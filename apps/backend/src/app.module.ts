@@ -1,14 +1,18 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
-import { AuthModule } from './modules/auth/auth.module';
-import { CatalogModule } from './modules/catalog/catalog.module';
-import { OrdersModule } from './modules/orders/orders.module';
-import { StoresModule } from './modules/stores/stores.module';
-import { CustomersModule } from './modules/customers/customers.module';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { CatalogModule } from './modules/catalog/catalog.module.js';
+import { OrdersModule } from './modules/orders/orders.module.js';
+import { StoresModule } from './modules/stores/stores.module.js';
+import { CustomersModule } from './modules/customers/customers.module.js';
+import { SharedModule } from './shared/shared.module.js';
+import { DbModule } from './db/db.module.js';
 
 @Module({
   imports: [
+    DbModule,
+    SharedModule,
     CustomersModule,
     StoresModule,
     OrdersModule,

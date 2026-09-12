@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "defaults": {
+    "namespace": "@jaja",
+    "sharedModulePath": "packages/shared",
+    "sharedSubmoduleUrl": "https://github.com/mentoria-360/shared.git",
+    "frontendAppPath": "apps/frontend",
+    "backendAppPath": "apps/backend",
+    "frontendPort": 3000,
+    "backendPort": 4000,
+    "frontendApiUrlEnvVar": "NEXT_PUBLIC_API_URL",
+    "backendPortEnvVar": "PORT"
+  }
+}

@@ -1,1 +1,1 @@
-export * from "./customers.module";
+export * from "./customers.module.js";

@@ -1,0 +1,4 @@
+# Placeholder — infraestrutura (ex.: RabbitMQ) entra em prompts futuros.
+# services:
+#   rabbitmq:
+#     image: rabbitmq:3-management

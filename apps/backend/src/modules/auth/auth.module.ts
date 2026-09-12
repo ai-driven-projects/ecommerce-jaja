@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { DbModule } from '../../db/db.module';
-import { AuthController } from './auth.controller';
-import { AuthPrisma } from './auth.prisma';
+import { DbModule } from '../../db/db.module.js';
+import { AuthController } from './auth.controller.js';
+import { AuthPrisma } from './auth.prisma.js';
 
 @Module({
   imports: [DbModule],
