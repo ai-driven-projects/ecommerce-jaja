@@ -1,3 +1,6 @@
 [submodule ".claude/skills"]
 	path = .claude/skills
 	url = https://github.com/mentoria-360/skills-ddd-clean
+[submodule "packages/shared"]
+	path = packages/shared
+	url = https://github.com/mentoria-360/shared.git

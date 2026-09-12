@@ -1,0 +1,13 @@
+# Submódulos Git: têm formatação própria, não formatar a partir da raiz
+packages/shared
+.claude/skills
+
+# Gerados / dependências
+node_modules
+dist
+build
+.next
+out
+.turbo
+coverage
+package-lock.json
