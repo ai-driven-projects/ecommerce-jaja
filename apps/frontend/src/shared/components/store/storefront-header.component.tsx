@@ -2,7 +2,7 @@
 
 import type { ReactNode, Ref } from 'react';
 import Link from 'next/link';
-import { ChevronDown, LogOut, ShoppingCart, UserRound } from 'lucide-react';
+import { ChevronDown, LogOut, ShieldCheck, ShoppingCart, UserRound } from 'lucide-react';
 import { AppLogo } from '@/shared/components/branding/app-logo.component';
 import { DeliveryPill } from '@/shared/components/store/delivery-pill.component';
 import { StorefrontSearch } from '@/shared/components/store/storefront-search.component';
@@ -29,6 +29,9 @@ type StorefrontHeaderProps = {
   /** Destino do botão "Entrar", exibido só quando não há `userName`. */
   signInHref?: string;
   onSignOut?: () => void;
+  /** Com sessão de administrador, o menu da conta ganha o link para a área administrativa. */
+  isAdmin?: boolean;
+  adminHref?: string;
   /** Conteúdo abaixo da linha principal (ex.: chips de categoria). */
   children?: ReactNode;
   className?: string;
@@ -38,9 +41,15 @@ function firstNameOf(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] || fullName;
 }
 
-// Controle de conta: com sessão → pílula com o primeiro nome e menu "Sair";
-// sem sessão → botão "Entrar" em contorno.
-function AccountControl({ userName, signInHref, onSignOut }: Pick<StorefrontHeaderProps, 'userName' | 'signInHref' | 'onSignOut'>) {
+// Controle de conta: com sessão → pílula com o primeiro nome e menu (área
+// administrativa para admins, "Sair"); sem sessão → botão "Entrar" em contorno.
+function AccountControl({
+  userName,
+  signInHref,
+  onSignOut,
+  isAdmin,
+  adminHref,
+}: Pick<StorefrontHeaderProps, 'userName' | 'signInHref' | 'onSignOut' | 'isAdmin' | 'adminHref'>) {
   if (userName) {
     return (
       <DropdownMenu>
@@ -56,9 +65,17 @@ function AccountControl({ userName, signInHref, onSignOut }: Pick<StorefrontHead
         <DropdownMenuContent align="end" className="w-52">
           <div className="px-3 py-2">
             <p className="truncate text-sm font-extrabold">{userName}</p>
-            <p className="text-xs text-muted-ink">Conta do escritório</p>
+            <p className="text-xs text-muted-ink">{isAdmin ? 'Administrador' : 'Conta do escritório'}</p>
           </div>
           <DropdownMenuSeparator />
+          {isAdmin && adminHref ? (
+            <DropdownMenuItem asChild>
+              <Link href={adminHref}>
+                <ShieldCheck className="size-4" strokeWidth={2.2} aria-hidden="true" />
+                Área administrativa
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem onSelect={onSignOut} className="text-danger focus:text-danger">
             <LogOut className="size-4" strokeWidth={2.2} aria-hidden="true" />
             Sair
@@ -94,6 +111,8 @@ export function StorefrontHeader({
   userName,
   signInHref,
   onSignOut,
+  isAdmin,
+  adminHref,
   children,
   className,
 }: StorefrontHeaderProps) {
@@ -115,7 +134,13 @@ export function StorefrontHeader({
         <StorefrontSearch className="order-last w-full flex-1 md:order-none md:min-w-[220px] md:basis-0" />
 
         <div className="ml-auto flex items-center gap-2.5">
-          <AccountControl userName={userName} signInHref={signInHref} onSignOut={onSignOut} />
+          <AccountControl
+            userName={userName}
+            signInHref={signInHref}
+            onSignOut={onSignOut}
+            isAdmin={isAdmin}
+            adminHref={adminHref}
+          />
 
           <Button ref={cartButtonRef} type="button" onClick={onOpenCart} aria-label={`Abrir carrinho, ${cartCount} ${cartCount === 1 ? 'item' : 'itens'}`}>
             <ShoppingCart className="size-[17px]" strokeWidth={2.2} aria-hidden="true" />

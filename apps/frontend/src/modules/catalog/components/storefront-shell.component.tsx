@@ -12,6 +12,7 @@ import { StorefrontFooter } from '@/shared/components/store/storefront-footer.co
 import { CompactStorefrontHeader, StorefrontHeader } from '@/shared/components/store/storefront-header.component';
 import { StorefrontLayout } from '@/shared/template/storefront-layout.component';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
+import { ADMIN_ROUTE } from '@/shared/navigation/admin-routes';
 import { CHECKOUT_ROUTE, STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
 import { CartProvider, useCart } from '../data/cart.context';
 import { ZONES } from '../data/storefront.mock';
@@ -28,7 +29,7 @@ function ConnectedHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   // A sessão vem do cookie e só o cliente a conhece: até hidratar, o cabeçalho
   // mostra "Entrar" nos dois lados para o markup não divergir.
   const hydrated = useHydrated();
@@ -60,6 +61,8 @@ function ConnectedHeader() {
         onNeighborhoodChange={storefront.setNeighborhood}
         onOpenCart={cart.open}
         userName={hydrated ? (user?.name ?? null) : null}
+        isAdmin={hydrated && isAdmin}
+        adminHref={ADMIN_ROUTE}
         signInHref={signInHref}
         onSignOut={handleSignOut}
       />
