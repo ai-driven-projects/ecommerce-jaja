@@ -44,7 +44,7 @@ export function LoginPage() {
           <Badge variant="dark">Operação</Badge>
         </div>
         <h1 className="mb-1 font-display text-2xl font-extrabold tracking-[-0.5px]">Área administrativa</h1>
-        <p className="mb-5 text-sm text-muted-ink">Acesso restrito à equipe dos hubs.</p>
+        <p className="mb-5 text-sm text-muted-ink">Acesso restrito à equipe das lojas.</p>
         <AuthForm onSignedIn={handleSignedIn} />
       </div>
       <Link href={STOREFRONT_ROUTE} className="mt-6 text-[13.5px] font-bold text-muted-ink transition-colors duration-150 hover:text-brand">

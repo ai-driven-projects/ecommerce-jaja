@@ -1,0 +1,61 @@
+# Testes de integração da geocodificação (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations aplicadas
+# (npm run prisma:migrate:deploy), seed `auth` aplicado
+# (npm run prisma:seed -- --only=auth) e backend rodando em
+# http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# Sem GOOGLE_MAPS_API_KEY no apps/backend/.env, o backend registra na inicialização
+# que a geocodificação está simulada e responde a qualquer endereço com o ponto da
+# Avenida Paulista (source "mock"). Com a chave, o passo 8 consulta o Google
+# (source "google") e devolve um ponto em Fortaleza. Nenhuma resposta contém a chave.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@userEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+
+### 1. Login do admin do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login de usuário do seed com admin = false -> 200 com token
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Sem token -> 401
+GET {{baseUrl}}/geocoding?address=Avenida%20Paulista
+
+### 4. Token de não administrador -> 403 ADMIN_REQUIRED
+GET {{baseUrl}}/geocoding?address=Avenida%20Paulista
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 5. Endereço só com espaços -> 400 GEOCODING_ADDRESS_REQUIRED
+GET {{baseUrl}}/geocoding?address=%20%20
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 6. Sem o parâmetro address -> 400 GEOCODING_ADDRESS_REQUIRED
+GET {{baseUrl}}/geocoding
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 7. Endereço com menos de 3 caracteres após o trim -> 400 GEOCODING_ADDRESS_REQUIRED
+GET {{baseUrl}}/geocoding?address=%20ab%20
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 8. Endereço do "Loja Aldeota" (seed) -> 200 com { latitude, longitude, formattedAddress, source }
+# Sem chave: source = "mock", latitude = -23.561414, longitude = -46.655881 e
+# formattedAddress = "Avenida Paulista, 1578 - Bela Vista, São Paulo - SP, 01310-200".
+# Com chave: source = "google" e um ponto em Fortaleza (latitude perto de -3.73).
+GET {{baseUrl}}/geocoding?address=Rua%20Silva%20Paulet%2C%201100%2C%20Fortaleza
+Authorization: Bearer {{loginAdmin.response.body.token}}

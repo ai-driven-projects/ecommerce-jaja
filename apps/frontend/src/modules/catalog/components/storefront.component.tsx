@@ -46,8 +46,8 @@ function ProductSection({ id, title, products, etaMinutes, query, minCardWidth, 
 }
 
 // Estado vazio: bairro fora da área de cobertura, com os bairros atendidos
-// clicáveis, agrupados por hub.
-function NotServed({ hubs, onPick }: { hubs: [string, string[]][]; onPick: (neighborhood: string) => void }) {
+// clicáveis, agrupados por loja.
+function NotServed({ stores, onPick }: { stores: [string, string[]][]; onPick: (neighborhood: string) => void }) {
   return (
     <section className="rounded-4xl border border-line bg-card px-6 py-10 sm:px-11 sm:py-12">
       <span className="text-[44px] leading-none" aria-hidden="true">
@@ -60,9 +60,9 @@ function NotServed({ hubs, onPick }: { hubs: [string, string[]][]; onPick: (neig
       </h1>
       <p className="mb-5 mt-3 text-muted-ink">Por enquanto entregamos nestes bairros:</p>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6">
-        {hubs.map(([hub, neighborhoods]) => (
-          <div key={hub}>
-            <h2 className="mb-2.5 text-xs font-extrabold uppercase tracking-[0.06em] text-muted-ink">{hub}</h2>
+        {stores.map(([store, neighborhoods]) => (
+          <div key={store}>
+            <h2 className="mb-2.5 text-xs font-extrabold uppercase tracking-[0.06em] text-muted-ink">{store}</h2>
             <div className="flex flex-wrap gap-2">
               {neighborhoods.map((neighborhood) => (
                 <button
@@ -103,7 +103,7 @@ export function Storefront() {
       />
 
       {!storefront.served ? (
-        <NotServed hubs={storefront.hubs} onPick={storefront.setNeighborhood} />
+        <NotServed stores={storefront.stores} onPick={storefront.setNeighborhood} />
       ) : isAll ? (
         <>
           <StorefrontHero neighborhood={storefront.neighborhood} couriersOnline={COURIERS_ONLINE} ctaHref={`#${TOP_ANCHOR}`} />

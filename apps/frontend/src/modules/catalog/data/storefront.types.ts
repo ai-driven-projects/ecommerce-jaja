@@ -35,11 +35,11 @@ export type Product = {
   description: string;
   /** Ficha técnica em pares rótulo/valor. */
   specs: ReadonlyArray<readonly [string, string]>;
-  /** Unidades em estoque no hub (dado local de exemplo). */
+  /** Unidades em estoque na loja (dado local de exemplo). */
   stock: number;
 };
 
 export type Zone = {
   neighborhood: string;
-  hub: string;
+  store: string;
 };

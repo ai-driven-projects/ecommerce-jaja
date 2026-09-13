@@ -1,4 +1,5 @@
 import { ADMIN_ROUTE } from '@/shared/navigation/admin-routes';
+import { withQuery } from '@/shared/navigation/with-query.util';
 
 export const CATALOG_ROUTE = `${ADMIN_ROUTE}/catalog`;
 
@@ -54,12 +55,6 @@ export function catalogSubcategoryNewRoute(parentId: string, query?: string): st
 /** Formulário de edição de uma categoria; `query` é a da lista, usada no retorno. */
 export function catalogCategoryRoute(id: string, query?: string): string {
   return withQuery(`${CATALOG_CATEGORIES_ROUTE}/${encodeURIComponent(id)}`, query);
-}
-
-/** Anexa a query string (com ou sem `?`) à rota; vazia devolve a rota como está. */
-function withQuery(route: string, query?: string): string {
-  const normalized = query?.replace(/^\?/, '') ?? '';
-  return normalized ? `${route}?${normalized}` : route;
 }
 
 /** Lista paginada de produtos do catálogo. */

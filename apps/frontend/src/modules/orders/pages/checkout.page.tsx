@@ -10,6 +10,9 @@ import { useAuth } from '@/modules/auth/data/auth.context';
 import { welcomeMessage } from '@/modules/auth/pages/storefront-login.page';
 import { useCart } from '@/modules/catalog/data/cart.context';
 import { useStorefront } from '@/modules/catalog/data/use-storefront.hook';
+import { CustomerDeliveryForm } from '@/modules/customers/components/customer-delivery-form.component';
+import { CustomerDeliverySummary } from '@/modules/customers/components/customer-delivery-summary.component';
+import { useMyCustomer } from '@/modules/customers/data/use-my-customer.hook';
 import { BikeIcon } from '@/shared/components/branding/app-logo.component';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { Button } from '@/shared/components/ui/button';
@@ -29,6 +32,10 @@ const PAYMENT_METHODS: ReadonlyArray<{ id: PaymentMethod; icon: string; label: s
   { id: 'card', icon: '💳', label: 'Cartão' },
   { id: 'corp', icon: '🏢', label: 'Faturado (empresa)' },
 ];
+
+// Cidade e UF iniciais dos dados de entrega sem cadastro: a loja só atende Fortaleza/CE.
+const DELIVERY_CITY = 'Fortaleza';
+const DELIVERY_STATE = 'CE';
 
 const CARD_CLASS = 'rounded-3xl border border-line bg-card px-5 py-[22px] sm:px-6';
 
@@ -50,6 +57,20 @@ function Field({ id, label, ...props }: { id: string; label: string } & React.Co
   );
 }
 
+// Estrutura estática (sem shimmer) do resumo enquanto o cadastro de cliente é consultado.
+function DeliverySkeleton() {
+  return (
+    <div role="status" className="flex items-start justify-between gap-3 rounded-xl bg-surface px-[18px] py-4">
+      <span className="sr-only">Carregando dados de entrega…</span>
+      <div className="flex flex-1 flex-col gap-2.5" aria-hidden="true">
+        <div className="h-4 w-4/5 rounded-md bg-card" />
+        <div className="h-4 w-36 rounded-md bg-card" />
+      </div>
+      <div className="h-9 w-20 rounded-pill bg-card" aria-hidden="true" />
+    </div>
+  );
+}
+
 // Janela de chegada relativa ao ETA do bairro: depende do relógio, então só
 // existe no cliente (o servidor renderiza "…").
 function useEtaWindow(etaMinutes: number | null): string | null {
@@ -64,17 +85,21 @@ function CheckoutForm() {
   const { user } = useAuth();
   const storefront = useStorefront();
   const cart = useCart();
+  const myCustomer = useMyCustomer();
+  const [editingDelivery, setEditingDelivery] = useState(false);
   const [payment, setPayment] = useState<PaymentMethod>('pix');
   const [isConfirming, setIsConfirming] = useState(false);
   const etaWindow = useEtaWindow(storefront.etaMinutes);
   const backHref = `${STOREFRONT_ROUTE}?${storefront.query}`;
-  const canConfirm = cart.items.length > 0 && storefront.served && !isConfirming;
+  // Confirmar exige cadastro de cliente salvo e o formulário de dados de entrega fechado.
+  const deliveryReady = myCustomer.hasCustomer && !editingDelivery;
+  const canConfirm = cart.items.length > 0 && storefront.served && deliveryReady && !isConfirming;
 
   const handleConfirm = () => {
     setIsConfirming(true);
     const orderId = nextOrderId();
     cart.clear();
-    toast.success(`Pedido #${orderId} confirmado`, { description: 'A bike já sai do hub.' });
+    toast.success(`Pedido #${orderId} confirmado`, { description: 'A bike já sai da loja.' });
     router.push(orderTrackingRoute(orderId));
   };
 
@@ -101,13 +126,35 @@ function CheckoutForm() {
                 ? `Dentro da área de cobertura · entrega em ~${storefront.etaMinutes} min`
                 : `Ainda não entregamos em ${storefront.neighborhood}`}
             </div>
-            <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
-              <Field id="address" label="Endereço" defaultValue={`Av. Santos Dumont, 1500 · ${storefront.neighborhood}`} autoComplete="street-address" />
-              <Field id="complement" label="Complemento" placeholder="Torre B" />
-              <Field id="floor" label="Andar / sala" defaultValue="12º andar · sala 1204" />
+
+            {/* Dados de entrega do cliente: carregando → criação | resumo ⇄ alteração. */}
+            {myCustomer.loading ? (
+              <DeliverySkeleton />
+            ) : myCustomer.customer === null ? (
+              <>
+                <p className="mb-4 text-[13.5px] leading-[1.55] text-ink-soft">
+                  Precisamos destes dados uma vez só: ficam salvos para os próximos pedidos.
+                </p>
+                <CustomerDeliveryForm
+                  customer={null}
+                  defaults={{ neighborhood: storefront.neighborhood, city: DELIVERY_CITY, state: DELIVERY_STATE }}
+                  save={myCustomer.save}
+                />
+              </>
+            ) : editingDelivery ? (
+              <CustomerDeliveryForm
+                customer={myCustomer.customer}
+                save={myCustomer.save}
+                onSaved={() => setEditingDelivery(false)}
+                onCancel={() => setEditingDelivery(false)}
+              />
+            ) : (
+              <CustomerDeliverySummary customer={myCustomer.customer} onEdit={() => setEditingDelivery(true)} />
+            )}
+
+            {/* Dados deste pedido: não são salvos no cadastro de cliente. */}
+            <div className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
               <Field id="receiver" label="Quem recebe" defaultValue={user?.name ?? ''} autoComplete="name" />
-            </div>
-            <div className="mt-3">
               <Field id="instructions" label="Instruções para o entregador" placeholder="Ex.: deixar na recepção do andar, falar com a Ana" />
             </div>
           </section>
@@ -138,7 +185,7 @@ function CheckoutForm() {
 
             {payment === 'pix' ? (
               <p className="rounded-xl bg-surface px-[18px] py-4 text-[13.5px] leading-[1.55] text-ink-soft">
-                O QR Code Pix é gerado após confirmar o pedido. Pagamento aprovado na hora — a bike já sai do hub. 🚲
+                O QR Code Pix é gerado após confirmar o pedido. Pagamento aprovado na hora — a bike já sai da loja. 🚲
               </p>
             ) : null}
             {payment === 'card' ? (
@@ -213,6 +260,12 @@ function CheckoutForm() {
           <Button size="xl" className="w-full" disabled={!canConfirm} onClick={handleConfirm}>
             {isConfirming ? 'Confirmando…' : `Confirmar pedido · ${formatPrice(cart.totals.totalCents)}`}
           </Button>
+          {/* Só depois de consultar o cadastro, para o aviso não piscar durante o carregamento. */}
+          {!myCustomer.loading && !deliveryReady ? (
+            <p className="mt-2.5 text-center text-[13px] font-bold text-ink-soft">
+              Preencha os dados de entrega para confirmar o pedido.
+            </p>
+          ) : null}
           <p className="mt-2.5 text-center text-xs text-placeholder">Ao confirmar, você concorda com os termos do já já.</p>
         </aside>
       </div>
@@ -265,7 +318,8 @@ function CheckoutSkeleton() {
 
 /**
  * Rota pública `/checkout`: sem sessão pede para entrar ou criar conta e, com
- * sessão, mostra endereço, pagamento e o resumo do carrinho. Nunca redireciona.
+ * sessão, mostra os dados de entrega do cliente, pagamento e o resumo do
+ * carrinho. Nunca redireciona.
  */
 export function CheckoutPage() {
   return (

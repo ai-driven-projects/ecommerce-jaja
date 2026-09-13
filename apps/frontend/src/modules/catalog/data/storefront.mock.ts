@@ -16,13 +16,13 @@ export function categoryLabel(category: Category): string {
   return CATEGORY_OPTIONS.find((option) => option.id === category)?.label ?? category;
 }
 
-/** Bairros atendidos, agrupados por hub (a ordem define a ordem de exibição). */
+/** Bairros atendidos, agrupados por loja (a ordem define a ordem de exibição). */
 export const ZONES: readonly Zone[] = [
-  { neighborhood: 'Aldeota', hub: 'Hub Aldeota' },
-  { neighborhood: 'Meireles', hub: 'Hub Aldeota' },
-  { neighborhood: 'Centro', hub: 'Hub Aldeota' },
-  { neighborhood: 'Cocó', hub: 'Hub Cocó' },
-  { neighborhood: 'Dionísio Torres', hub: 'Hub Cocó' },
+  { neighborhood: 'Aldeota', store: 'Loja Aldeota' },
+  { neighborhood: 'Meireles', store: 'Loja Aldeota' },
+  { neighborhood: 'Centro', store: 'Loja Aldeota' },
+  { neighborhood: 'Cocó', store: 'Loja Cocó' },
+  { neighborhood: 'Dionísio Torres', store: 'Loja Cocó' },
 ];
 
 /** Bairros que constam no seletor mas ainda não são atendidos. */
@@ -40,8 +40,8 @@ export const ETA_BY_NEIGHBORHOOD: Readonly<Record<string, number>> = {
 /** Entregadores online agora (dado local de exemplo para o hero e o admin). */
 export const COURIERS_ONLINE = 14;
 
-export function hubOf(neighborhood: string): string | null {
-  return ZONES.find((zone) => zone.neighborhood === neighborhood)?.hub ?? null;
+export function storeOf(neighborhood: string): string | null {
+  return ZONES.find((zone) => zone.neighborhood === neighborhood)?.store ?? null;
 }
 
 const p = (

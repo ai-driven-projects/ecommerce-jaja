@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Loja Aldeota",
+    "slug": "loja-aldeota",
+    "phone": "8530001001",
+    "address": "Rua Silva Paulet, 1100 – Aldeota, Fortaleza/CE",
+    "latitude": -3.7356,
+    "longitude": -38.5012,
+    "deliveryRadiusMeters": 2500
+  },
+  {
+    "name": "Loja Cocó",
+    "slug": "loja-coco",
+    "phone": "8530001002",
+    "address": "Avenida Engenheiro Santana Júnior, 2500 – Cocó, Fortaleza/CE",
+    "latitude": -3.7475,
+    "longitude": -38.4839,
+    "deliveryRadiusMeters": 2500
+  }
+]

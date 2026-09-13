@@ -28,7 +28,7 @@ export type TrackingOrder = {
   etaWindow: string;
   remainingMinutes: number;
   courier: { name: string; mode: string; deliveries: number; rating: string; distanceLabel: string; streetLabel: string };
-  hub: string;
+  store: string;
   steps: TrackingStep[];
   items: TrackingOrderItem[];
   totalCents: number;
@@ -61,10 +61,10 @@ export function buildTrackingOrder(id: string, now: Date): TrackingOrder {
       distanceLabel: 'a 650 m',
       streetLabel: 'pedalando pela R. Tibúrcio Cavalcante',
     },
-    hub: 'Hub Aldeota',
+    store: 'Loja Aldeota',
     steps: [
       { title: 'Pedido confirmado', detail: `${hhmm(confirmedAt)} · pagamento aprovado no Pix`, status: 'done' },
-      { title: 'Separando no Hub Aldeota', detail: `${hhmm(packedAt)} · 3 itens embalados`, status: 'done' },
+      { title: 'Separando na Loja Aldeota', detail: `${hhmm(packedAt)} · 3 itens embalados`, status: 'done' },
       { title: 'Rafael saiu de bike', detail: `${hhmm(leftAt)} · a ~650 m de você`, status: 'now' },
       { title: 'Entregue no 12º andar', detail: 'Aguardando chegada', status: 'todo' },
     ],

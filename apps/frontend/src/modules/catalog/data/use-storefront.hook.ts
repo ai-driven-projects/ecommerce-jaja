@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ETA_BY_NEIGHBORHOOD, PRODUCTS, UNSERVED_NEIGHBORHOODS, ZONES, hubOf } from './storefront.mock';
+import { ETA_BY_NEIGHBORHOOD, PRODUCTS, UNSERVED_NEIGHBORHOODS, ZONES, storeOf } from './storefront.mock';
 import { CATEGORY_ALL, type Product } from './storefront.types';
 
 export const DEFAULT_NEIGHBORHOOD = 'Aldeota';
@@ -12,17 +12,17 @@ export function buildStorefrontQuery(neighborhood: string, category: string): st
   return new URLSearchParams({ bairro: neighborhood, categoria: category }).toString();
 }
 
-/** Bairros atendidos agrupados por hub, na ordem de `ZONES`: `[hub, bairros[]][]`. */
-export function groupNeighborhoodsByHub(): [string, string[]][] {
-  const byHub = new Map<string, string[]>();
+/** Bairros atendidos agrupados por loja, na ordem de `ZONES`: `[loja, bairros[]][]`. */
+export function groupNeighborhoodsByStore(): [string, string[]][] {
+  const byStore = new Map<string, string[]>();
   for (const zone of ZONES) {
-    byHub.set(zone.hub, [...(byHub.get(zone.hub) ?? []), zone.neighborhood]);
+    byStore.set(zone.store, [...(byStore.get(zone.store) ?? []), zone.neighborhood]);
   }
-  return [...byHub.entries()];
+  return [...byStore.entries()];
 }
 
 const SERVED_NEIGHBORHOODS = ZONES.map((zone) => zone.neighborhood);
-const HUBS = groupNeighborhoodsByHub();
+const STORES = groupNeighborhoodsByStore();
 
 /**
  * Estado da vitrine com a URL como fonte de verdade: `bairro` e `categoria`
@@ -49,7 +49,7 @@ export function useStorefront() {
 
   const served = SERVED_NEIGHBORHOODS.includes(neighborhood);
   const etaMinutes = served ? (ETA_BY_NEIGHBORHOOD[neighborhood] ?? null) : null;
-  const hub = hubOf(neighborhood);
+  const store = storeOf(neighborhood);
 
   const visibleProducts: Product[] = PRODUCTS.filter((product) => category === CATEGORY_ALL || product.category === category);
 
@@ -65,9 +65,9 @@ export function useStorefront() {
     setCategory,
     served,
     etaMinutes,
-    hub,
+    store,
     visibleProducts,
-    hubs: HUBS,
+    stores: STORES,
     neighborhoods,
     servedNeighborhoods: SERVED_NEIGHBORHOODS,
     query: buildStorefrontQuery(neighborhood, category),

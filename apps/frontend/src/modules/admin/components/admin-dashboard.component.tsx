@@ -9,18 +9,14 @@ import { Button } from '@/shared/components/ui/button';
 import { MetricCard } from '@/shared/components/ui/metric-card';
 import { CATALOG_ROUTE } from '@/shared/navigation/catalog-routes';
 import { ORDERS_ROUTE } from '@/shared/navigation/orders-routes';
-import { STORES_ROUTE } from '@/shared/navigation/stores-routes';
 import { STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
 import { cn } from '@/shared/lib/class-name.util';
 import {
   COURIERS_ONLINE,
-  COVERAGE_RADIUS_KM,
-  COVERAGE_ROWS,
   DASHBOARD_KPIS,
   DELIVERY_TARGET_MINUTES,
   HOURLY_BARS,
   LOW_STOCK_PRODUCTS,
-  MAIN_HUB,
   ONGOING_ORDERS,
 } from '../data';
 import { OrderStatusBadge, CourierCell } from './order-status.component';
@@ -95,12 +91,18 @@ function OrderRowFragment({ order }: { order: (typeof ONGOING_ORDERS)[number] })
   );
 }
 
+// No desktop o cartão estica até a altura de "Pedidos em andamento" e as barras
+// ocupam o espaço livre; abaixo disso mantém a altura fixa de 120px.
 function HourlyChartCard() {
   return (
-    <section className={CARD_CLASS}>
+    <section className={cn(CARD_CLASS, 'flex flex-col')}>
       <h2 className="mb-1 font-display text-[17px] font-extrabold">Tempo médio por hora</h2>
       <p className="mb-3.5 text-[12.5px] text-muted-ink">Meta: até {DELIVERY_TARGET_MINUTES} min por entrega</p>
-      <div className="flex h-[120px] items-end gap-2" role="img" aria-label="Tempo médio de entrega por hora do dia">
+      <div
+        className="flex h-[120px] items-end gap-2 xl:h-auto xl:min-h-[120px] xl:flex-1"
+        role="img"
+        aria-label="Tempo médio de entrega por hora do dia"
+      >
         {HOURLY_BARS.map((bar) => {
           const overTarget = bar.minutes > DELIVERY_TARGET_MINUTES;
           return (
@@ -119,46 +121,10 @@ function HourlyChartCard() {
   );
 }
 
-function CoverageCard() {
-  return (
-    <section className={CARD_CLASS}>
-      <CardTitleRow title="Área de cobertura" action={{ label: 'Editar', href: STORES_ROUTE }} />
-      <div className="relative mb-3 h-[150px] overflow-hidden rounded-xl bg-map">
-        <svg width="100%" height="100%" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <rect width="360" height="150" fill="#E9EFE9" />
-          <g stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round">
-            <line x1="0" y1="45" x2="360" y2="45" />
-            <line x1="0" y1="105" x2="360" y2="105" />
-            <line x1="90" y1="0" x2="90" y2="150" />
-            <line x1="200" y1="0" x2="200" y2="150" />
-            <line x1="300" y1="0" x2="300" y2="150" />
-          </g>
-          <circle cx="180" cy="75" r="62" fill="#FF6B00" opacity=".14" />
-          <circle cx="180" cy="75" r="62" fill="none" stroke="#FF6B00" strokeWidth="2.5" strokeDasharray="6 6" />
-          <circle cx="180" cy="75" r="7" fill="#FF6B00" />
-        </svg>
-        <span className="absolute bottom-2.5 left-2.5 rounded-pill bg-card px-[11px] py-1.5 text-[11.5px] font-extrabold shadow-badge">
-          🏬 {MAIN_HUB} · raio {COVERAGE_RADIUS_KM.toLocaleString('pt-BR')} km
-        </span>
-      </div>
-      <div className="flex flex-col gap-2 text-[13px]">
-        {COVERAGE_ROWS.map((row) => (
-          <div key={row.neighborhood} className="flex items-center justify-between">
-            <span className="font-bold">
-              {row.neighborhood} <span className="font-semibold text-muted-ink">· {row.hub.replace('Hub ', '')}</span>
-            </span>
-            <span className={cn('font-extrabold', row.etaMinutes > 25 ? 'text-warning' : 'text-success')}>~{row.etaMinutes} min</span>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function LowStockCard() {
   return (
     <section className={CARD_CLASS}>
-      <CardTitleRow title="Estoque baixo no hub" action={{ label: 'Repor estoque', href: CATALOG_ROUTE }} />
+      <CardTitleRow title="Estoque baixo" action={{ label: 'Repor estoque', href: CATALOG_ROUTE }} />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {LOW_STOCK_PRODUCTS.map((product) => {
           const ratio = product.stock / product.capacity;
@@ -181,7 +147,7 @@ function LowStockCard() {
   );
 }
 
-/** Dashboard do hub: saudação, KPIs, pedidos em andamento, tempo por hora, cobertura e estoque baixo. */
+/** Dashboard da operação: saudação, KPIs, pedidos em andamento, tempo por hora e estoque baixo. */
 export function AdminDashboardComponent() {
   const { user } = useAuth();
   const today = useTodayLabel();
@@ -195,7 +161,7 @@ export function AdminDashboardComponent() {
           </h1>
           <p className="mt-0.5 text-[13.5px] text-muted-ink">
             {today ? `${today.date} · ` : ''}
-            {MAIN_HUB} operando normalmente
+            Operação normal
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -223,12 +189,9 @@ export function AdminDashboardComponent() {
         ))}
       </div>
 
-      <div className="grid items-start gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <OngoingOrdersCard />
-        <div className="flex flex-col gap-3.5">
-          <HourlyChartCard />
-          <CoverageCard />
-        </div>
+        <HourlyChartCard />
       </div>
 
       <LowStockCard />

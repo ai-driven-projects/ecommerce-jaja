@@ -36,7 +36,7 @@ const moduleItems: AppModuleItem[] = [
   { id: 'catalog', label: 'Catálogo de Produtos', href: CATALOG_ROUTE, icon: Tag },
   { id: 'couriers', label: 'Entregadores', href: `${ADMIN_ROUTE}/couriers`, icon: Bike },
   { id: 'customers', label: 'Clientes', href: CUSTOMERS_ROUTE, icon: Users },
-  { id: 'stores', label: 'Hubs & cobertura', href: STORES_ROUTE, icon: Store },
+  { id: 'stores', label: 'Lojas', href: STORES_ROUTE, icon: Store },
 ];
 
 // ── Sub-itens por módulo, agrupados em seções (vazio com uma única tela) ──────

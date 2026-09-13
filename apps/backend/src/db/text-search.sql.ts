@@ -1,6 +1,7 @@
-// Text search helpers shared by the catalog adapters that search in raw SQL
-// (`BrandPrisma`, `CategoryPrisma`). Each adapter builds its own tsvector
-// document from its columns; these helpers keep folding and term parsing equal.
+// Text search helpers shared by the adapters that search in raw SQL
+// (`BrandPrisma`, `CategoryPrisma`, `CustomerPrisma`). Each adapter builds its
+// own tsvector document from its columns; these helpers keep folding and term
+// parsing equal.
 
 // Accent folding done with `translate`, in both cases, so the database needs
 // no `unaccent` extension.

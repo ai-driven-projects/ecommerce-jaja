@@ -1,0 +1,295 @@
+# Testes de integração do cadastro de lojas (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations aplicadas
+# (npm run prisma:migrate:deploy), seeds `auth` e `stores` aplicados
+# (npm run prisma:seed -- --only=auth,stores) e backend rodando em
+# http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# Ordem sugerida: executar de cima para baixo. As lojas criadas usam nomes com sufixo de
+# timestamp para o arquivo poder ser executado de novo; os passos seguintes reutilizam
+# nome, slug e id por requisições nomeadas. Os passos 31 a 33 excluem as lojas que
+# continuam ativas, para a listagem voltar a ter só os lojas do seed.
+#
+# Os conflitos e a busca por endereço usam os lojas do seed: "Loja Aldeota" (loja-aldeota,
+# "Rua Silva Paulet, 1100 – Aldeota, Fortaleza/CE") e "Loja Cocó" (loja-coco).
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@userEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+
+### 1. Login do admin do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login de usuário do seed com admin = false -> 200 com token
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Listagem sem token -> 401
+GET {{baseUrl}}/stores
+
+### 4. Criação com token de não administrador -> 403 ADMIN_REQUIRED
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Proibida {{$timestamp}}",
+  "latitude": -3.7247,
+  "longitude": -38.4968
+}
+
+### 5. Criação completa -> 201 com id uuid, slug derivado do nome, phone = "8530001003", deliveryRadiusMeters = 2000 e isActive = true
+# @name createStore
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Teste {{$timestamp}}",
+  "phone": "(85) 3000-1003",
+  "address": "Avenida Beira Mar, 3000 – Meireles, Fortaleza/CE",
+  "latitude": -3.7247,
+  "longitude": -38.4968,
+  "deliveryRadiusMeters": 2000
+}
+
+### 6. Criação só com nome e coordenadas -> 201 com phone = null, address = null, deliveryRadiusMeters = 1000, isActive = true e coordenadas arredondadas (-3.735612, -38.501299)
+# @name createMinimal
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Minimo {{$timestamp}}",
+  "latitude": -3.73561234,
+  "longitude": -38.50129876
+}
+
+### 7. Criação com id no corpo -> 201 com um id diferente de {{missingId}}
+# @name createWithBodyId
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": "{{missingId}}",
+  "name": "Loja Id Ignorado {{$timestamp}}",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 8. Nome duplicado com outra caixa (loja do seed) -> 409 STORE_NAME_ALREADY_EXISTS
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "LOJA ALDEOTA",
+  "slug": "loja-aldeota-{{$timestamp}}",
+  "latitude": -3.7356,
+  "longitude": -38.5012
+}
+
+### 9. Slug duplicado (loja do seed) -> 409 STORE_SLUG_ALREADY_EXISTS
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Aldeota Norte {{$timestamp}}",
+  "slug": "loja-aldeota",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 10. Coordenadas fora do intervalo -> 400 GEO_POINT_LATITUDE_INVALID e GEO_POINT_LONGITUDE_INVALID
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Fora do Mapa {{$timestamp}}",
+  "latitude": 91,
+  "longitude": -181
+}
+
+### 11. Raio abaixo de 300 m -> 400 DELIVERY_RADIUS_INVALID
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Raio Curto {{$timestamp}}",
+  "latitude": -3.7300,
+  "longitude": -38.5000,
+  "deliveryRadiusMeters": 299
+}
+
+### 12. Telefone inválido -> 400 PHONE_INVALID_LENGTH
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Telefone Curto {{$timestamp}}",
+  "phone": "9999",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 13. Endereço de referência com 201 caracteres -> 400 TEXT_TOO_LONG
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Endereco Longo {{$timestamp}}",
+  "address": "Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa Rua Longa X",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 14. Raio sobreposto ao do "Loja Aldeota" (ponto a cerca de 1 km dele, raio de 2 km) -> 201
+# @name createOverlapping
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Meireles {{$timestamp}}",
+  "latitude": -3.7270,
+  "longitude": -38.4960,
+  "deliveryRadiusMeters": 2000
+}
+
+### 15. Busca pelo endereço de referência -> 200 só com "Loja Aldeota" (total = 1, totalPages = 1)
+GET {{baseUrl}}/stores?search=silva%20paulet
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 16. Busca por nome paginada -> 200 com page = 2, pageSize = 2, até 2 itens e totalPages = ceil(total / 2)
+GET {{baseUrl}}/stores?search=loja&page=2&pageSize=2
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 17. pageSize acima do máximo -> 200 com pageSize = 100
+GET {{baseUrl}}/stores?pageSize=500
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 18. Busca por id da loja criada no passo 5 -> 200 com latitude, longitude e deliveryRadiusMeters
+GET {{baseUrl}}/stores/{{createStore.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 19. Busca por uuid inexistente -> 404 STORE_NOT_FOUND
+GET {{baseUrl}}/stores/{{missingId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 20. Busca por id que não é uuid -> 404 STORE_NOT_FOUND
+GET {{baseUrl}}/stores/abc
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 21. Alteração mantendo o nome, movendo o ponto, mudando o raio e limpando telefone e endereço -> 200 com slug inalterado, phone = null, address = null e deliveryRadiusMeters = 3000
+PUT {{baseUrl}}/stores/{{createStore.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{createStore.response.body.name}}",
+  "phone": null,
+  "address": "",
+  "latitude": -3.7300,
+  "longitude": -38.4950,
+  "deliveryRadiusMeters": 3000
+}
+
+### 22. Renomear e desativar a loja do passo 6 -> 200 com isActive = false e slug inalterado
+# O nome passa a terminar com o id da loja, para o passo 28 repeti-lo com outra caixa.
+# @name renameMinimal
+PUT {{baseUrl}}/stores/{{createMinimal.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Excluida {{createMinimal.response.body.id}}",
+  "latitude": -3.735612,
+  "longitude": -38.501299,
+  "isActive": false
+}
+
+### 23. Filtro por status -> 200 só com lojas de isActive = false, incluindo a do passo 22
+GET {{baseUrl}}/stores?isActive=false
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 24. Exclusão da loja do passo 6 -> 204 sem corpo
+DELETE {{baseUrl}}/stores/{{createMinimal.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 25. Busca da loja excluída -> 404 STORE_NOT_FOUND
+GET {{baseUrl}}/stores/{{createMinimal.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 26. Loja excluída não aparece na busca -> 200 com total = 0
+GET {{baseUrl}}/stores?search={{createMinimal.response.body.slug}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 27. Criação com o nome da loja excluída -> 409 STORE_NAME_ALREADY_EXISTS (o nome continua reservado)
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{renameMinimal.response.body.name}}",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 28. Criação com o nome da loja excluída em outra caixa -> 409 STORE_NAME_ALREADY_EXISTS
+POST {{baseUrl}}/stores
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "LOJA EXCLUIDA {{createMinimal.response.body.id}}",
+  "slug": "loja-excluida-outra-caixa-{{$timestamp}}",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 29. PUT no id da loja excluída -> 404 STORE_NOT_FOUND e a loja continua excluída
+PUT {{baseUrl}}/stores/{{createMinimal.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Loja Ressuscitada {{$timestamp}}",
+  "latitude": -3.7300,
+  "longitude": -38.5000
+}
+
+### 30. Exclusão da loja já excluída -> 404 STORE_NOT_FOUND
+DELETE {{baseUrl}}/stores/{{createMinimal.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 31. Exclusão da loja do passo 5 -> 204 (limpeza)
+DELETE {{baseUrl}}/stores/{{createStore.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 32. Exclusão da loja do passo 7 -> 204 (limpeza)
+DELETE {{baseUrl}}/stores/{{createWithBodyId.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 33. Exclusão da loja do passo 14 -> 204 (limpeza)
+DELETE {{baseUrl}}/stores/{{createOverlapping.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}

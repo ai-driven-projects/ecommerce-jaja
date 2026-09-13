@@ -5,18 +5,24 @@ import { seedAuth } from './tasks/auth.seed.js';
 import { seedCatalogBrands } from './tasks/catalog-brands.seed.js';
 import { seedCatalogCategories } from './tasks/catalog-categories.seed.js';
 import { seedCatalogProducts } from './tasks/catalog-products.seed.js';
+import { seedCustomers } from './tasks/customers.seed.js';
+import { seedStoresStores } from './tasks/stores-stores.seed.js';
 
 type SeedTask = {
   name: string;
   run: (prisma: PrismaClient) => Promise<void>;
 };
 
-// Products depend on brands and categories, so they run after both.
+// Customers reference users by email, so they run after `auth`. Products depend
+// on brands and categories, so they run after both.
 const seedTasks: SeedTask[] = [
   { name: 'auth', run: seedAuth },
+  { name: 'customers', run: seedCustomers },
   { name: 'catalog-brands', run: seedCatalogBrands },
   { name: 'catalog-categories', run: seedCatalogCategories },
   { name: 'catalog-products', run: seedCatalogProducts },
+  // Stores depend on no other task.
+  { name: 'stores-stores', run: seedStoresStores },
 ];
 
 const adapter = new PrismaPg({

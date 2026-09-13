@@ -10,7 +10,7 @@ import { formatPrice } from '@/shared/util/price.util';
 import { buildTrackingOrder, type TrackingOrder, type TrackingStep } from '../data/tracking.mock';
 
 // Mapa ilustrativo: quarteirões claros sobre verde-acinzentado, rota laranja
-// pontilhada do hub (ponto escuro) até o cliente (ponto laranja pulsando).
+// pontilhada da loja (ponto escuro) até o cliente (ponto laranja pulsando).
 function RouteMap({ order }: { order: TrackingOrder }) {
   return (
     <div className="relative h-[420px] overflow-hidden rounded-xl bg-map lg:h-[520px]">
@@ -37,7 +37,7 @@ function RouteMap({ order }: { order: TrackingOrder }) {
           <animate attributeName="r" values="16;30;16" dur="2s" repeatCount="indefinite" />
         </circle>
       </svg>
-      <div className="absolute bottom-[88px] left-3.5 rounded-xl bg-card px-[13px] py-2 text-[12.5px] font-extrabold shadow-float">🏬 {order.hub}</div>
+      <div className="absolute bottom-[88px] left-3.5 rounded-xl bg-card px-[13px] py-2 text-[12.5px] font-extrabold shadow-float">🏬 {order.store}</div>
       <div className="absolute right-3.5 top-16 max-w-[60%] truncate rounded-xl bg-card px-[13px] py-2 text-[12.5px] font-extrabold shadow-float">📍 Você · {order.address.split(' · ')[0]}</div>
       <div className="absolute left-1/2 top-[46%] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-pill bg-card px-4 py-[9px] text-[13px] font-extrabold shadow-float">
         🚴 {order.courier.name.split(' ')[0]} <span className="text-success">{order.courier.distanceLabel}</span>

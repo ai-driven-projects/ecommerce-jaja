@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ONGOING_ORDERS_COUNT, MAIN_HUB } from '@/modules/admin/data/dashboard.mock';
+import { ONGOING_ORDERS_COUNT } from '@/modules/admin/data/dashboard.mock';
 import { AdminGuard } from '@/modules/auth/components/admin-guard.component';
 import { useAuth } from '@/modules/auth/data/auth.context';
 import { ShellProvider } from '@/shared/context/shell.context';
@@ -29,7 +29,6 @@ export default function AdminShellLayout({ children }: { children: React.ReactNo
           storeHref={STOREFRONT_ROUTE}
           userName={user?.name}
           userEmail={user?.email}
-          userSubtitle={MAIN_HUB}
           userAvatarUrl={user?.avatarUrl}
           onLogout={handleLogout}
         >

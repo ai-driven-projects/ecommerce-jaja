@@ -28,7 +28,7 @@ type AdminShellProps = {
   storeHref?: string;
   userName?: string;
   userEmail?: string;
-  /** Linha abaixo do nome no rodapé da barra (ex.: o hub do operador). */
+  /** Linha abaixo do nome no rodapé da barra; sem ela, mostra o e-mail. */
   userSubtitle?: string;
   userAvatarUrl?: string | null;
   profileHref?: string;
@@ -44,7 +44,7 @@ function initialsOf(name: string): string {
 
 type UserMenuProps = Pick<AdminShellProps, 'userName' | 'userEmail' | 'userSubtitle' | 'userAvatarUrl' | 'profileHref' | 'storeHref' | 'onLogout'>;
 
-// Rodapé da barra: avatar + nome + hub, com menu (loja, perfil, sair).
+// Rodapé da barra: avatar + nome + subtítulo (ou e-mail), com menu (loja, perfil, sair).
 function UserMenu({ userName = 'Usuário', userEmail, userSubtitle, userAvatarUrl, profileHref, storeHref, onLogout }: UserMenuProps) {
   const router = useRouter();
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);

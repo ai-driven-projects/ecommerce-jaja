@@ -1,4 +1,4 @@
-import { COURIERS_ONLINE, ETA_BY_NEIGHBORHOOD, PRODUCTS, ZONES, type Product } from '@/modules/catalog/data';
+import { COURIERS_ONLINE, PRODUCTS, type Product } from '@/modules/catalog/data';
 
 /**
  * Dados locais de exemplo do dashboard administrativo. Sem chamadas à API:
@@ -36,12 +36,6 @@ export type OngoingOrder = {
 export type HourlyBar = {
   hour: string;
   minutes: number;
-};
-
-export type CoverageRow = {
-  neighborhood: string;
-  hub: string;
-  etaMinutes: number;
 };
 
 export type LowStockProduct = Product & {
@@ -91,15 +85,6 @@ export const HOURLY_BARS: readonly HourlyBar[] = [
   { hour: '14h', minutes: 24 },
   { hour: '15h', minutes: 22 },
 ];
-
-export const COVERAGE_ROWS: readonly CoverageRow[] = ZONES.map((zone) => ({
-  neighborhood: zone.neighborhood,
-  hub: zone.hub,
-  etaMinutes: ETA_BY_NEIGHBORHOOD[zone.neighborhood] ?? 0,
-}));
-
-export const COVERAGE_RADIUS_KM = 2.5;
-export const MAIN_HUB = 'Hub Aldeota';
 
 export const LOW_STOCK_THRESHOLD = 25;
 

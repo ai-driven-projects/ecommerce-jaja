@@ -110,13 +110,13 @@ export function ProductDetail({ product }: ProductDetailProps) {
           <div className="mb-3 flex flex-wrap gap-2">
             {isTop ? <Badge variant="brand">Mais pedido</Badge> : null}
             {product.oldPriceCents ? <Badge variant="solid">Oferta da semana</Badge> : null}
-            {storefront.hub ? (
+            {storefront.store ? (
               isOut ? (
-                <Badge variant="danger">Acabou no {storefront.hub}</Badge>
+                <Badge variant="danger">Acabou na {storefront.store}</Badge>
               ) : isLow ? (
-                <Badge variant="warning">Últimas {product.stock} no {storefront.hub}</Badge>
+                <Badge variant="warning">Últimas {product.stock} na {storefront.store}</Badge>
               ) : (
-                <Badge variant="success">Em estoque no {storefront.hub}</Badge>
+                <Badge variant="success">Em estoque na {storefront.store}</Badge>
               )
             ) : null}
           </div>

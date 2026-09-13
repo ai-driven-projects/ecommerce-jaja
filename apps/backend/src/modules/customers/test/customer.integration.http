@@ -1,0 +1,297 @@
+# Testes de integração do cadastro de clientes (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations aplicadas
+# (npm run prisma:migrate:deploy), seeds `auth` e `customers` aplicados
+# (npm run prisma:seed -- --only=auth,customers) e backend rodando em
+# http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# Ordem sugerida: executar de cima para baixo. O passo 3 registra um usuário novo
+# com email de sufixo de timestamp, para o arquivo poder ser executado de novo; os
+# passos seguintes reutilizam o email, o token e o id do cliente por requisições
+# nomeadas.
+#
+# CPFs: `cpf` (passo 8) e `otherCpf` (passo 22) são pedidos pelo Rest Client ao
+# enviar a requisição (`# @prompt`). Informe CPFs válidos ainda não usados, com ou
+# sem máscara. Um CPF usado em uma execução fica reservado para aquele cliente
+# (inclusive depois de trocado ou excluído): na execução seguinte, informe outros dois.
+#
+# `@userEmail` é um usuário do seed com admin = false e com cadastro de cliente; o
+# CPF dele (536.174.732-70, em prisma/seed/data/customers.json) é usado na busca
+# com máscara do passo 18.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@userEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+
+### 1. Login do admin do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login de usuário do seed com admin = false e com cadastro de cliente -> 200 com token
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Registro de usuário novo, ainda sem cliente -> 201 sem corpo
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Cliente Teste",
+  "email": "cliente.teste+{{$timestamp}}@jaja.dev",
+  "password": "{{seedPassword}}"
+}
+
+### 4. Login do usuário registrado no passo 3 (mesmo email) -> 200 com token
+# @name loginNewUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{registerUser.request.body.$.email}}",
+  "password": "{{seedPassword}}"
+}
+
+# ---------------------------------------------------------------------------
+# /me/customer: cadastro do próprio usuário (qualquer usuário autenticado)
+# ---------------------------------------------------------------------------
+
+### 5. GET /me/customer sem token -> 401
+GET {{baseUrl}}/me/customer
+
+### 6. Usuário novo sem cadastro -> 404 CUSTOMER_NOT_FOUND
+GET {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+
+### 7. CPF com dígito verificador errado -> 400 CPF_INVALID_CHECK_DIGIT e nada é gravado
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "529.982.247-26",
+  "phone": "(85) 99876-5432",
+  "address": {
+    "zipCode": "60150-160",
+    "street": "Av. Santos Dumont",
+    "number": "1500",
+    "neighborhood": "Aldeota",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}
+
+### 8. CEP inválido -> 400 CUSTOMER_ZIP_CODE_INVALID e nada é gravado
+# O CPF informado aqui é reutilizado nos passos 9 e 10.
+# @name invalidZipCode
+# @prompt cpf CPF válido ainda não usado (com ou sem máscara)
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{cpf}}",
+  "phone": "(85) 99876-5432",
+  "address": {
+    "zipCode": "6015-160",
+    "street": "Av. Santos Dumont",
+    "number": "1500",
+    "neighborhood": "Aldeota",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}
+
+### 9. UF inexistente -> 400 CUSTOMER_STATE_INVALID e nada é gravado
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{invalidZipCode.request.body.$.cpf}}",
+  "phone": "(85) 99876-5432",
+  "address": {
+    "zipCode": "60150-160",
+    "street": "Av. Santos Dumont",
+    "number": "1500",
+    "neighborhood": "Aldeota",
+    "city": "Fortaleza",
+    "state": "XX"
+  }
+}
+
+### 10. Criação com isActive: false (e id/userId) no corpo -> 200 com id novo, userId do token,
+# isActive = true, cpf/phone/zipCode só com dígitos e state = "CE"
+# @name createMyCustomer
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": "{{missingId}}",
+  "userId": "{{missingId}}",
+  "isActive": false,
+  "cpf": "{{invalidZipCode.request.body.$.cpf}}",
+  "phone": "(85) 99876-5432",
+  "address": {
+    "zipCode": "60150-160",
+    "street": "Av. Santos Dumont",
+    "number": "1500",
+    "complement": "Torre B · 12º andar · sala 1204",
+    "neighborhood": "Aldeota",
+    "city": "Fortaleza",
+    "state": "ce"
+  }
+}
+
+### 11. Nova chamada com outro endereço e sem complement -> 200 com o mesmo id e complement = null
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{createMyCustomer.response.body.cpf}}",
+  "phone": "(85) 98888-7777",
+  "address": {
+    "zipCode": "60165120",
+    "street": "Av. Beira Mar",
+    "number": "S/N",
+    "neighborhood": "Meireles",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}
+
+### 12. GET /me/customer -> 200 com os dados do cliente, name = "Cliente Teste" e o email do passo 3
+GET {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+
+### 13. Cliente do seed de @userEmail -> 200 (o CPF e os ids são reutilizados abaixo)
+# @name seedCustomer
+GET {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 14. CPF de um cliente do seed -> 409 CUSTOMER_CPF_ALREADY_EXISTS e nenhum cliente muda
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "(85) 98888-7777",
+  "address": {
+    "zipCode": "60165120",
+    "street": "Av. Beira Mar",
+    "number": "S/N",
+    "neighborhood": "Meireles",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}
+
+# ---------------------------------------------------------------------------
+# /customers: administração (somente administradores)
+# ---------------------------------------------------------------------------
+
+### 15. GET /customers sem token -> 401
+GET {{baseUrl}}/customers
+
+### 16. Token de usuário não administrador -> 403 ADMIN_REQUIRED
+GET {{baseUrl}}/customers
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 17. Listagem com search por nome -> 200 { items, total, page, pageSize, totalPages }, só clientes
+# com uma palavra iniciada por "ana" no nome, no email ou no bairro, e totalPages = ceil(total / pageSize)
+GET {{baseUrl}}/customers?search=ana
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 18. Listagem com search por CPF com máscara -> 200 com o cliente de @userEmail entre os itens
+GET {{baseUrl}}/customers?search=536.174
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 19. Listagem só de ativos -> 200 com isActive = true em todos os itens
+GET {{baseUrl}}/customers?isActive=true
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 20. Busca por id do cliente criado no passo 10 -> 200 com name e email do usuário vinculado
+GET {{baseUrl}}/customers/{{createMyCustomer.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 21. Busca por uuid inexistente -> 404 CUSTOMER_NOT_FOUND
+GET {{baseUrl}}/customers/{{missingId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 22. Alteração pelo administrador trocando o CPF e desativando -> 200 com isActive = false.
+# O id e o userId do corpo (do cliente do seed) são ignorados: o cliente alterado é o da rota
+# e continua vinculado ao usuário do passo 3.
+# @name adminUpdate
+# @prompt otherCpf Outro CPF válido ainda não usado (com ou sem máscara)
+PUT {{baseUrl}}/customers/{{createMyCustomer.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "id": "{{seedCustomer.response.body.id}}",
+  "userId": "{{seedCustomer.response.body.userId}}",
+  "isActive": false,
+  "cpf": "{{otherCpf}}",
+  "phone": "(85) 98888-7777",
+  "address": {
+    "zipCode": "60165120",
+    "street": "Av. Beira Mar",
+    "number": "S/N",
+    "neighborhood": "Meireles",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}
+
+### 23. PUT em uuid inexistente -> 404 CUSTOMER_NOT_FOUND e nenhum cliente é criado
+PUT {{baseUrl}}/customers/{{missingId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{adminUpdate.response.body.cpf}}",
+  "phone": "(85) 98888-7777",
+  "address": {
+    "zipCode": "60165120",
+    "street": "Av. Beira Mar",
+    "number": "S/N",
+    "neighborhood": "Meireles",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}
+
+### 24. Cliente desativado envia isActive: true pelo /me/customer -> 200 e continua com isActive = false
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginNewUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "isActive": true,
+  "cpf": "{{adminUpdate.response.body.cpf}}",
+  "phone": "(85) 98888-7777",
+  "address": {
+    "zipCode": "60165120",
+    "street": "Av. Beira Mar",
+    "number": "S/N",
+    "neighborhood": "Meireles",
+    "city": "Fortaleza",
+    "state": "CE"
+  }
+}

@@ -16,7 +16,7 @@ import {
   PrismaService,
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
-import { folded, toPrefixTsQuery } from './text-search.sql.js';
+import { folded, toPrefixTsQuery } from '../../db/text-search.sql.js';
 
 // Maps the unique constraints of `categories` to the domain error they represent.
 // A primary key collision only happens when creating with the id of a deleted

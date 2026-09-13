@@ -29,7 +29,7 @@ export type BagItem = CartItem;
 
 export type Zone = {
   neighborhood: string;
-  hub: string;
+  store: string;
 };
 
 export type CartTotals = {

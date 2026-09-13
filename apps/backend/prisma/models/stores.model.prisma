@@ -1,2 +1,26 @@
 // Prisma models for module: stores
-// Add concrete models for this module below.
+
+// A store is where fast deliveries leave from: a point on the map plus a delivery radius.
+// `name` and `slug` stay unique even for soft-deleted stores (`deletedAt` set):
+// the values remain reserved and the seed upserts by `slug`. The database
+// unique on `name` is case-sensitive, so `StorePrisma` also checks the name
+// case-insensitively (deleted stores included) before writing.
+// `latitude` and `longitude` are decimal degrees (WGS 84), rounded to 6 places
+// by the domain. `deliveryRadiusMeters` is measured in a straight line from the
+// point and is informative only in this version: no order rule reads it.
+model Store {
+  id                   String    @id @db.Uuid
+  name                 String    @unique
+  slug                 String    @unique
+  phone                String?
+  address              String?
+  latitude             Float
+  longitude            Float
+  deliveryRadiusMeters Int       @default(1000) @map("delivery_radius_meters")
+  isActive             Boolean   @default(true) @map("is_active")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  @@map("stores")
+}

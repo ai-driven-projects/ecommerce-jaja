@@ -90,7 +90,7 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
 - Rodapé branco: wordmark + horário, "Áreas atendidas" em pílulas creme e o
   link discreto "Área administrativa".
 - Bairro não atendido: cartão branco com "Ainda não chegamos aí. Já já." em
-  display e os bairros atendidos em pílulas clicáveis, agrupados por hub.
+  display e os bairros atendidos em pílulas clicáveis, agrupados por loja.
 
 ## Carrinho (gaveta)
 - Painel branco de 400px à direita, canto interno de 22px, `shadow-drawer`;
@@ -106,7 +106,7 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
 - Duas colunas (imagem 1.05fr / info 1fr). Imagem: bloco pastel de 380px
   (raio 24) com o emoji grande e o selo "Chega em ~X min"; três miniaturas de
   72px, a ativa com borda laranja 2px.
-- Coluna de informação: badges (Mais pedido · Oferta · Em estoque no hub X /
+- Coluna de informação: badges (Mais pedido · Oferta · Em estoque na loja X /
   Últimas N / Acabou), `h1` em Bricolage 32, unidade em cinza, preço 34px em
   Bricolage, stepper grande (creme) + botão "Adicionar · R$ total" (que abre a
   gaveta), cartão de entrega (bike verde + caminhão laranja: ETA e a regra do
@@ -135,24 +135,24 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   cinza-claro); cartão do entregador com botões de chat (contorno) e ligar
   (verde); cartão "Itens do pedido" com total tracejado.
 - Direita (fixa): mapa ilustrativo (quarteirões brancos sobre `--map`, rota
-  laranja pontilhada, hub escuro, cliente laranja pulsando) com selos brancos.
+  laranja pontilhada, loja escura, cliente laranja pulsando) com selos brancos.
 
 ## Área administrativa (`/admin`)
 - Sidebar escura fixa de 236px: logo com o rótulo "OPERAÇÃO", itens com ícone
   Lucide (raio 12; o ativo é laranja com texto branco, contador em pílula) e o
-  usuário no rodapé (avatar com iniciais em `--brand-light`, nome, hub; abre
+  usuário no rodapé (avatar com iniciais em `--brand-light`, nome e e-mail; abre
   menu com "Ver loja", "Sair"). No mobile vira gaveta com barra branca em cima.
 - Conteúdo sobre papel, padding 26/30: saudação "Bom dia, Paula 👋" em
-  Bricolage 26 + data e hub; à direita a badge verde "14 entregadores online"
+  Bricolage 26 + data e status da operação; à direita a badge verde "14 entregadores online"
   e "Ver loja →" em contorno.
 - KPIs: cartões brancos (raio 18) com rótulo cinza, quadradinho pastel com
   emoji, valor em Bricolage 28 e a variação (verde/cinza) abaixo.
 - "Pedidos em andamento": grade de 5 colunas com cabeçalho em caixa alta
   pequena, entregador com 🚴/🚶, status em badge colorida e ETA (vermelho quando
   atrasado). Ao lado: "Tempo médio por hora" (barras laranja, acima da meta em
-  laranja claro com o número em vermelho) e "Área de cobertura" (mapa com o
-  raio tracejado e a lista bairro → ETA, verde até 25 min, amarelo acima).
-- "Estoque baixo no hub": cartões com emoji, nome e barra de progresso
+  laranja claro com o número em vermelho), que no desktop estica até a altura
+  da tabela.
+- "Estoque baixo": cartões com emoji, nome e barra de progresso
   amarela (< 20% vermelha).
 - Páginas de módulo: `PageSectionHeader` (título Bricolage 26 + subtítulo +
   ações), filtros em chips, tabelas dentro de `TableCard`. Módulos sem dados

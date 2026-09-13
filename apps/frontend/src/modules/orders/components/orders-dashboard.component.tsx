@@ -21,7 +21,7 @@ const FILTERS: ReadonlyArray<{ id: Filter; label: string }> = [
   { id: 'entregue', label: ORDER_STATUS_LABEL.entregue },
 ];
 
-/** Pedidos do hub: filtros por status em pílulas e a tabela com destino, entregador, ETA e total. */
+/** Pedidos da loja: filtros por status em pílulas e a tabela com destino, entregador, ETA e total. */
 export function OrdersDashboardComponent() {
   const [filter, setFilter] = useState<Filter>('todos');
   const orders = ONGOING_ORDERS.filter((order) => filter === 'todos' || order.status === filter);
