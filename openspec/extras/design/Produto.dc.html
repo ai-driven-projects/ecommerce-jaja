@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#FAF8F5;color:#1E1812;font-family:'Manrope',sans-serif;}
+  a{color:#FF6B00;text-decoration:none;} a:hover{color:#D95B00;}
+  *{box-sizing:border-box;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+  <header style="position:sticky;top:0;z-index:40;background:#FFFFFF;border-bottom:1px solid #EFE9E2">
+    <div style="max-width:1240px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;color:#1E1812">
+        <span style="width:40px;height:40px;border-radius:14px;background:#FF6B00;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="16.5" r="3.4"></circle><circle cx="18" cy="16.5" r="3.4"></circle><path d="M6 16.5 L10 9 L15 9"></path><path d="M12 16.5 L15 9 L14 6.5 H16.5"></path><path d="M12 16.5 H6"></path></svg>
+        </span>
+        <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.5px">já já</span>
+      </a>
+      <span style="display:flex;align-items:center;gap:8px;background:#F6F1EA;border:1px solid #EFE9E2;border-radius:999px;padding:9px 16px;font-size:14px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E9F5D" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.2 2"></path></svg>
+        <span><strong style="color:#FF6B00">Entrega em ~25 min</strong><span style="color:#8A8177"> · Av. Paulista, 1000 · 12º andar</span></span>
+      </span>
+      <div style="flex:1;min-width:180px;display:flex;align-items:center;gap:10px;background:#F6F1EA;border:1px solid #EFE9E2;border-radius:999px;padding:0 18px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8177" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
+        <input placeholder="Buscar papel A4, toner, café…" style="flex:1;border:none;background:transparent;outline:none;font-family:'Manrope',sans-serif;font-size:14px;padding:11px 0;color:#1E1812">
+      </div>
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:8px;background:#FF6B00;border-radius:999px;padding:10px 18px;font-weight:800;font-size:14px;color:#FFFFFF;box-shadow:0 4px 14px rgba(255,107,0,.28)" style-hover="background:#E85F00;color:#FFFFFF">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h2l2.2 11h9.6L20 8H7"></path><circle cx="9.5" cy="19.5" r="1.4"></circle><circle cx="16.5" cy="19.5" r="1.4"></circle></svg>
+        Carrinho
+      </a>
+    </div>
+  </header>
+
+  <main style="max-width:1240px;margin:0 auto;padding:22px 24px 48px;width:100%">
+    <nav style="font-size:13.5px;color:#8A8177;margin-bottom:18px">
+      <a href="Home.dc.html" style="color:#8A8177" style-hover="color:#FF6B00">Início</a>
+      <span style="margin:0 6px">/</span>
+      <a href="#" style="color:#8A8177" style-hover="color:#FF6B00">Papelaria</a>
+      <span style="margin:0 6px">/</span>
+      <span style="color:#1E1812;font-weight:700">Papel sulfite A4 branco</span>
+    </nav>
+
+    <div style="display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:32px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:#EAF4FF;border-radius:24px;height:380px;display:flex;align-items:center;justify-content:center;font-size:120px;position:relative">📄
+          <span style="position:absolute;top:16px;left:16px;background:#FFFFFF;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:800;color:#0E9F5D;box-shadow:0 2px 8px rgba(0,0,0,.08)">⏱ Chega em ~25 min</span>
+        </div>
+        <div style="display:flex;gap:10px">
+          <span style="width:72px;height:72px;border-radius:14px;background:#EAF4FF;border:2px solid #FF6B00;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer">📄</span>
+          <span style="width:72px;height:72px;border-radius:14px;background:#F6F1EA;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer" style-hover="border-color:#EFE9E2">📦</span>
+          <span style="width:72px;height:72px;border-radius:14px;background:#F6F1EA;border:2px solid transparent;display:flex;align-items:center;justify-content:center;font-size:30px;cursor:pointer" style-hover="border-color:#EFE9E2">📏</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <span style="background:#FFF1E6;color:#FF6B00;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800">Mais pedido</span>
+          <span style="background:#E7F6EE;color:#0E9F5D;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:800">Em estoque no hub Paulista</span>
+        </div>
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:32px;letter-spacing:-0.8px;line-height:1.15;margin:0 0 6px;text-wrap:pretty">Papel sulfite A4 branco — resma 500 folhas</h1>
+        <div style="color:#8A8177;font-size:14.5px;margin-bottom:18px">75g/m² · alvura 96% · ideal para impressão e cópia</div>
+
+        <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:20px">
+          <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:34px">R$ 32,90</span>
+          <span style="color:#8A8177;font-size:14px">ou 3 resmas por <strong style="color:#FF6B00">R$ 89,90</strong></span>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px;background:#F6F1EA;border-radius:999px;padding:6px">
+            <button onClick="{{ sub }}" style="width:38px;height:38px;border-radius:50%;border:none;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:19px;cursor:pointer;line-height:1" style-hover="background:#FFF1E6">−</button>
+            <span style="min-width:36px;text-align:center;font-weight:800;font-size:17px">{{ qty }}</span>
+            <button onClick="{{ add }}" style="width:38px;height:38px;border-radius:50%;border:none;background:#FF6B00;color:#FFFFFF;font-weight:800;font-size:19px;cursor:pointer;line-height:1" style-hover="background:#E85F00">+</button>
+          </span>
+          <a href="Checkout.dc.html" style="flex:1;min-width:200px;background:#FF6B00;color:#FFFFFF;border-radius:999px;padding:15px 24px;text-align:center;font-weight:800;font-size:15.5px;box-shadow:0 4px 14px rgba(255,107,0,.28)" style-hover="background:#E85F00;color:#FFFFFF">Adicionar · {{ lineTotal }}</a>
+        </div>
+
+        <div style="background:#FFFFFF;border:1px solid #EFE9E2;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:11px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E9F5D" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="16.5" r="3.4"></circle><circle cx="18" cy="16.5" r="3.4"></circle><path d="M6 16.5 L10 9 L15 9"></path><path d="M12 16.5 L15 9 L14 6.5 H16.5"></path><path d="M12 16.5 H6"></path></svg>
+            <div><strong style="font-size:14px">Entrega de bike em ~25 min</strong><div style="color:#8A8177;font-size:12.5px">Para Av. Paulista, 1000 · direto no 12º andar</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:11px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8"></path><path d="M1 4h22v4H1z"></path><path d="M10 12h4"></path></svg>
+            <div><strong style="font-size:14px">Entrega grátis acima de R$ 79</strong><div style="color:#8A8177;font-size:12.5px">Abaixo disso, taxa fixa de R$ 4,90</div></div>
+          </div>
+        </div>
+
+        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:17px;margin:0 0 8px">Sobre o produto</h2>
+        <p style="color:#5C544B;font-size:14.5px;line-height:1.65;margin:0 0 14px;text-wrap:pretty">Resma com 500 folhas A4 (210 × 297 mm), gramatura 75g/m². Alta alvura para impressões nítidas em jato de tinta e laser. Embalagem com proteção contra umidade — chega pronta para ir direto para a bandeja da impressora.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13.5px">
+          <div style="background:#F6F1EA;border-radius:10px;padding:9px 13px"><span style="color:#8A8177">Formato</span> · <strong>A4</strong></div>
+          <div style="background:#F6F1EA;border-radius:10px;padding:9px 13px"><span style="color:#8A8177">Gramatura</span> · <strong>75g/m²</strong></div>
+          <div style="background:#F6F1EA;border-radius:10px;padding:9px 13px"><span style="color:#8A8177">Folhas</span> · <strong>500</strong></div>
+          <div style="background:#F6F1EA;border-radius:10px;padding:9px 13px"><span style="color:#8A8177">Alvura</span> · <strong>96%</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <section style="margin-top:44px">
+      <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:22px;letter-spacing:-0.5px;margin:0 0 14px">Quem pediu, também levou</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+        <sc-for list="{{ related }}" as="p" hint-placeholder-count="4">
+          <a href="#" style="background:#FFFFFF;border:1px solid #EFE9E2;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px;color:#1E1812;transition:box-shadow .15s, transform .15s" style-hover="box-shadow:0 10px 26px rgba(30,24,18,.09);transform:translateY(-2px);color:#1E1812">
+            <span style="border-radius:12px;background:{{ p.tint }};height:110px;display:flex;align-items:center;justify-content:center;font-size:42px">{{ p.emoji }}</span>
+            <span style="font-weight:700;font-size:14px;line-height:1.35;flex:1">{{ p.name }}</span>
+            <span style="font-weight:800;font-size:15.5px">{{ p.price }}</span>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+
+  <footer style="background:#FFFFFF;border-top:1px solid #EFE9E2;margin-top:auto">
+    <div style="max-width:1240px;margin:0 auto;padding:22px 24px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;color:#8A8177;font-size:13px">
+      <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px;color:#1E1812">já já</span>
+      <span>Áreas atendidas: Av. Paulista · Jardins · Faria Lima · Vila Olímpia · Itaim Bibi</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { qty: 1 };
+  renderVals() {
+    const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',');
+    return {
+      qty: this.state.qty,
+      add: () => this.setState(s => ({ qty: s.qty + 1 })),
+      sub: () => this.setState(s => ({ qty: Math.max(1, s.qty - 1) })),
+      lineTotal: fmt(32.9 * this.state.qty),
+      related: [
+        { name: 'Toner preto compatível 105A', price: 'R$ 289,00', emoji: '🖨️', tint: '#F5EFFF' },
+        { name: 'Caneta esferográfica azul cx 12', price: 'R$ 18,50', emoji: '🖊️', tint: '#EAF7F3' },
+        { name: 'Bloco adesivo 76×76 pack 4', price: 'R$ 24,90', emoji: '🗒️', tint: '#FFF7DD' },
+        { name: 'Grampeador + 1.000 grampos', price: 'R$ 39,90', emoji: '🖇️', tint: '#EAF4FF' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

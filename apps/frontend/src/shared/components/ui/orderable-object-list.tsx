@@ -101,7 +101,7 @@ export function OrderableObjectList<TItem>({
     return (
       <div
         className={cn(
-          'rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground',
+          'rounded-2xl border border-dashed border-line px-4 py-6 text-sm text-muted-ink',
           className,
         )}
       >
@@ -123,7 +123,7 @@ export function OrderableObjectList<TItem>({
         const itemTitle = getItemTitle?.(params) ?? `Item ${index + 1}`;
 
         return (
-          <div key={itemKey} className={cn('rounded-lg border border-border p-4', itemClassName)}>
+          <div key={itemKey} className={cn('rounded-2xl border border-line bg-card p-4', itemClassName)}>
             <div className="mb-4 flex items-start justify-between gap-2">
               <div className="min-h-9 flex items-center text-sm font-medium">{itemTitle}</div>
               <div className="flex items-center gap-1">

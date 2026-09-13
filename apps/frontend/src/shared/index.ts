@@ -1,4 +1,5 @@
 export * from './components/branding/app-logo.component';
+export * from './components/store';
 export * from './components/ui/badge';
 export * from './components/ui/button';
 export * from './components/ui/card';
@@ -44,6 +45,9 @@ export * from './components/ui/textarea';
 export * from './components/ui/toaster';
 export * from './context/shell.context';
 export * from './hooks/shell.hook';
+export * from './hooks/use-client-clock.hook';
+export * from './hooks/use-hydrated.hook';
 export * from './hooks/use-local-storage.hook';
 export * from './template';
 export * from './util/color.util';
+export * from './util/price.util';

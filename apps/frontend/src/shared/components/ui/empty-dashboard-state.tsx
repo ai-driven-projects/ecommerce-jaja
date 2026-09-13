@@ -1,43 +1,27 @@
-import Image from 'next/image';
-
 type EmptyDashboardStateProps = {
   moduleName?: string;
+  /** Emoji ilustrativo (padrão: gráfico). */
+  emoji?: string;
+  description?: string;
 };
 
-export function EmptyDashboardState({ moduleName }: EmptyDashboardStateProps) {
+/** Placeholder de módulo do admin ainda sem widgets. */
+export function EmptyDashboardState({
+  moduleName,
+  emoji = '📊',
+  description = 'Esta área está pronta para receber os widgets e indicadores do módulo. Já já chega.',
+}: EmptyDashboardStateProps) {
   const normalizedModuleName = moduleName?.trim();
-  const hasModuleName = Boolean(normalizedModuleName);
 
   return (
-    <section className="flex min-h-[calc(100vh-9rem)] w-full items-center justify-center">
-      <article className="w-full max-w-5xl bg-transparent p-2 md:p-4">
-        <div className="mb-3 text-center md:mb-4">
-          <h1 className="text-2xl font-black tracking-tight text-slate-100 md:text-4xl">
-            Dashboard{' '}
-            {hasModuleName ? (
-              <span className="bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent">
-                {normalizedModuleName}
-              </span>
-            ) : (
-              'Vazio'
-            )}
-          </h1>
-          <p className="text-sm text-slate-400 md:text-base">
-            Esta area esta pronta para receber os widgets e indicadores da aplicacao.
-          </p>
-        </div>
-
-        <div className="mx-auto w-full max-w-270">
-          <Image
-            src="/illustrations/empty-dashboard-dark.svg"
-            alt="Ilustracao de dashboard vazio aguardando implementacao"
-            width={1600}
-            height={1000}
-            priority
-            className="mx-auto h-auto max-h-[56vh] w-full object-contain"
-          />
-        </div>
-      </article>
+    <section className="flex w-full flex-col items-center rounded-2xl border border-dashed border-line bg-card px-6 py-16 text-center">
+      <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-soft text-[30px]" aria-hidden="true">
+        {emoji}
+      </span>
+      <h2 className="mt-4 font-display text-2xl font-extrabold tracking-[-0.5px]">
+        {normalizedModuleName || 'Em breve'}
+      </h2>
+      <p className="mt-2 max-w-md text-sm text-muted-ink">{description}</p>
     </section>
   );
 }

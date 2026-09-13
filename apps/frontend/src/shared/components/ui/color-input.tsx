@@ -43,7 +43,7 @@ export function ColorInput({ id, value, onChange, disabled, placeholder = '#22C5
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="relative h-10 w-12 shrink-0 overflow-hidden rounded-md border border-input bg-background">
+      <div className="relative h-11 w-12 shrink-0 overflow-hidden rounded-xl border-[1.5px] border-line bg-surface">
         <div aria-hidden="true" className="absolute inset-0" style={{ backgroundColor: pickerValue }} />
         <input
           type="color"

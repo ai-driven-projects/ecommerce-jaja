@@ -11,10 +11,11 @@ const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-50 bg-black/50', className)} {...props} />
+  <DialogPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-50 bg-[rgba(30,24,18,0.4)]', className)} {...props} />
 ));
 SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+// Painel lateral: branco, canto interno arredondado (22px) e sombra longa.
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
@@ -22,10 +23,10 @@ const SheetContent = React.forwardRef<
   }
 >(({ side = 'right', className, children, ...props }, ref) => {
   const sideClasses = {
-    top: 'inset-x-0 top-0 border-b',
-    right: 'inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
-    bottom: 'inset-x-0 bottom-0 border-t',
-    left: 'inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm',
+    top: 'inset-x-0 top-0 rounded-b-[22px]',
+    right: 'inset-y-0 right-0 h-full w-[400px] max-w-[92vw] rounded-l-[22px]',
+    bottom: 'inset-x-0 bottom-0 rounded-t-[22px]',
+    left: 'inset-y-0 left-0 h-full w-[300px] max-w-[92vw] rounded-r-[22px]',
   };
 
   return (
@@ -33,7 +34,7 @@ const SheetContent = React.forwardRef<
       <SheetOverlay />
       <DialogPrimitive.Content
         ref={ref}
-        className={cn('fixed z-50 bg-background p-6 shadow-lg transition ease-in-out', sideClasses[side], className)}
+        className={cn('fixed z-50 bg-card p-6 text-ink shadow-drawer outline-none', sideClasses[side], className)}
         {...props}
       >
         {children}
@@ -52,7 +53,7 @@ const SheetTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn('text-lg font-semibold', className)} {...props} />
+  <DialogPrimitive.Title ref={ref} className={cn('font-display text-xl font-extrabold', className)} {...props} />
 ));
 SheetTitle.displayName = DialogPrimitive.Title.displayName;
 

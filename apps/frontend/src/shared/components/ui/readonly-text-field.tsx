@@ -57,7 +57,7 @@ export function ReadonlyTextField({
         id={id}
         aria-readonly="true"
         className={cn(
-          'pointer-events-none flex h-10 w-full cursor-default items-center rounded-md border border-input bg-muted/35 px-3 py-2 text-sm text-muted-foreground select-none',
+          'pointer-events-none flex h-11 w-full cursor-default select-none items-center rounded-xl border-[1.5px] border-line bg-surface px-3.5 py-2 text-sm text-muted-ink',
           className,
         )}
       >

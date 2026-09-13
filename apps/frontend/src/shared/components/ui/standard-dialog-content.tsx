@@ -31,17 +31,15 @@ export function StandardDialogContent({
 }: StandardDialogContentProps) {
   return (
     <DialogContent className={cn('overflow-hidden p-0', className)}>
-      <DialogHeader className={cn('space-y-0.5 px-6 pt-6', headerClassName)}>
-        <DialogTitle className="text-lg font-black tracking-tight">{title}</DialogTitle>
-        {description ? (
-          <DialogDescription className="text-sm leading-5 text-muted-foreground">{description}</DialogDescription>
-        ) : null}
+      <DialogHeader className={cn('space-y-1 px-6 pt-6', headerClassName)}>
+        <DialogTitle>{title}</DialogTitle>
+        {description ? <DialogDescription className="leading-5">{description}</DialogDescription> : null}
       </DialogHeader>
 
       {children ? <div className={cn('space-y-4 px-6 py-5', bodyClassName)}>{children}</div> : <div className="h-5" />}
 
       {footer ? (
-        <DialogFooter className={cn('border-t bg-muted/25 px-6 py-4 sm:justify-end', footerClassName)}>
+        <DialogFooter className={cn('border-t border-line bg-paper px-6 py-4 sm:justify-end', footerClassName)}>
           {footer}
         </DialogFooter>
       ) : null}

@@ -102,7 +102,7 @@ export function IconCombobox({
               setOpen(false);
             }}
             className={cn(
-              'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+              'flex w-full items-center justify-between px-2 py-1.5 text-left text-sm transition-colors duration-100 hover:bg-accent',
               !selectedIconName && !value && 'bg-accent',
             )}
           >
@@ -125,7 +125,7 @@ export function IconCombobox({
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+                    'flex w-full items-center justify-between px-2 py-1.5 text-left text-sm transition-colors duration-100 hover:bg-accent',
                     isSelected && 'bg-accent',
                   )}
                 >

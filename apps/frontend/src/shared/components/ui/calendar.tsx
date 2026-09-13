@@ -21,16 +21,16 @@ export function Calendar({ className, classNames, showOutsideDays = true, locale
         caption_label: 'text-sm font-semibold',
         nav: 'flex items-center gap-1',
         button_previous:
-          'absolute left-1 inline-flex size-7 items-center justify-center rounded-md border border-input bg-background text-foreground transition hover:bg-accent',
+          'absolute left-1 inline-flex size-7 items-center justify-center rounded-full border border-line bg-card text-ink transition-colors duration-150 hover:bg-surface',
         button_next:
-          'absolute right-1 inline-flex size-7 items-center justify-center rounded-md border border-input bg-background text-foreground transition hover:bg-accent',
+          'absolute right-1 inline-flex size-7 items-center justify-center rounded-full border border-line bg-card text-ink transition-colors duration-150 hover:bg-surface',
         month_grid: 'w-full border-collapse space-y-1',
         weekdays: 'flex',
         weekday: 'w-9 text-[0.8rem] font-normal text-muted-foreground',
         week: 'mt-2 flex w-full',
         day: 'relative size-9 p-0 text-center text-sm',
         day_button:
-          'inline-flex size-9 items-center justify-center rounded-md text-sm font-normal transition hover:bg-accent hover:text-accent-foreground aria-selected:opacity-100',
+          'inline-flex size-9 items-center justify-center rounded-full text-sm font-semibold tabular-nums transition-colors duration-150 hover:bg-surface aria-selected:opacity-100',
         selected:
           'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground',
         today: 'bg-accent text-accent-foreground',

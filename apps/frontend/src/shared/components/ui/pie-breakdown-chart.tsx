@@ -20,21 +20,22 @@ type PieBreakdownChartProps = {
   showPercentageInTooltip?: boolean;
 };
 
-const DEFAULT_COLORS = [
-  '#4ADE80',
-  '#22C55E',
-  '#16A34A',
-  '#86EFAC',
-  '#FB7185',
-  '#F97316',
-  '#FACC15',
-  '#38BDF8',
-  '#A78BFA',
-  '#F472B6',
-];
+// Paleta do design: tinta, vermelho e os cinzas do sistema. Sem cores extras.
+const DEFAULT_COLORS = ['var(--brand)', 'var(--success)', 'var(--ink)', 'var(--warning)'];
+
+const TOOLTIP_STYLE = {
+  border: '1px solid var(--line)',
+  borderRadius: 12,
+  backgroundColor: 'var(--card)',
+  boxShadow: 'none',
+  color: 'var(--ink)',
+  fontFamily: 'var(--font-ui)',
+  fontVariantNumeric: 'tabular-nums',
+  fontSize: '12px',
+} as const;
 
 const DEFAULT_EMPTY_STATE = (
-  <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] text-sm text-zinc-500">
+  <div className="flex h-full items-center rounded-2xl border border-dashed border-line px-6 text-sm text-muted-ink">
     Nenhum dado disponível para exibir no gráfico.
   </div>
 );
@@ -71,12 +72,8 @@ export function PieBreakdownChart({
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Tooltip
-            contentStyle={{
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '16px',
-              backgroundColor: 'rgba(24,24,27,0.96)',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.35)',
-            }}
+            contentStyle={TOOLTIP_STYLE}
+            itemStyle={{ color: 'var(--ink)' }}
             formatter={(value, name, item) => {
               const numericValue = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : 0;
 
@@ -85,7 +82,7 @@ export function PieBreakdownChart({
 
               return [
                 showPercentageInTooltip
-                  ? `${formatValue(safeValue)} • ${percentage.toFixed(1).replace('.', ',')}%`
+                  ? `${formatValue(safeValue)} · ${percentage.toFixed(1).replace('.', ',')}%`
                   : formatValue(safeValue),
                 String(name ?? item?.name ?? ''),
               ];
@@ -95,9 +92,9 @@ export function PieBreakdownChart({
           {showLegend ? (
             <Legend
               verticalAlign="bottom"
-              align="center"
-              iconType="circle"
-              wrapperStyle={{ fontSize: '12px', color: 'rgba(244,244,245,0.72)' }}
+              align="left"
+              iconType="square"
+              wrapperStyle={{ fontSize: '12px', color: 'var(--muted-ink)' }}
             />
           ) : null}
           <Pie
@@ -106,10 +103,11 @@ export function PieBreakdownChart({
             nameKey="label"
             innerRadius={72}
             outerRadius={108}
-            paddingAngle={2}
-            cornerRadius={8}
-            stroke="rgba(24,24,27,0.65)"
-            strokeWidth={1}
+            paddingAngle={0}
+            cornerRadius={0}
+            stroke="var(--card)"
+            strokeWidth={2}
+            isAnimationActive={false}
           >
             {data.map((item, index) => (
               <Cell key={`${item.label}-${index}`} fill={item.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length]} />

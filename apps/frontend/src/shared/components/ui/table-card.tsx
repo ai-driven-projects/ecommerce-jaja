@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { cn } from '@/shared/lib/class-name.util';
 
 type TableCardTone = 'default' | 'critical';
@@ -18,18 +18,11 @@ type TableCardProps = {
 };
 
 const toneClasses: Record<TableCardTone, { card: string; title: string; footer: string }> = {
-  default: {
-    card: '',
-    title: '',
-    footer: 'border-border/80 bg-muted/25',
-  },
-  critical: {
-    card: 'border-destructive/45',
-    title: 'text-destructive',
-    footer: 'border-destructive/35 bg-destructive/10',
-  },
+  default: { card: '', title: '', footer: 'border-line bg-paper' },
+  critical: { card: 'border-danger/40', title: 'text-danger', footer: 'border-danger/40 bg-danger-soft' },
 };
 
+/** Cartão que envolve uma tabela: cabeçalho com título/ação e conteúdo sem padding. */
 export function TableCard({
   title,
   subtitle,
@@ -47,24 +40,20 @@ export function TableCard({
   return (
     <Card className={cn('overflow-hidden', toneClasses[tone].card, className)}>
       {hasHeaderContent ? (
-        <CardHeader className={cn(title ? 'gap-4' : 'gap-2', !title && 'py-3 md:py-4', headerClassName)}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className={cn('space-y-1.5', !title && 'space-y-0')}>
-              {title ? (
-                <CardTitle className={cn('text-lg font-bold tracking-tight', toneClasses[tone].title)}>
-                  {title}
-                </CardTitle>
-              ) : null}
-              {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+        <CardHeader className={cn('pb-4', headerClassName)}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-0.5">
+              {title ? <CardTitle className={toneClasses[tone].title}>{title}</CardTitle> : null}
+              {subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
             </div>
-            {headerAside ? <div className="text-xs text-muted-foreground">{headerAside}</div> : null}
+            {headerAside ? <div className="text-[13px] font-bold">{headerAside}</div> : null}
           </div>
         </CardHeader>
       ) : (
-        <div className="h-3" />
+        <div className="h-2" />
       )}
 
-      <CardContent className={cn('p-0', contentClassName)}>{children}</CardContent>
+      <CardContent className={cn('px-2 pb-2 md:px-2 md:pb-2', contentClassName)}>{children}</CardContent>
 
       {footer ? (
         <div className={cn('border-t px-5 py-4 md:px-6', toneClasses[tone].footer, footerClassName)}>{footer}</div>

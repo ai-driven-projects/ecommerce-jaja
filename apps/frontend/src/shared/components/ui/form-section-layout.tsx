@@ -24,7 +24,7 @@ export function FormSectionLayout({
     <section
       className={cn(
         'grid grid-cols-1 gap-x-8 gap-y-6 pb-10 md:grid-cols-3 md:gap-y-10',
-        showDivider ? 'border-b border-border/80' : '',
+        showDivider ? 'border-b border-line' : '',
         className,
       )}
     >

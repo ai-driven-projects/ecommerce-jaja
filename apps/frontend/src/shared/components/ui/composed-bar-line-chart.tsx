@@ -24,8 +24,21 @@ type ComposedBarLineChartProps<TData extends ChartDatum> = {
   valueFormatter?: (value: number, dataKey: string) => string;
 };
 
+const TOOLTIP_STYLE = {
+  border: '1px solid var(--line)',
+  borderRadius: 12,
+  backgroundColor: 'var(--card)',
+  boxShadow: 'none',
+  color: 'var(--ink)',
+  fontFamily: 'var(--font-ui)',
+  fontVariantNumeric: 'tabular-nums',
+  fontSize: '12px',
+} as const;
+
+const AXIS_TICK_STYLE = { fill: 'var(--muted-ink)', fontSize: 12, fontFamily: 'var(--font-ui)' };
+
 const DEFAULT_EMPTY_STATE = (
-  <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.03] text-sm text-zinc-500">
+  <div className="flex h-full items-center rounded-2xl border border-dashed border-line px-6 text-sm text-muted-ink">
     Nenhum dado disponível para exibir no gráfico.
   </div>
 );
@@ -37,8 +50,8 @@ export function ComposedBarLineChart<TData extends ChartDatum>({
   lineKey,
   barLabel = 'Barras',
   lineLabel = 'Linha',
-  barColor = '#f97316',
-  lineColor = '#22c55e',
+  barColor = 'var(--brand)',
+  lineColor = 'var(--brand)',
   height = 320,
   className,
   emptyState = DEFAULT_EMPTY_STATE,
@@ -66,32 +79,28 @@ export function ComposedBarLineChart<TData extends ChartDatum>({
     <div className={cn('w-full', className)} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 8, right: 8, left: 4, bottom: 4 }}>
-          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+          <CartesianGrid vertical={false} stroke="var(--line)" />
           <XAxis
-            axisLine={false}
+            axisLine={{ stroke: 'var(--line)', strokeWidth: 1 }}
             dataKey={xKey as string}
             minTickGap={24}
             tickLine={false}
             tickMargin={10}
-            tick={{ fill: 'rgba(244,244,245,0.72)', fontSize: 12 }}
+            tick={AXIS_TICK_STYLE}
             tickFormatter={xAxisTickFormatter ? (value) => xAxisTickFormatter(value as ChartValue) : undefined}
           />
           <YAxis
             axisLine={false}
             tickLine={false}
             tickMargin={10}
-            tick={{ fill: 'rgba(244,244,245,0.6)', fontSize: 12 }}
+            tick={AXIS_TICK_STYLE}
             tickFormatter={(value: number) => formatValue(value, '')}
             width={80}
           />
           <Tooltip
-            contentStyle={{
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '16px',
-              backgroundColor: 'rgba(24,24,27,0.96)',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.35)',
-            }}
-            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            contentStyle={TOOLTIP_STYLE}
+            itemStyle={{ color: 'var(--ink)' }}
+            cursor={{ fill: 'var(--surface)' }}
             formatter={(value, name) => {
               const numericValue = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : 0;
 
@@ -104,20 +113,30 @@ export function ComposedBarLineChart<TData extends ChartDatum>({
           />
           <Legend
             verticalAlign="top"
+            align="left"
+            iconType="square"
             height={32}
-            wrapperStyle={{ fontSize: '12px', color: 'rgba(244,244,245,0.72)' }}
+            wrapperStyle={{ fontSize: '12px', color: 'var(--muted-ink)' }}
           />
-          <Bar dataKey={barKey as string} fill={barColor} name={barLabel} radius={[10, 10, 4, 4]} maxBarSize={40} />
+          <Bar
+            dataKey={barKey as string}
+            fill={barColor}
+            name={barLabel}
+            radius={0}
+            maxBarSize={40}
+            isAnimationActive={false}
+          />
           <Line
             dataKey={lineKey as string}
-            dot={{ r: 4, fill: lineColor, strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: lineColor, strokeWidth: 0 }}
+            dot={{ r: 3, fill: lineColor, strokeWidth: 0 }}
+            activeDot={{ r: 4, fill: lineColor, strokeWidth: 0 }}
             name={lineLabel}
             stroke={lineColor}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={3}
-            type="monotone"
+            strokeLinecap="square"
+            strokeLinejoin="miter"
+            strokeWidth={2}
+            type="linear"
+            isAnimationActive={false}
           />
         </ComposedChart>
       </ResponsiveContainer>

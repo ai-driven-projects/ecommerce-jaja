@@ -56,7 +56,7 @@ export function PaginationControls({
       }`}
     >
       {showSummary ? (
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs font-semibold tabular-nums text-muted-ink">
           <p>
             Página {safePage} de {safeTotalPages}
           </p>
@@ -97,7 +97,7 @@ export function PaginationControls({
             type="button"
             variant={pageNumber === safePage ? 'default' : 'outline'}
             size="sm"
-            className="min-w-9 px-2"
+            className="min-w-9 justify-center px-2 tabular-nums"
             onClick={() => onPageChange(pageNumber)}
             disabled={disabled}
             aria-current={pageNumber === safePage ? 'page' : undefined}

@@ -55,7 +55,7 @@ export function DatePickerInput({
           variant="outline"
           disabled={disabled}
           className={cn(
-            'h-10 w-full justify-between border-input bg-background px-3 font-normal text-left hover:bg-accent/40',
+            'h-11 w-full justify-between rounded-xl border-[1.5px] border-line bg-card px-3.5 text-left font-semibold hover:bg-surface',
             !selectedDate && 'text-muted-foreground',
             className,
           )}

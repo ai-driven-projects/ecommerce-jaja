@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#FAF8F5;color:#1E1812;font-family:'Manrope',sans-serif;}
+  a{color:#FF6B00;text-decoration:none;} a:hover{color:#D95B00;}
+  *{box-sizing:border-box;}
+  @keyframes jj-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+  <!-- HEADER -->
+  <header style="position:sticky;top:0;z-index:40;background:#FFFFFF;border-bottom:1px solid #EFE9E2">
+    <div style="max-width:1240px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:10px;color:#1E1812">
+        <span style="width:40px;height:40px;border-radius:14px;background:#FF6B00;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="16.5" r="3.4"></circle><circle cx="18" cy="16.5" r="3.4"></circle><path d="M6 16.5 L10 9 L15 9"></path><path d="M12 16.5 L15 9 L14 6.5 H16.5"></path><path d="M12 16.5 H6"></path></svg>
+        </span>
+        <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;letter-spacing:-0.5px">já já</span>
+      </a>
+      <button onClick="{{ noop }}" style="display:flex;align-items:center;gap:8px;background:#F6F1EA;border:1px solid #EFE9E2;border-radius:999px;padding:9px 16px;font-family:'Manrope',sans-serif;font-size:14px;cursor:pointer;color:#1E1812" style-hover="background:#F0E9E0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E9F5D" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.2 2"></path></svg>
+        <span><strong style="color:#FF6B00">Entrega em ~{{ etaMin }} min</strong><span style="color:#8A8177"> · Av. Paulista, 1000 · 12º andar</span></span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A8177" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div style="flex:1;min-width:220px;display:flex;align-items:center;gap:10px;background:#F6F1EA;border:1px solid #EFE9E2;border-radius:999px;padding:0 18px">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8A8177" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
+        <input placeholder="Buscar papel A4, toner, café…" style="flex:1;border:none;background:transparent;outline:none;font-family:'Manrope',sans-serif;font-size:14px;padding:11px 0;color:#1E1812">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button style="background:transparent;border:1px solid #EFE9E2;border-radius:999px;padding:10px 18px;font-family:'Manrope',sans-serif;font-weight:700;font-size:14px;cursor:pointer;color:#1E1812" style-hover="background:#F6F1EA">Entrar</button>
+        <button onClick="{{ openCart }}" style="display:flex;align-items:center;gap:8px;background:#FF6B00;border:none;border-radius:999px;padding:10px 18px;font-family:'Manrope',sans-serif;font-weight:800;font-size:14px;color:#FFFFFF;cursor:pointer;box-shadow:0 4px 14px rgba(255,107,0,.28)" style-hover="background:#E85F00">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h2l2.2 11h9.6L20 8H7"></path><circle cx="9.5" cy="19.5" r="1.4"></circle><circle cx="16.5" cy="19.5" r="1.4"></circle></svg>
+          <span>Carrinho</span>
+          <span style="background:#FFFFFF;color:#FF6B00;border-radius:999px;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;padding:0 5px">{{ cartCount }}</span>
+        </button>
+      </div>
+    </div>
+    <nav style="max-width:1240px;margin:0 auto;padding:0 24px 12px;display:flex;gap:8px;overflow-x:auto">
+      <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="6">
+        <a href="#" style="display:flex;align-items:center;gap:7px;white-space:nowrap;border:1px solid #EFE9E2;background:#FFFFFF;border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;color:#1E1812" style-hover="border-color:#FF6B00;color:#FF6B00;background:#FFF4EB">{{ cat }}</a>
+      </sc-for>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section style="max-width:1240px;margin:20px auto 0;padding:0 24px;width:100%">
+    <div style="background:#1E1812;border-radius:24px;padding:40px 44px;display:flex;align-items:center;gap:32px;flex-wrap:wrap;position:relative;overflow:hidden">
+      <div style="flex:1;min-width:280px">
+        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;color:#FFD9BD;font-size:13px;font-weight:700;margin-bottom:16px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFD9BD" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="16.5" r="3.4"></circle><circle cx="18" cy="16.5" r="3.4"></circle><path d="M6 16.5 L10 9 L15 9"></path><path d="M12 16.5 L15 9 L14 6.5 H16.5"></path><path d="M12 16.5 H6"></path></svg>
+          De bike e a pé pela Paulista
+        </div>
+        <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:40px;line-height:1.1;letter-spacing:-1px;color:#FFFFFF;margin:0 0 12px;text-wrap:pretty">Acabou no escritório?<br>Chega <span style="color:#FF8A3D">em minutos.</span></h1>
+        <p style="color:#B8AFA4;font-size:16px;line-height:1.55;margin:0 0 22px;max-width:440px">Papel, toner, café e tudo que o seu escritório consome — entregue por bike direto na sua recepção, sem taxa surpresa.</p>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <a href="#mais-pedidos" style="background:#FF6B00;color:#FFFFFF;border-radius:999px;padding:13px 26px;font-weight:800;font-size:15px;display:inline-block" style-hover="background:#E85F00;color:#FFFFFF">Pedir agora</a>
+          <span style="display:inline-flex;align-items:center;gap:7px;color:#7ED9A9;font-size:14px;font-weight:700">
+            <span style="width:8px;height:8px;border-radius:50%;background:#0E9F5D;animation:jj-pulse 1.6s infinite"></span>
+            14 entregadores online agora
+          </span>
+        </div>
+      </div>
+      <div style="width:300px;max-width:100%;display:flex;flex-direction:column;gap:12px">
+        <div style="background:#FFFFFF;border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)">
+          <span style="width:42px;height:42px;border-radius:12px;background:#FFF1E6;display:flex;align-items:center;justify-content:center;font-size:22px">📦</span>
+          <div style="flex:1"><div style="font-weight:800;font-size:14px">Pedido #4207 saiu</div><div style="color:#8A8177;font-size:12.5px">Rua Augusta → Av. Paulista</div></div>
+          <span style="background:#E7F6EE;color:#0E9F5D;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800">8 min</span>
+        </div>
+        <div style="background:#FFFFFF;border-radius:18px;padding:16px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)">
+          <span style="width:42px;height:42px;border-radius:12px;background:#EAF4FF;display:flex;align-items:center;justify-content:center;font-size:22px">🖨️</span>
+          <div style="flex:1"><div style="font-weight:800;font-size:14px">Toner entregue</div><div style="color:#8A8177;font-size:12.5px">Ed. Cetenco Plaza · 9º andar</div></div>
+          <span style="background:#E7F6EE;color:#0E9F5D;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:800">✓ 19 min</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEÇÕES -->
+  <main style="max-width:1240px;margin:0 auto;padding:8px 24px 40px;width:100%;display:flex;flex-direction:column;gap:34px">
+
+    <section id="mais-pedidos" style="margin-top:24px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;letter-spacing:-0.5px;margin:0">Mais pedidos nos escritórios</h2>
+        <a href="#" style="font-size:14px;font-weight:700">Ver tudo →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+        <sc-for list="{{ top }}" as="p" hint-placeholder-count="6">
+          <div style="background:#FFFFFF;border:1px solid #EFE9E2;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s, transform .15s" style-hover="box-shadow:0 10px 26px rgba(30,24,18,.09);transform:translateY(-2px)">
+            <a href="Produto.dc.html" style="display:block;position:relative;border-radius:12px;background:{{ p.tint }};height:120px;display:flex;align-items:center;justify-content:center;font-size:46px">{{ p.emoji }}
+              <span style="position:absolute;top:8px;left:8px;background:#FFFFFF;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:800;color:#0E9F5D;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,.08)">⏱ {{ etaMin }} min</span>
+            </a>
+            <div style="flex:1"><a href="Produto.dc.html" style="color:#1E1812;font-weight:700;font-size:14px;line-height:1.35;display:block" style-hover="color:#FF6B00">{{ p.name }}</a>
+            <div style="color:#8A8177;font-size:12.5px;margin-top:2px">{{ p.unit }}</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font-weight:800;font-size:16px">{{ p.price }}</span>
+              <sc-if value="{{ p.inCart }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:2px;background:#FFF1E6;border-radius:999px;padding:3px">
+                  <button onClick="{{ p.sub }}" style="width:26px;height:26px;border-radius:50%;border:none;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:15px;cursor:pointer;line-height:1">−</button>
+                  <span style="min-width:22px;text-align:center;font-weight:800;font-size:14px;color:#FF6B00">{{ p.qty }}</span>
+                  <button onClick="{{ p.add }}" style="width:26px;height:26px;border-radius:50%;border:none;background:#FF6B00;color:#FFFFFF;font-weight:800;font-size:15px;cursor:pointer;line-height:1">+</button>
+                </span>
+              </sc-if>
+              <sc-if value="{{ p.notInCart }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ p.add }}" style="width:32px;height:32px;border-radius:50%;border:1.5px solid #FF6B00;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:18px;cursor:pointer;line-height:1" style-hover="background:#FF6B00;color:#FFFFFF">+</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;letter-spacing:-0.5px;margin:0">Repor agora</h2>
+        <a href="#" style="font-size:14px;font-weight:700">Ver tudo →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+        <sc-for list="{{ repor }}" as="p" hint-placeholder-count="6">
+          <div style="background:#FFFFFF;border:1px solid #EFE9E2;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s, transform .15s" style-hover="box-shadow:0 10px 26px rgba(30,24,18,.09);transform:translateY(-2px)">
+            <a href="Produto.dc.html" style="display:block;position:relative;border-radius:12px;background:{{ p.tint }};height:120px;display:flex;align-items:center;justify-content:center;font-size:46px">{{ p.emoji }}
+              <span style="position:absolute;top:8px;left:8px;background:#FFFFFF;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:800;color:#0E9F5D;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,.08)">⏱ {{ etaMin }} min</span>
+            </a>
+            <div style="flex:1"><a href="Produto.dc.html" style="color:#1E1812;font-weight:700;font-size:14px;line-height:1.35;display:block" style-hover="color:#FF6B00">{{ p.name }}</a>
+            <div style="color:#8A8177;font-size:12.5px;margin-top:2px">{{ p.unit }}</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font-weight:800;font-size:16px">{{ p.price }}</span>
+              <sc-if value="{{ p.inCart }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:2px;background:#FFF1E6;border-radius:999px;padding:3px">
+                  <button onClick="{{ p.sub }}" style="width:26px;height:26px;border-radius:50%;border:none;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:15px;cursor:pointer;line-height:1">−</button>
+                  <span style="min-width:22px;text-align:center;font-weight:800;font-size:14px;color:#FF6B00">{{ p.qty }}</span>
+                  <button onClick="{{ p.add }}" style="width:26px;height:26px;border-radius:50%;border:none;background:#FF6B00;color:#FFFFFF;font-weight:800;font-size:15px;cursor:pointer;line-height:1">+</button>
+                </span>
+              </sc-if>
+              <sc-if value="{{ p.notInCart }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ p.add }}" style="width:32px;height:32px;border-radius:50%;border:1.5px solid #FF6B00;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:18px;cursor:pointer;line-height:1" style-hover="background:#FF6B00;color:#FFFFFF">+</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px">
+        <h2 style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:24px;letter-spacing:-0.5px;margin:0">Ofertas da semana</h2>
+        <a href="#" style="font-size:14px;font-weight:700">Ver tudo →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+        <sc-for list="{{ ofertas }}" as="p" hint-placeholder-count="4">
+          <div style="background:#FFFFFF;border:1px solid #EFE9E2;border-radius:18px;padding:12px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s, transform .15s" style-hover="box-shadow:0 10px 26px rgba(30,24,18,.09);transform:translateY(-2px)">
+            <a href="Produto.dc.html" style="display:block;position:relative;border-radius:12px;background:{{ p.tint }};height:130px;display:flex;align-items:center;justify-content:center;font-size:50px">{{ p.emoji }}
+              <span style="position:absolute;top:8px;left:8px;background:#FF6B00;border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:800;color:#FFFFFF">−{{ p.off }}%</span>
+            </a>
+            <div style="flex:1"><a href="Produto.dc.html" style="color:#1E1812;font-weight:700;font-size:14px;line-height:1.35;display:block" style-hover="color:#FF6B00">{{ p.name }}</a>
+            <div style="color:#8A8177;font-size:12.5px;margin-top:2px">{{ p.unit }}</div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span><span style="color:#B8AFA4;font-size:12.5px;text-decoration:line-through">{{ p.oldPrice }}</span> <span style="font-weight:800;font-size:16px;color:#FF6B00">{{ p.price }}</span></span>
+              <sc-if value="{{ p.inCart }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:2px;background:#FFF1E6;border-radius:999px;padding:3px">
+                  <button onClick="{{ p.sub }}" style="width:26px;height:26px;border-radius:50%;border:none;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:15px;cursor:pointer;line-height:1">−</button>
+                  <span style="min-width:22px;text-align:center;font-weight:800;font-size:14px;color:#FF6B00">{{ p.qty }}</span>
+                  <button onClick="{{ p.add }}" style="width:26px;height:26px;border-radius:50%;border:none;background:#FF6B00;color:#FFFFFF;font-weight:800;font-size:15px;cursor:pointer;line-height:1">+</button>
+                </span>
+              </sc-if>
+              <sc-if value="{{ p.notInCart }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ p.add }}" style="width:32px;height:32px;border-radius:50%;border:1.5px solid #FF6B00;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:18px;cursor:pointer;line-height:1" style-hover="background:#FF6B00;color:#FFFFFF">+</button>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="background:#FFFFFF;border-top:1px solid #EFE9E2;margin-top:auto">
+    <div style="max-width:1240px;margin:0 auto;padding:28px 24px;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center">
+      <div>
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px">já já</div>
+        <div style="color:#8A8177;font-size:13px;margin-top:4px">Entrega rápida para escritórios · seg–sex, 8h–19h</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="color:#8A8177;font-size:13px;font-weight:700;margin-right:4px">Áreas atendidas:</span>
+        <span style="background:#F6F1EA;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700">Av. Paulista</span>
+        <span style="background:#F6F1EA;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700">Jardins</span>
+        <span style="background:#F6F1EA;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700">Faria Lima</span>
+        <span style="background:#F6F1EA;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700">Vila Olímpia</span>
+        <span style="background:#F6F1EA;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:700">Itaim Bibi</span>
+      </div>
+      <a href="Admin.dc.html" style="color:#8A8177;font-size:13px" style-hover="color:#FF6B00">Área administrativa</a>
+    </div>
+  </footer>
+
+  <!-- CART DRAWER -->
+  <sc-if value="{{ cartOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCart }}" style="position:fixed;inset:0;background:rgba(30,24,18,.4);z-index:60"></div>
+    <aside style="position:fixed;top:0;right:0;bottom:0;width:400px;max-width:92vw;background:#FFFFFF;z-index:61;display:flex;flex-direction:column;box-shadow:-18px 0 50px rgba(30,24,18,.18);border-radius:22px 0 0 22px">
+      <div style="padding:20px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #EFE9E2">
+        <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:20px">Seu carrinho</div>
+        <button onClick="{{ closeCart }}" style="width:34px;height:34px;border-radius:50%;border:1px solid #EFE9E2;background:#FFFFFF;cursor:pointer;font-size:15px;color:#8A8177" style-hover="background:#F6F1EA">✕</button>
+      </div>
+      <div style="background:#E7F6EE;margin:14px 22px 0;border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:#0B7A47">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0E9F5D" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="16.5" r="3.4"></circle><circle cx="18" cy="16.5" r="3.4"></circle><path d="M6 16.5 L10 9 L15 9"></path><path d="M12 16.5 L15 9 L14 6.5 H16.5"></path><path d="M12 16.5 H6"></path></svg>
+        Saindo de bike · chega em ~{{ etaMin }} min
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:14px 22px;display:flex;flex-direction:column;gap:12px">
+        <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;color:#8A8177;padding:48px 12px;font-size:14px">
+            <div style="font-size:40px;margin-bottom:10px">🛒</div>
+            Seu carrinho está vazio.<br>Adicione itens para o escritório!
+          </div>
+        </sc-if>
+        <sc-for list="{{ cartItems }}" as="it" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:52px;height:52px;border-radius:12px;background:{{ it.tint }};display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">{{ it.emoji }}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13.5px;line-height:1.3">{{ it.name }}</div>
+              <div style="color:#8A8177;font-size:12.5px">{{ it.price }}</div>
+            </div>
+            <span style="display:flex;align-items:center;gap:2px;background:#FFF1E6;border-radius:999px;padding:3px">
+              <button onClick="{{ it.sub }}" style="width:24px;height:24px;border-radius:50%;border:none;background:#FFFFFF;color:#FF6B00;font-weight:800;font-size:14px;cursor:pointer;line-height:1">−</button>
+              <span style="min-width:20px;text-align:center;font-weight:800;font-size:13px;color:#FF6B00">{{ it.qty }}</span>
+              <button onClick="{{ it.add }}" style="width:24px;height:24px;border-radius:50%;border:none;background:#FF6B00;color:#FFFFFF;font-weight:800;font-size:14px;cursor:pointer;line-height:1">+</button>
+            </span>
+            <span style="font-weight:800;font-size:13.5px;min-width:64px;text-align:right">{{ it.total }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="border-top:1px solid #EFE9E2;padding:16px 22px 20px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#8A8177"><span>Subtotal</span><span style="font-weight:700;color:#1E1812">{{ subtotal }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13.5px;color:#8A8177"><span>Entrega de bike</span><span style="font-weight:700;color:{{ feeColor }}">{{ fee }}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:17px;font-weight:800;margin-top:4px"><span>Total</span><span>{{ total }}</span></div>
+        <a href="Checkout.dc.html" style="margin-top:10px;background:#FF6B00;color:#FFFFFF;border-radius:999px;padding:14px;text-align:center;font-weight:800;font-size:15px;display:block;box-shadow:0 4px 14px rgba(255,107,0,.28)" style-hover="background:#E85F00;color:#FFFFFF">Finalizar pedido · {{ total }}</a>
+      </div>
+    </aside>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;etaMin&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:25,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:10,&quot;max&quot;:60,&quot;unit&quot;:&quot;min&quot;,&quot;section&quot;:&quot;Entrega&quot;}}">
+class Component extends DCLogic {
+  state = { cart: { a4: 1, cafe: 2 }, cartOpen: false };
+  data() {
+    return [
+      { id: 'a4', sec: 'top', name: 'Papel sulfite A4 branco', unit: 'Resma 500 folhas · 75g', p: 32.9, emoji: '📄', tint: '#EAF4FF' },
+      { id: 'toner', sec: 'top', name: 'Toner preto compatível 105A', unit: 'Rende ~1.000 páginas', p: 289.0, emoji: '🖨️', tint: '#F5EFFF' },
+      { id: 'caneta', sec: 'top', name: 'Caneta esferográfica azul', unit: 'Caixa com 12 un', p: 18.5, emoji: '🖊️', tint: '#EAF7F3' },
+      { id: 'postit', sec: 'top', name: 'Bloco adesivo 76×76 amarelo', unit: 'Pack com 4 blocos', p: 24.9, emoji: '🗒️', tint: '#FFF7DD' },
+      { id: 'cafe', sec: 'top', name: 'Café em cápsulas intenso', unit: 'Caixa com 10 cápsulas', p: 27.9, emoji: '☕', tint: '#FFF1E6' },
+      { id: 'agua', sec: 'top', name: 'Água mineral sem gás 510ml', unit: 'Pack com 6 un', p: 14.9, emoji: '💧', tint: '#EAF4FF' },
+      { id: 'copo', sec: 'repor', name: 'Copo descartável 200ml', unit: 'Pacote com 100 un', p: 9.9, emoji: '🥤', tint: '#FFF1E6' },
+      { id: 'pilha', sec: 'repor', name: 'Pilha AA alcalina', unit: 'Cartela com 4 un', p: 21.9, emoji: '🔋', tint: '#F0F7EA' },
+      { id: 'cabo', sec: 'repor', name: 'Cabo USB-C reforçado 1m', unit: 'Carga rápida 60W', p: 34.9, emoji: '🔌', tint: '#F5EFFF' },
+      { id: 'alcool', sec: 'repor', name: 'Álcool em gel 70%', unit: 'Frasco 500ml com válvula', p: 16.9, emoji: '🧴', tint: '#EAF7F3' },
+      { id: 'toalha', sec: 'repor', name: 'Papel toalha interfolha', unit: 'Pacote com 1.000 folhas', p: 22.5, emoji: '🧻', tint: '#FFF7DD' },
+      { id: 'grampo', sec: 'repor', name: 'Grampeador + 1.000 grampos', unit: 'Grampeia até 25 folhas', p: 39.9, emoji: '🖇️', tint: '#EAF4FF' },
+      { id: 'kit', sec: 'ofertas', name: 'Kit volta ao escritório', unit: 'Canetas + marca-textos + post-its', p: 39.9, old: 49.9, emoji: '✏️', tint: '#FFF7DD' },
+      { id: 'cafe500', sec: 'ofertas', name: 'Café torrado e moído 500g', unit: 'Torra média · moagem fina', p: 29.9, old: 36.9, emoji: '☕', tint: '#FFF1E6' },
+      { id: 'organizador', sec: 'ofertas', name: 'Organizador de mesa acrílico', unit: '4 divisórias · fumê', p: 64.9, old: 79.9, emoji: '🗂️', tint: '#EAF7F3' },
+      { id: 'mouse', sec: 'ofertas', name: 'Mouse sem fio silencioso', unit: 'USB · 1.600 dpi', p: 69.9, old: 89.9, emoji: '🖱️', tint: '#F5EFFF' },
+    ];
+  }
+  chg(id, d) {
+    this.setState(s => {
+      const cart = { ...s.cart };
+      const q = (cart[id] || 0) + d;
+      if (q <= 0) delete cart[id]; else cart[id] = q;
+      return { cart };
+    });
+  }
+  renderVals() {
+    const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',');
+    const cart = this.state.cart;
+    const enrich = p => {
+      const qty = cart[p.id] || 0;
+      return { ...p, price: fmt(p.p), oldPrice: p.old ? fmt(p.old) : '', off: p.old ? Math.round((1 - p.p / p.old) * 100) : 0, qty, inCart: qty > 0, notInCart: qty === 0, add: () => this.chg(p.id, 1), sub: () => this.chg(p.id, -1), total: fmt(p.p * qty) };
+    };
+    const all = this.data().map(enrich);
+    const cartItems = all.filter(p => p.qty > 0);
+    const sub = cartItems.reduce((a, p) => a + p.p * p.qty, 0);
+    const freeAbove = 79;
+    const feeVal = sub === 0 || sub >= freeAbove ? 0 : 4.9;
+    return {
+      etaMin: this.props.etaMin ?? 25,
+      categories: ['✏️ Papelaria', '💻 Informática', '🖨️ Impressão', '☕ Copa', '🧽 Limpeza', '🗂️ Organização'],
+      top: all.filter(p => p.sec === 'top'),
+      repor: all.filter(p => p.sec === 'repor'),
+      ofertas: all.filter(p => p.sec === 'ofertas'),
+      cartOpen: this.state.cartOpen,
+      openCart: () => this.setState({ cartOpen: true }),
+      closeCart: () => this.setState({ cartOpen: false }),
+      noop: () => {},
+      cartItems, cartEmpty: cartItems.length === 0,
+      cartCount: cartItems.reduce((a, p) => a + p.qty, 0),
+      subtotal: fmt(sub),
+      fee: feeVal === 0 ? 'Grátis' : fmt(feeVal),
+      feeColor: feeVal === 0 ? '#0E9F5D' : '#1E1812',
+      total: fmt(sub + feeVal),
+    };
+  }
+}
+</script>
+</body>
+</html>

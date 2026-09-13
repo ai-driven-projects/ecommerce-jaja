@@ -1,17 +1,21 @@
 import * as React from 'react';
 import { cn } from '@/shared/lib/class-name.util';
 
+// Tabela leve: cabeçalho em caixa alta pequena e cinza, linhas separadas por
+// réguas de 1px em `line`; sem bordas externas (o cartão as fornece).
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
     <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
+      <table ref={ref} className={cn('w-full caption-bottom text-[13.5px]', className)} {...props} />
     </div>
   ),
 );
 Table.displayName = 'Table';
 
 const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
-  ({ className, ...props }, ref) => <thead ref={ref} className={cn('[&_tr]:border-b', className)} {...props} />,
+  ({ className, ...props }, ref) => (
+    <thead ref={ref} className={cn('[&_tr]:border-b [&_tr]:border-line [&_tr:hover]:bg-transparent', className)} {...props} />
+  ),
 );
 TableHeader.displayName = 'TableHeader';
 
@@ -26,7 +30,10 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
   ({ className, ...props }, ref) => (
     <tr
       ref={ref}
-      className={cn('border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted', className)}
+      className={cn(
+        'border-b border-line transition-colors duration-150 hover:bg-paper data-[state=selected]:bg-brand-soft',
+        className,
+      )}
       {...props}
     />
   ),
@@ -34,10 +41,15 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
 TableRow.displayName = 'TableRow';
 
 const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
+  ({ className, align, ...props }, ref) => (
     <th
       ref={ref}
-      className={cn('h-10 px-2 text-left align-middle font-medium text-muted-foreground', className)}
+      align={align}
+      className={cn(
+        'h-10 px-3 text-left align-middle text-[12px] font-extrabold uppercase tracking-[0.04em] text-muted-ink',
+        align === 'right' && 'text-right',
+        className,
+      )}
       {...props}
     />
   ),
@@ -45,7 +57,14 @@ const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<
 TableHead.displayName = 'TableHead';
 
 const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => <td ref={ref} className={cn('p-2 align-middle', className)} {...props} />,
+  ({ className, align, ...props }, ref) => (
+    <td
+      ref={ref}
+      align={align}
+      className={cn('px-3 py-3 align-middle', align === 'right' && 'text-right font-extrabold', className)}
+      {...props}
+    />
+  ),
 );
 TableCell.displayName = 'TableCell';
 

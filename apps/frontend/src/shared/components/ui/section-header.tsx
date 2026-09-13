@@ -15,6 +15,7 @@ type SectionHeaderProps = {
   subtitleClassName?: string;
 };
 
+/** Cabeçalho de seção: título em display, subtítulo cinza e ação à direita. */
 export function SectionHeader({
   badge,
   title,
@@ -29,14 +30,10 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div className={cn('space-y-4', className)}>
-      {divider ? <div className={cn('h-px w-full bg-border/70', dividerClassName)} aria-hidden="true" /> : null}
+      {divider ? <div className={cn('h-px w-full bg-line', dividerClassName)} aria-hidden="true" /> : null}
 
-      <header className="space-y-2">
-        {badge ? (
-          <Badge variant="secondary" className="px-2.5 py-1 text-[13px] font-semibold">
-            {badge}
-          </Badge>
-        ) : null}
+      <header className="space-y-3">
+        {badge ? <Badge variant="brand">{badge}</Badge> : null}
 
         <div
           className={cn(
@@ -44,17 +41,11 @@ export function SectionHeader({
             contentClassName,
           )}
         >
-          <div className="flex flex-col space-y-1">
-            <h2
-              className={cn(
-                'inline-block w-fit self-start bg-linear-to-r from-white to-zinc-500 bg-clip-text text-2xl font-bold tracking-tight text-transparent',
-                titleClassName,
-              )}
-            >
+          <div className="flex flex-col gap-1">
+            <h2 className={cn('font-display text-2xl font-extrabold tracking-[-0.5px] text-ink', titleClassName)}>
               {title}
             </h2>
-
-            {subtitle ? <p className={cn('text-sm text-zinc-400', subtitleClassName)}>{subtitle}</p> : null}
+            {subtitle ? <p className={cn('text-[13.5px] text-muted-ink', subtitleClassName)}>{subtitle}</p> : null}
           </div>
 
           {aside ? <div className="shrink-0">{aside}</div> : null}

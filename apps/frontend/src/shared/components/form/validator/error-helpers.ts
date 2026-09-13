@@ -23,7 +23,7 @@ export function formatValidationError(errors?: string[]): {
 } {
   return {
     type: 'validation',
-    message: getErrorMessage({ errors }) || getMessage('INVALID_VALUE'),
+    message: getErrorMessage({ errors: errors ? Array.from(new Set(errors)) : errors }) || getMessage('INVALID_VALUE'),
   };
 }
 

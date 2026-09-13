@@ -1,31 +1,21 @@
-import Image from 'next/image';
-
 type EmptyListStateProps = {
   title: string;
   subtitle: string;
+  /** Emoji ilustrativo no topo (padrão: caixa). */
+  emoji?: string;
+  /** Mantido por compatibilidade: o design não usa fotos. */
   imageAlt?: string;
 };
 
-export function EmptyListState({ title, subtitle, imageAlt = 'Ilustracao de lista vazia' }: EmptyListStateProps) {
+/** Estado vazio de lista: emoji grande, título em display e explicação curta. */
+export function EmptyListState({ title, subtitle, emoji = '📦' }: EmptyListStateProps) {
   return (
-    <div className="flex flex-col items-center gap-3 text-center">
-      <div className="w-full max-w-4xl">
-        <Image
-          src="/illustrations/empty-list-dark.svg"
-          alt={imageAlt}
-          width={1200}
-          height={700}
-          priority
-          className="mx-auto h-auto w-full max-w-2xl object-contain"
-        />
-      </div>
-
-      <div className="space-y-1">
-        <h3 className="bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-xl font-black text-transparent md:text-2xl">
-          {title}
-        </h3>
-        <p className="text-sm text-muted-foreground md:text-base">{subtitle}</p>
-      </div>
+    <div className="flex w-full flex-col items-center gap-2 rounded-2xl border border-dashed border-line bg-card px-6 py-12 text-center">
+      <span className="text-[40px] leading-none" aria-hidden="true">
+        {emoji}
+      </span>
+      <h3 className="mt-2 font-display text-xl font-extrabold tracking-[-0.3px]">{title}</h3>
+      <p className="max-w-md text-sm text-muted-ink">{subtitle}</p>
     </div>
   );
 }

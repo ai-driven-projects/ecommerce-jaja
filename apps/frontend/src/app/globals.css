@@ -1,57 +1,87 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 
-/* ── Design system tokens (consumidos por src/shared/components/ui) ─────────── */
+/* ── Tokens do design "já já" (ver DESIGN.md) ──────────────────────────────
+   Papel quente, superfícies brancas arredondadas, laranja como cor de ação e
+   verde para "entrega/ok". Um único visual em qualquer esquema de cores do
+   navegador: não há tema escuro por decisão de design. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Superfícies e texto */
+  --paper: #faf8f5;
   --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #f59e0b;
-  --primary-foreground: #0a0a0a;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #f59e0b;
-  --chart-1: #f59e0b;
-  --chart-2: #0ea5e9;
-  --chart-3: #22c55e;
-  --chart-4: #a855f7;
-  --chart-5: #ef4444;
-  --radius: 0.625rem;
-}
+  --surface: #f6f1ea;
+  --surface-strong: #f0e9e0;
+  --line: #efe9e2;
+  --ink: #1e1812;
+  --ink-soft: #5c544b;
+  --muted-ink: #8a8177;
+  --placeholder: #b8afa4;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card: #111113;
-    --card-foreground: #ededed;
-    --popover: #111113;
-    --popover-foreground: #ededed;
-    --primary: #f59e0b;
-    --primary-foreground: #0a0a0a;
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
-    --destructive: #ef4444;
-    --destructive-foreground: #fafafa;
-    --border: rgba(255, 255, 255, 0.1);
-    --input: rgba(255, 255, 255, 0.15);
-    --ring: #f59e0b;
-  }
+  /* Marca (laranja) */
+  --brand: #ff6b00;
+  --brand-strong: #e85f00;
+  --brand-link: #d95b00;
+  --brand-light: #ff8a3d;
+  --brand-soft: #fff1e6;
+  --brand-pale: #ffd9bd;
+
+  /* Estados */
+  --success: #0e9f5d;
+  --success-strong: #0b7a47;
+  --success-soft: #e7f6ee;
+  --success-light: #7ed9a9;
+  --warning: #b78a00;
+  --warning-soft: #fff7dd;
+  --danger: #c93a31;
+  --danger-soft: #fdebea;
+
+  /* Blocos escuros (hero, ETA, sidebar do admin) */
+  --dark: #1e1812;
+  --dark-muted: #b8afa4;
+  --dark-line: rgba(255, 255, 255, 0.08);
+  --dark-surface: rgba(255, 255, 255, 0.1);
+
+  /* Tons pastéis das áreas de imagem e ícones */
+  --tint-blue: #eaf4ff;
+  --tint-purple: #f5efff;
+  --tint-mint: #eaf7f3;
+  --tint-yellow: #fff7dd;
+  --tint-peach: #fff1e6;
+  --tint-green: #f0f7ea;
+  --map: #e9efe9;
+
+  /* Sombras */
+  --shadow-card: 0 10px 26px rgba(30, 24, 18, 0.09);
+  --shadow-brand: 0 4px 14px rgba(255, 107, 0, 0.28);
+  --shadow-float: 0 6px 18px rgba(0, 0, 0, 0.12);
+  --shadow-badge: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-drawer: -18px 0 50px rgba(30, 24, 18, 0.18);
+  --shadow-deep: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  /* ── Tokens semânticos consumidos por src/shared/components/ui ─────────── */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card-foreground: var(--ink);
+  --popover: var(--card);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface);
+  --muted-foreground: var(--muted-ink);
+  --accent: var(--surface);
+  --accent-foreground: var(--ink);
+  --destructive: var(--danger);
+  --destructive-foreground: #ffffff;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand);
+  --chart-1: var(--brand);
+  --chart-2: var(--success);
+  --chart-3: var(--ink);
+  --chart-4: var(--warning);
+  --chart-5: var(--placeholder);
+  --radius: 12px;
 }
 
 @theme inline {
@@ -79,22 +109,135 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Tokens do design para uso explícito nos componentes. */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-muted-ink: var(--muted-ink);
+  --color-placeholder: var(--placeholder);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-link: var(--brand-link);
+  --color-brand-light: var(--brand-light);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-pale: var(--brand-pale);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-success-soft: var(--success-soft);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-dark: var(--dark);
+  --color-dark-muted: var(--dark-muted);
+  --color-dark-line: var(--dark-line);
+  --color-dark-surface: var(--dark-surface);
+  --color-tint-blue: var(--tint-blue);
+  --color-tint-purple: var(--tint-purple);
+  --color-tint-mint: var(--tint-mint);
+  --color-tint-yellow: var(--tint-yellow);
+  --color-tint-peach: var(--tint-peach);
+  --color-tint-green: var(--tint-green);
+  --color-map: var(--map);
+
+  /* Raios: 10–14 em campos e ícones, 18–24 em cards e blocos, pílula em ações. */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
+  --radius-pill: 999px;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-float: var(--shadow-float);
+  --shadow-badge: var(--shadow-badge);
+  --shadow-drawer: var(--shadow-drawer);
+  --shadow-deep: var(--shadow-deep);
+
+  /* Fontes carregadas via next/font em src/app/layout.tsx. */
+  --font-sans: var(--font-ui), system-ui, sans-serif;
+  --font-display: var(--font-display), var(--font-ui), system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+
+  html {
+    background: var(--paper);
   }
 
   body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-ui), system-ui, sans-serif;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--brand-pale);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    cursor: pointer;
+    font: inherit;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--placeholder);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: pretty;
+  }
+}
+
+/* Toasts (Sonner): cartão branco, borda suave, raio 16 e sombra flutuante. */
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted-ink);
+  box-shadow: none;
 }

@@ -1,26 +1,38 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Bricolage_Grotesque, Manrope } from 'next/font/google';
+import { AuthProvider } from '@/modules/auth/data/auth.context';
+import { Toaster } from '@/shared/components/ui/toaster';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// Manrope: todo o texto e UI (eixo variável 400–800).
+const fontUi = Manrope({
+  variable: '--font-ui',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+// Bricolage Grotesque: display — logo, títulos, preços grandes e KPIs.
+const fontDisplay = Bricolage_Grotesque({
+  variable: '--font-display',
   subsets: ['latin'],
+  axes: ['opsz'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Jaja',
-  description: 'Plataforma de e-commerce Jaja',
+  title: 'já já — entrega rápida para escritórios',
+  description: 'Papel, toner, café e tudo que o seu escritório consome, entregue de bike em minutos.',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="pt-BR" className={`${fontUi.variable} ${fontDisplay.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
+      </body>
     </html>
   );
 }

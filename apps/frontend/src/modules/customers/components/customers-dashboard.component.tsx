@@ -1,10 +1,15 @@
+import { EmptyDashboardState } from '@/shared/components/ui/empty-dashboard-state';
+import { PageSectionHeader } from '@/shared/components/ui/page-section-header';
+
 export function CustomersDashboardComponent() {
   return (
-    <section className="space-y-1">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard Clientes</h1>
-      <p className="text-sm text-muted-foreground">
-        Estrutura inicial do módulo customers.
-      </p>
-    </section>
+    <div className="flex flex-col gap-[22px]">
+      <PageSectionHeader title="Clientes" subtitle="Escritórios, contas e faturamento mensal." />
+      <EmptyDashboardState
+        moduleName="Clientes"
+        emoji="🏢"
+        description="A lista de escritórios, contatos e o histórico de pedidos por conta aparecem aqui quando a API de clientes estiver disponível."
+      />
+    </div>
   );
 }

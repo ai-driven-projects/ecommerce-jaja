@@ -1,15 +1,6 @@
-'use client';
+import { StorefrontShell } from '@/modules/catalog/components/storefront-shell.component';
 
-import { usePathname } from 'next/navigation';
-import { PublicBoxedLayout } from '@/shared/template/public-boxed-layout.component';
-
+/** Tudo que é público vive dentro do shell da loja; a área administrativa fica em `/admin`. */
 export default function PublicGroupLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const isAuthRoute = pathname === '/auth' || pathname.startsWith('/auth/');
-
-  if (isAuthRoute) {
-    return <>{children}</>;
-  }
-
-  return <PublicBoxedLayout>{children}</PublicBoxedLayout>;
+  return <StorefrontShell>{children}</StorefrontShell>;
 }

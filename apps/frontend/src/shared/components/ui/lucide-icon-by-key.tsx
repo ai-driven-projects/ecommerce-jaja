@@ -75,7 +75,7 @@ function parseHexColor(color?: string | null): ParsedHexColor | null {
 function pickSmartIconColor(backgroundColor?: string | null): string {
   const parsed = parseHexColor(backgroundColor);
   if (!parsed) {
-    return '#0F172A';
+    return '#201e1d';
   }
 
   const { r, g, b, a } = parsed;
@@ -84,7 +84,7 @@ function pickSmartIconColor(backgroundColor?: string | null): string {
   const baseB = Math.round(b * a + 255 * (1 - a));
   const brightness = (baseR * 299 + baseG * 587 + baseB * 114) / 1000;
 
-  return brightness >= 160 ? '#0F172A' : '#F8FAFC';
+  return brightness >= 160 ? '#201e1d' : '#f3f2f2';
 }
 
 type LucideIconByKeyProps = {
@@ -128,7 +128,7 @@ export function LucideIconByKey({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full border border-border/70 bg-muted',
+        'inline-flex shrink-0 items-center justify-center rounded-xl bg-surface',
         className,
       )}
       style={{ width: circleSize, height: circleSize, backgroundColor: backgroundColor ?? undefined }}

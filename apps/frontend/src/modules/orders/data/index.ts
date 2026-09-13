@@ -1,3 +1,3 @@
-// Frontend-only API clients, schemas, hooks and browser state for orders.
+// Frontend-only mock data for orders (tracking and checkout).
 
-export {};
+export * from './tracking.mock';

@@ -33,14 +33,16 @@ export function DashboardBreakdownCard({
   accentClassName,
 }: DashboardBreakdownCardProps) {
   return (
-    <Card className="relative overflow-hidden border-white/10 bg-linear-to-br from-zinc-900 via-zinc-900/95 to-zinc-800/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
-      <div className={cn('pointer-events-none absolute inset-0 opacity-90', accentClassName)} />
+    <Card className="relative overflow-hidden">
+      {accentClassName ? (
+        <div className={cn('pointer-events-none absolute inset-0', accentClassName)} aria-hidden="true" />
+      ) : null}
 
-      <CardHeader className="relative gap-4 border-b border-white/8 pb-5">
+      <CardHeader className="relative pb-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
-            <CardTitle className="text-lg font-semibold text-zinc-50">{title}</CardTitle>
-            <p className="max-w-xl text-sm text-zinc-400">{subtitle}</p>
+            <CardTitle>{title}</CardTitle>
+            <p className="max-w-xl text-[12.5px] text-muted-ink">{subtitle}</p>
           </div>
 
           <Button
@@ -51,7 +53,6 @@ export function DashboardBreakdownCard({
             disabled={isLoading}
             aria-label={`Atualizar ${title.toLowerCase()}`}
             title={`Atualizar ${title.toLowerCase()}`}
-            className="border-white/10 bg-white/5 text-zinc-100 hover:bg-white/10"
           >
             <RefreshCcw className="size-4" />
           </Button>
@@ -59,11 +60,7 @@ export function DashboardBreakdownCard({
       </CardHeader>
 
       <CardContent className="relative space-y-5 pt-6">
-        {error ? (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-            {error}
-          </div>
-        ) : null}
+        {error ? <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">{error}</div> : null}
 
         {!error ? (
           <>
@@ -84,20 +81,25 @@ export function DashboardBreakdownCard({
                 }).format(value)
               }
               emptyState={
-                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.03] px-6 text-sm text-zinc-500">
+                <div
+                  className={cn(
+                    'flex h-full items-center rounded-2xl border border-dashed px-6 text-sm',
+                    isLoading ? 'border-line text-placeholder' : 'border-line text-muted-ink',
+                  )}
+                >
                   {isLoading
                     ? `Carregando ${title.toLowerCase()}...`
-                    : `Nenhum dado disponivel para os ultimos ${selectedMonths} meses.`}
+                    : `Nenhum dado disponível para os últimos ${selectedMonths} meses.`}
                 </div>
               }
             />
 
             {!isLoading && items.length > 0 ? (
-              <div className="space-y-2">
+              <ul className="divide-y divide-line">
                 {items.slice(0, 6).map((item) => (
-                  <div
+                  <li
                     key={item.label}
-                    className="flex items-center justify-between gap-4 rounded-2xl border border-white/6 bg-white/[0.03] px-4 py-3"
+                    className="flex items-center justify-between gap-4 py-3"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span
@@ -105,13 +107,13 @@ export function DashboardBreakdownCard({
                         style={{ backgroundColor: item.color }}
                         aria-hidden="true"
                       />
-                      <p className="truncate text-sm font-medium text-zinc-100">{item.label}</p>
+                      <p className="truncate text-sm font-semibold text-ink">{item.label}</p>
                     </div>
 
-                    <p className="shrink-0 text-sm font-semibold text-zinc-200">{item.amountLabel}</p>
-                  </div>
+                    <p className="shrink-0 text-sm font-extrabold tabular-nums text-ink">{item.amountLabel}</p>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : null}
           </>
         ) : null}

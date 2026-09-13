@@ -1,80 +1,75 @@
 import type { ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { cn } from '@/shared/lib/class-name.util';
 
+type DeltaTone = 'success' | 'danger' | 'warning' | 'muted';
+
 type MetricCardProps = {
+  /** Rótulo pequeno em cinza no topo. */
   title: ReactNode;
+  /** Texto abaixo do valor (ex.: "↑ 12% vs. ontem" ou "Meta: 95%"). */
   subtitle?: ReactNode;
   value: ReactNode;
+  /** Emoji ou ícone dentro do quadradinho pastel à direita. */
   icon?: ReactNode;
-  iconColorClassName?: string;
+  /** Cor de fundo do quadradinho do ícone (`bg-tint-*`). */
+  iconTintClassName?: string;
+  deltaTone?: DeltaTone;
   className?: string;
+  valueClassName?: string;
+  /** Mantidos por compatibilidade de API. */
+  iconColorClassName?: string;
   overlayClassName?: string;
   headerClassName?: string;
   contentClassName?: string;
   titleClassName?: string;
   subtitleClassName?: string;
-  valueClassName?: string;
   iconContainerClassName?: string;
 };
 
+const deltaToneClasses: Record<DeltaTone, string> = {
+  success: 'text-success',
+  danger: 'text-danger',
+  warning: 'text-warning',
+  muted: 'text-muted-ink',
+};
+
+/** Cartão de indicador: rótulo + ícone pastel, valor em display e variação. */
 export function MetricCard({
   title,
   subtitle,
   value,
   icon,
-  iconColorClassName,
+  iconTintClassName = 'bg-brand-soft',
+  deltaTone = 'muted',
   className,
-  overlayClassName,
-  headerClassName,
-  contentClassName,
+  valueClassName,
   titleClassName,
   subtitleClassName,
-  valueClassName,
   iconContainerClassName,
 }: MetricCardProps) {
   return (
-    <Card
-      className={cn(
-        'relative overflow-hidden border border-white/10 bg-linear-to-br from-zinc-900 via-zinc-900/95 to-zinc-800/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]',
-        className,
-      )}
-    >
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_120%_120%,rgba(245,158,11,0.12),transparent_52%)]',
-          overlayClassName,
-        )}
-      />
-
-      <CardHeader className={cn('relative space-y-0 pb-0.5', headerClassName)}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-1">
-            <CardTitle className={cn('truncate text-[15px] font-semibold text-zinc-100', titleClassName)}>
-              {title}
-            </CardTitle>
-            {subtitle ? (
-              <p className={cn('truncate text-xs leading-snug text-zinc-400', subtitleClassName)}>{subtitle}</p>
-            ) : null}
-          </div>
-
-          {icon ? (
-            <span
-              className={cn(
-                'shrink-0 rounded-xl border border-white/10 bg-white/5 p-3 text-zinc-400 [&_svg]:size-7',
-                iconColorClassName,
-                iconContainerClassName,
-              )}
-            >
-              {icon}
-            </span>
-          ) : null}
-        </div>
-      </CardHeader>
-
-      <CardContent className={cn('relative -mt-3', contentClassName)}>
-        <p className={cn('text-2xl md:text-3xl font-black tracking-tight text-zinc-100', valueClassName)}>{value}</p>
-      </CardContent>
-    </Card>
+    <div className={cn('rounded-2xl border border-line bg-card px-5 py-[18px]', className)}>
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <span className={cn('truncate text-[13px] font-bold text-muted-ink', titleClassName)}>{title}</span>
+        {icon ? (
+          <span
+            className={cn(
+              'flex size-[34px] shrink-0 items-center justify-center rounded-[10px] text-[17px] [&_svg]:size-[18px]',
+              iconTintClassName,
+              iconContainerClassName,
+            )}
+            aria-hidden="true"
+          >
+            {icon}
+          </span>
+        ) : null}
+      </div>
+      <p className={cn('font-display text-[28px] font-extrabold leading-none tracking-[-0.5px] text-ink', valueClassName)}>
+        {value}
+      </p>
+      {subtitle ? (
+        <p className={cn('mt-1.5 text-[12.5px] font-bold', deltaToneClasses[deltaTone], subtitleClassName)}>{subtitle}</p>
+      ) : null}
+    </div>
   );
 }

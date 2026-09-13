@@ -3,7 +3,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { cn } from '@/shared/lib/class-name.util';
 
 type PageSectionHeaderProps = {
-  badge: ReactNode;
+  badge?: ReactNode;
   title: string;
   subtitle?: string;
   aside?: ReactNode;
@@ -13,6 +13,7 @@ type PageSectionHeaderProps = {
   subtitleClassName?: string;
 };
 
+/** Cabeçalho de página do admin: título em display à esquerda e ações à direita. */
 export function PageSectionHeader({
   badge,
   title,
@@ -24,31 +25,23 @@ export function PageSectionHeader({
   subtitleClassName,
 }: PageSectionHeaderProps) {
   return (
-    <header className={cn('space-y-2', className)}>
-      <Badge variant="secondary" className="px-2.5 py-1 text-[13px] font-semibold">
-        {badge}
-      </Badge>
+    <header className={cn('space-y-3', className)}>
+      {badge ? <Badge variant="brand">{badge}</Badge> : null}
 
       <div
         className={cn(
-          aside ? 'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between' : 'space-y-1',
+          'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
           contentClassName,
         )}
       >
-        <div className="space-y-1 flex flex-col">
-          <h2
-            className={cn(
-              'inline-block w-fit self-start bg-linear-to-r from-white to-zinc-500 bg-clip-text text-2xl font-bold tracking-tight text-transparent',
-              titleClassName,
-            )}
-          >
+        <div className="flex flex-col gap-1">
+          <h1 className={cn('font-display text-[26px] font-extrabold tracking-[-0.6px] text-ink', titleClassName)}>
             {title}
-          </h2>
-
-          {subtitle ? <p className={cn('text-zinc-400 text-sm', subtitleClassName)}>{subtitle}</p> : null}
+          </h1>
+          {subtitle ? <p className={cn('text-[13.5px] text-muted-ink', subtitleClassName)}>{subtitle}</p> : null}
         </div>
 
-        {aside ? <div className="shrink-0">{aside}</div> : null}
+        {aside ? <div className="flex shrink-0 items-center gap-2.5">{aside}</div> : null}
       </div>
     </header>
   );
