@@ -20,7 +20,7 @@ type ProductFormPageProps = {
  * de produto em página. Produto inexistente mostra o estado de não encontrado.
  */
 export function ProductFormPage({ id, returnQuery }: ProductFormPageProps) {
-  const { form, isEditing, loading, loadError, brandSelect, categoryOptions, listHref, submit } = useProductForm({
+  const { form, isEditing, loading, loadError, brandSelect, categorySelect, listHref, submit } = useProductForm({
     id,
     returnQuery,
   });
@@ -58,7 +58,7 @@ export function ProductFormPage({ id, returnQuery }: ProductFormPageProps) {
           form={form}
           isEditing={isEditing}
           brandSelect={brandSelect}
-          categoryOptions={categoryOptions}
+          categorySelect={categorySelect}
           onSubmit={submit}
           cancelHref={listHref}
         />

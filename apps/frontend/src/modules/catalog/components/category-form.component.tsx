@@ -14,14 +14,17 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { CATEGORY_DESCRIPTION_MAX_LENGTH, type CategoryFormData } from '../data/category.schema';
-import type { CategoryParentOption } from '../data/use-category-form.hook';
+import type { CategorySelectState } from '../data/use-category-options.hook';
 
 type CategoryFormProps = {
   /** Formulário criado por `useCategoryForm` (resolver `v.resolver(categorySchema)`). */
   form: UseFormReturn<CategoryFormData>;
   isEditing: boolean;
-  /** "Sem categoria pai (raiz)" seguida das categorias de nível 1 e 2, rotuladas pelo `path`. */
-  parentOptions: CategoryParentOption[];
+  /**
+   * Seletor de pai com busca na API: "Sem categoria pai (raiz)" (quando não há
+   * busca) seguida das categorias de nível 1 e 2 carregadas, rotuladas pelo `path`.
+   */
+  parentSelect: CategorySelectState;
   onSubmit: FormEventHandler<HTMLFormElement>;
   cancelHref: string;
 };
@@ -55,12 +58,13 @@ function CategoryImagePreview({ url, name }: { url: string; name: string }) {
 
 /**
  * Formulário de categoria em página (sem modal). O pai é escolhido num
- * `Combobox` rotulado pelo caminho. Na criação, o slug acompanha o nome
- * (`Alias.format`) até o administrador editá-lo; na edição já nasce editado,
- * para mudar o nome não reescrever URLs. A imagem tem pré-visualização quando
- * a URL é válida e o status ativo só aparece na edição.
+ * `Combobox` com busca na API, rotulado pelo caminho, com "Carregar mais". Na
+ * criação, o slug acompanha o nome (`Alias.format`) até o administrador
+ * editá-lo; na edição já nasce editado, para mudar o nome não reescrever URLs.
+ * A imagem tem pré-visualização quando a URL é válida e o status ativo só
+ * aparece na edição.
  */
-export function CategoryForm({ form, isEditing, parentOptions, onSubmit, cancelHref }: CategoryFormProps) {
+export function CategoryForm({ form, isEditing, parentSelect, onSubmit, cancelHref }: CategoryFormProps) {
   const {
     register,
     control,
@@ -90,14 +94,19 @@ export function CategoryForm({ form, isEditing, parentOptions, onSubmit, cancelH
                 <Combobox
                   id="category-parent"
                   ref={field.ref}
-                  options={parentOptions}
+                  options={parentSelect.options}
                   value={field.value ?? ''}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
-                  placeholder="Selecione a categoria pai"
+                  placeholder="Sem categoria pai (raiz)"
                   emptyText="Nenhuma categoria encontrada."
                   invalid={Boolean(errors.parentId)}
                   disabled={isSubmitting}
+                  onSearchChange={parentSelect.setSearch}
+                  selectedOption={parentSelect.selectedOption}
+                  loading={parentSelect.loading}
+                  hasMore={parentSelect.hasMore}
+                  onLoadMore={parentSelect.loadMore}
                 />
               )}
             />

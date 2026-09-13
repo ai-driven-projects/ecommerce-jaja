@@ -15,7 +15,7 @@ export * from './use-brand-options.hook';
 export * from './use-brands.hook';
 export * from './use-categories.hook';
 export * from './use-category-form.hook';
+export * from './use-category-options.hook';
 export * from './use-product-form.hook';
-export * from './use-product-options.hook';
 export * from './use-products.hook';
 export * from './use-storefront.hook';

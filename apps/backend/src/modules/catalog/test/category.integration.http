@@ -3,16 +3,17 @@
 # (npm run prisma:migrate:deploy && npm run prisma:seed) e backend rodando em
 # http://localhost:4000 (npm run dev --workspace=@jaja/backend).
 #
-# Ordem: executar de cima para baixo. Raiz, filha e neta usam nomes com sufixo de
-# timestamp (slugs derivados únicos) para o arquivo poder ser repetido; os cenários
-# seguintes reutilizam ids e slugs das respostas dos passos 5, 6 e 7. Os passos
-# finais excluem a filha e a raiz, deixando o banco como estava.
+# Ordem: executar de cima para baixo. Raiz, filha e neta usam nomes e slugs com
+# sufixo de timestamp para o arquivo poder ser repetido; os cenários seguintes
+# reutilizam ids e slugs das respostas dos passos 5, 6 e 7. Os passos finais
+# excluem a filha e a raiz (a neta é excluída no passo 30), deixando o banco
+# como estava.
 
 @baseUrl = http://localhost:4000
 @adminEmail = usuario@formacao.dev
 @userEmail = ana.pereira.carvalho@jaja.dev
 @seedPassword = #Senha123
-# uuid v4 válido que não existe (um id malformado responderia 400 INVALID_ID).
+# uuid v4 válido que não existe (um id malformado responderia 400 INVALID_ID ou 404, conforme a rota).
 @missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
 
 ### 1. Login do admin do seed -> 200 com token
@@ -35,10 +36,10 @@ Content-Type: application/json
   "password": "{{seedPassword}}"
 }
 
-### 3. Listagem sem token -> 401
-GET {{baseUrl}}/categories
+### 3. Árvore sem token -> 401
+GET {{baseUrl}}/categories/tree
 
-### 4. Criação com token de não administrador -> 403 ADMIN_REQUIRED
+### 4. Criação com token de não administrador -> 403 ADMIN_REQUIRED (nada é criado)
 POST {{baseUrl}}/categories
 Authorization: Bearer {{loginUser.response.body.token}}
 Content-Type: application/json
@@ -47,18 +48,19 @@ Content-Type: application/json
   "name": "Categoria Proibida {{$timestamp}}"
 }
 
-### 5. Criação de raiz só com o nome -> 201 com slug derivado, parentId null, order 0,
-### isHighlighted false, isActive true, description/imageUrl null, level 1 e path = nome
+### 5. Criação de raiz -> 201 com parentId null, order 0, isHighlighted false, isActive true,
+### description/imageUrl null, level 1, path = nome e childrenCount 0
 # @name createRoot
 POST {{baseUrl}}/categories
 Authorization: Bearer {{loginAdmin.response.body.token}}
 Content-Type: application/json
 
 {
-  "name": "Raiz Teste {{$timestamp}}"
+  "name": "Raiz Teste {{$timestamp}}",
+  "slug": "raiz-teste-{{$timestamp}}"
 }
 
-### 6. Criação de filha -> 201 com level 2 e path "<raiz> / <filha>"
+### 6. Criação de filha -> 201 com level 2, path "<raiz> / <filha>" e childrenCount 0
 # @name createChild
 POST {{baseUrl}}/categories
 Authorization: Bearer {{loginAdmin.response.body.token}}
@@ -66,12 +68,13 @@ Content-Type: application/json
 
 {
   "name": "Filha Teste {{$timestamp}}",
+  "slug": "filha-teste-{{$timestamp}}",
   "parentId": "{{createRoot.response.body.id}}",
   "description": "Categoria de nível 2",
   "order": 1
 }
 
-### 7. Criação de neta -> 201 com level 3 e path "<raiz> / <filha> / <neta>"
+### 7. Criação de neta -> 201 com level 3, path "<raiz> / <filha> / <neta>" e childrenCount 0
 # @name createGrandchild
 POST {{baseUrl}}/categories
 Authorization: Bearer {{loginAdmin.response.body.token}}
@@ -79,6 +82,7 @@ Content-Type: application/json
 
 {
   "name": "Neta Teste {{$timestamp}}",
+  "slug": "neta-teste-{{$timestamp}}",
   "parentId": "{{createChild.response.body.id}}",
   "isHighlighted": true,
   "imageUrl": "https://exemplo.com/neta-teste.png"
@@ -102,6 +106,7 @@ Content-Type: application/json
 
 {
   "name": "Bisneta Teste {{$timestamp}}",
+  "slug": "bisneta-teste-{{$timestamp}}",
   "parentId": "{{createGrandchild.response.body.id}}"
 }
 
@@ -112,10 +117,22 @@ Content-Type: application/json
 
 {
   "name": "Orfã Teste {{$timestamp}}",
+  "slug": "orfa-teste-{{$timestamp}}",
   "parentId": "{{missingId}}"
 }
 
-### 11. Slug duplicado em outro ramo (slug da raiz numa subcategoria) -> 409 CATEGORY_SLUG_ALREADY_EXISTS
+### 11. Pai com id malformado -> 400 INVALID_ID
+POST {{baseUrl}}/categories
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Pai Malformada {{$timestamp}}",
+  "slug": "pai-malformada-{{$timestamp}}",
+  "parentId": "abc"
+}
+
+### 12. Slug duplicado em outro ramo (slug da raiz numa subcategoria) -> 409 CATEGORY_SLUG_ALREADY_EXISTS
 POST {{baseUrl}}/categories
 Authorization: Bearer {{loginAdmin.response.body.token}}
 Content-Type: application/json
@@ -126,7 +143,7 @@ Content-Type: application/json
   "parentId": "{{createChild.response.body.id}}"
 }
 
-### 12. Ciclo: raiz passando a ter a neta como pai -> 400 CATEGORY_CYCLE (hierarquia inalterada)
+### 13. Ciclo: raiz passando a ter a neta como pai -> 400 CATEGORY_CYCLE (hierarquia inalterada)
 PUT {{baseUrl}}/categories/{{createRoot.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 Content-Type: application/json
@@ -135,25 +152,56 @@ Content-Type: application/json
   "parentId": "{{createGrandchild.response.body.id}}"
 }
 
-### 13. Listagem plana -> 200 com todas as categorias (seed + teste), cada uma com level e path,
-### ordenada por path
+### 14. Lista sem filtros -> 200 com { items, total, page: 1, pageSize: 20, totalPages }, ordenada por path
 GET {{baseUrl}}/categories
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 14. Listagem só de ativas -> 200 (isActive=true)
+### 15. pageSize acima do máximo -> 200 com no máximo 100 itens e pageSize = 100
+GET {{baseUrl}}/categories?pageSize=500
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 16. Busca por prefixo sem acento -> 200 com "Borrachas Técnicas" (level 3, path "Escolar / Borrachas / Borrachas Técnicas") entre os itens (após o seed)
+GET {{baseUrl}}/categories?search=borracha%20tecn
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 17. Só ativas -> 200 com a página filtrada por isActive = true
 GET {{baseUrl}}/categories?isActive=true
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 15. Busca por id da filha -> 200 com level 2 e path
+### 18. Opções de pai na edição da raiz criada -> 200 sem itens de level 3 e sem a raiz, a filha ou a neta
+GET {{baseUrl}}/categories?maxLevel=2&excludeSubtreeOf={{createRoot.response.body.id}}&pageSize=100
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 19. Árvore recolhida -> 200 com as raízes (total conta só raízes), todas com children = []
+GET {{baseUrl}}/categories/tree
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 20. Árvore expandida paginada -> 200 com 5 raízes, cada uma com as filhas e, nelas, as netas
+GET {{baseUrl}}/categories/tree?expanded=true&pageSize=5
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 21. Filhas diretas da raiz criada -> 200 com a filha (level 2, children = [])
+GET {{baseUrl}}/categories/{{createRoot.response.body.id}}/children
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 22. Filhas de uuid inexistente -> 404 CATEGORY_NOT_FOUND
+GET {{baseUrl}}/categories/{{missingId}}/children
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 23. Busca por id da raiz -> 200 com level 1 e childrenCount 1
+GET {{baseUrl}}/categories/{{createRoot.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 24. Busca por id da filha -> 200 com level 2, path "<raiz> / <filha>" e childrenCount 1
 GET {{baseUrl}}/categories/{{createChild.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 16. Busca por uuid inexistente -> 404 CATEGORY_NOT_FOUND
+### 25. Busca por uuid inexistente -> 404 CATEGORY_NOT_FOUND
 GET {{baseUrl}}/categories/{{missingId}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 17. Alteração da filha (nome, ordem e destaque; slug e descrição omitidos são mantidos)
-### -> 200 com os novos valores e path refletindo o novo nome
+### 26. Alteração da filha (nome, ordem e destaque; slug e descrição omitidos são mantidos)
+### -> 200 com os novos valores, updatedAt atualizado e path refletindo o novo nome
 PUT {{baseUrl}}/categories/{{createChild.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 Content-Type: application/json
@@ -164,22 +212,36 @@ Content-Type: application/json
   "isHighlighted": true
 }
 
-### 18. Exclusão da raiz, que tem filha -> 409 CATEGORY_HAS_CHILDREN (nada é excluído)
+### 27. Exclusão da raiz, que tem filha -> 409 CATEGORY_HAS_CHILDREN (nada é excluído)
 DELETE {{baseUrl}}/categories/{{createRoot.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 19. Exclusão da neta (folha) -> 204 sem corpo
+### 28. Exclusão da neta (folha) -> 204 sem corpo
 DELETE {{baseUrl}}/categories/{{createGrandchild.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 20. Busca da neta excluída -> 404 CATEGORY_NOT_FOUND
+### 29. Busca da neta excluída -> 404 CATEGORY_NOT_FOUND
 GET {{baseUrl}}/categories/{{createGrandchild.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 21. Limpeza: exclusão da filha, agora folha -> 204
+### 30. Busca da filha após a exclusão da neta -> 200 com childrenCount 0 (reduzido em 1)
+GET {{baseUrl}}/categories/{{createChild.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 31. PUT no id da neta excluída -> 404 CATEGORY_NOT_FOUND e nada é criado
+PUT {{baseUrl}}/categories/{{createGrandchild.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Neta Ressuscitada {{$timestamp}}",
+  "slug": "neta-ressuscitada-{{$timestamp}}"
+}
+
+### 32. Limpeza: exclusão da filha, agora folha -> 204
 DELETE {{baseUrl}}/categories/{{createChild.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}
 
-### 22. Limpeza: exclusão da raiz, agora folha -> 204
+### 33. Limpeza: exclusão da raiz, agora folha -> 204
 DELETE {{baseUrl}}/categories/{{createRoot.response.body.id}}
 Authorization: Bearer {{loginAdmin.response.body.token}}

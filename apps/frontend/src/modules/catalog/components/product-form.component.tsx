@@ -24,7 +24,7 @@ import {
   type ProductImageFormData,
 } from '../data/product.schema';
 import type { BrandSelectState } from '../data/use-brand-options.hook';
-import type { ProductSelectOption } from '../data/use-product-options.hook';
+import type { CategorySelectState } from '../data/use-category-options.hook';
 import { ProductThumbnail } from './product-thumbnail.component';
 
 type ProductFormProps = {
@@ -33,8 +33,8 @@ type ProductFormProps = {
   isEditing: boolean;
   /** Seletor de marca com busca na API: "Sem marca" (quando não há busca) seguida das marcas carregadas. */
   brandSelect: BrandSelectState;
-  /** Categorias rotuladas pelo caminho completo. */
-  categoryOptions: ProductSelectOption[];
+  /** Seletor de categoria com busca na API, rotulado pelo caminho completo. */
+  categorySelect: CategorySelectState;
   onSubmit: FormEventHandler<HTMLFormElement>;
   cancelHref: string;
 };
@@ -124,7 +124,7 @@ export function ProductForm({
   form,
   isEditing,
   brandSelect,
-  categoryOptions,
+  categorySelect,
   onSubmit,
   cancelHref,
 }: ProductFormProps) {
@@ -242,7 +242,7 @@ export function ProductForm({
                 <Combobox
                   id="product-category"
                   ref={field.ref}
-                  options={categoryOptions}
+                  options={categorySelect.options}
                   value={field.value ?? ''}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
@@ -250,6 +250,11 @@ export function ProductForm({
                   emptyText="Nenhuma categoria encontrada."
                   invalid={Boolean(errors.categoryId)}
                   disabled={isSubmitting}
+                  onSearchChange={categorySelect.setSearch}
+                  selectedOption={categorySelect.selectedOption}
+                  loading={categorySelect.loading}
+                  hasMore={categorySelect.hasMore}
+                  onLoadMore={categorySelect.loadMore}
                 />
               )}
             />

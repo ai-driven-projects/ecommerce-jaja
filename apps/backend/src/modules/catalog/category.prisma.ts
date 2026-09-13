@@ -1,19 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { Id, Result, TransactionContext } from '@mentoria-360/shared';
 import {
-  CATEGORY_MAX_DEPTH,
   Category,
   CategoryDTO,
   CategoryErrors,
   CategoryRepository,
+  CategoryTreeNodeDTO,
   FindCategoriesQuery,
   FindCategoryByIdQuery,
+  FindCategoryChildrenQuery,
+  FindCategoryTreeQuery,
 } from '@jaja/catalog';
 import { Category as CategoryRow, Prisma } from '@prisma/client';
 import {
   PrismaService,
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
+import { folded, toPrefixTsQuery } from './text-search.sql.js';
 
 // Maps the unique constraints of `categories` to the domain error they represent.
 // A primary key collision only happens when creating with the id of a deleted
@@ -31,37 +34,153 @@ const UNIQUE_VIOLATIONS = [
   },
 ] as const;
 
-// Extra hops allowed beyond the maximum depth when walking up the hierarchy, so
-// a loop stored by corrupted data can never make the walk spin forever.
-const MAX_ANCESTOR_HOPS = CATEGORY_MAX_DEPTH + 3;
+// Base selection of the read side. The depth is at most 3, so two self-joins
+// (`p` parent, `g` grandparent) are enough to compute `level` and `path`, and
+// they never filter: an ancestor that fails the filters still names the path.
+const BASE_FROM = Prisma.sql`
+  FROM categories c
+  LEFT JOIN categories p ON p.id = c.parent_id
+  LEFT JOIN categories g ON g.id = p.parent_id`;
 
-const PATH_SEPARATOR = ' / ';
+const LEVEL = Prisma.sql`CASE WHEN c.parent_id IS NULL THEN 1 WHEN p.parent_id IS NULL THEN 2 ELSE 3 END`;
 
-type Lineage = { level: number; path: string };
+const PATH = Prisma.sql`concat_ws(' / ', g.name, p.name, c.name)`;
+
+const BASE_SELECT = Prisma.sql`
+  SELECT c.id, c.name, c.slug, c.description, c.parent_id, c."order",
+    c.is_highlighted, c.image_url, c.is_active, c.created_at, c.updated_at,
+    ${LEVEL} AS level,
+    ${PATH} AS path,
+    (SELECT count(*)::int FROM categories k
+      WHERE k.parent_id = c.id AND k.deleted_at IS NULL) AS children_count
+  ${BASE_FROM}`;
+
+// Full-text document of a category: name and slug weigh more than the description.
+const SEARCH_DOCUMENT = Prisma.raw(
+  [
+    `setweight(to_tsvector('simple', ${folded('c.name')}), 'A')`,
+    `setweight(to_tsvector('simple', replace(c.slug, '-', ' ')), 'A')`,
+    `setweight(to_tsvector('simple', ${folded("coalesce(c.description, '')")}), 'B')`,
+  ].join(' || '),
+);
+
+// The database collation orders by bytes (uppercase first); the ICU collation
+// ignores case and accents. `c.id` keeps pages stable.
+const PATH_ORDER = Prisma.sql`${PATH} COLLATE "pt-BR-x-icu", c.id`;
+const SIBLING_ORDER = Prisma.sql`c."order", c.name COLLATE "pt-BR-x-icu", c.id`;
+
+type CategoryReadRow = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent_id: string | null;
+  order: number;
+  is_highlighted: boolean;
+  image_url: string | null;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+  level: number;
+  path: string;
+  children_count: number;
+};
+
+type Paging = { page: number; pageSize: number };
 
 @Injectable()
 export class CategoryPrisma implements CategoryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Read side (CQRS): rows are mapped straight to `CategoryDTO`, without the
-  // entity. One query loads every live category; `level`/`path` are computed in
-  // memory and the `isActive` filter runs only afterwards, so a filtered category
-  // keeps the path of an ancestor that did not pass the filter.
+  // Read side (CQRS): raw SQL rows are mapped straight to DTOs, without the
+  // entity. Prisma has neither full-text search on Postgres, a collation-aware
+  // `orderBy`, nor a way to compute `level`/`path`/`childrenCount` per row.
   readonly findCategories: FindCategoriesQuery = {
     execute: (filter) =>
       Result.tryAsync(async () => {
-        const rows = await this.prisma.client.category.findMany({
-          where: { deletedAt: null },
-        });
-        const lineageOf = this.lineageResolver(rows);
+        const { page, pageSize } = this.paging(filter);
+        const tsQuery = filter.search ? toPrefixTsQuery(filter.search) : null;
 
-        const categories = rows.map((row) => this.toDTO(row, lineageOf(row)));
-        const filtered =
-          typeof filter?.isActive === 'boolean'
-            ? categories.filter((category) => category.isActive === filter.isActive)
-            : categories;
+        const conditions = [Prisma.sql`c.deleted_at IS NULL`];
+        if (typeof filter.isActive === 'boolean') {
+          conditions.push(Prisma.sql`c.is_active = ${filter.isActive}`);
+        }
+        if (filter.maxLevel) {
+          conditions.push(Prisma.sql`${LEVEL} <= ${filter.maxLevel}`);
+        }
+        // The category, its children and its grandchildren (the whole subtree).
+        if (filter.excludeSubtreeOf && this.isUuid(filter.excludeSubtreeOf)) {
+          const rootId = filter.excludeSubtreeOf;
+          conditions.push(
+            Prisma.sql`c.id <> ${rootId}::uuid
+              AND c.parent_id IS DISTINCT FROM ${rootId}::uuid
+              AND p.parent_id IS DISTINCT FROM ${rootId}::uuid`,
+          );
+        }
+        if (tsQuery) {
+          conditions.push(Prisma.sql`(${SEARCH_DOCUMENT}) @@ to_tsquery('simple', ${tsQuery})`);
+        }
+        const where = Prisma.join(conditions, ' AND ');
 
-        return filtered.sort((a, b) => a.path.localeCompare(b.path, 'pt-BR'));
+        // With a search the best matches come first (name and slug before description).
+        const orderBy = tsQuery
+          ? Prisma.sql`ts_rank(${SEARCH_DOCUMENT}, to_tsquery('simple', ${tsQuery})) DESC, ${PATH_ORDER}`
+          : PATH_ORDER;
+
+        const client = this.prisma.client;
+        const [counts, rows] = await Promise.all([
+          client.$queryRaw<{ total: number }[]>`SELECT count(*)::int AS total ${BASE_FROM} WHERE ${where}`,
+          client.$queryRaw<CategoryReadRow[]>`
+            ${BASE_SELECT}
+            WHERE ${where}
+            ORDER BY ${orderBy}
+            LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
+        ]);
+
+        return this.toPage(rows.map((row) => this.toDTO(row)), counts[0]?.total ?? 0, page, pageSize);
+      }),
+  };
+
+  // Roots of the page and their count; with `expanded`, one query for the
+  // children of those roots and one for the grandchildren (at most 4 queries).
+  readonly findCategoryTree: FindCategoryTreeQuery = {
+    execute: (filter) =>
+      Result.tryAsync(async () => {
+        const { page, pageSize } = this.paging(filter);
+        const where = Prisma.sql`c.deleted_at IS NULL AND c.parent_id IS NULL`;
+
+        const client = this.prisma.client;
+        const [counts, rootRows] = await Promise.all([
+          client.$queryRaw<{ total: number }[]>`SELECT count(*)::int AS total FROM categories c WHERE ${where}`,
+          client.$queryRaw<CategoryReadRow[]>`
+            ${BASE_SELECT}
+            WHERE ${where}
+            ORDER BY ${SIBLING_ORDER}
+            LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
+        ]);
+
+        const roots = rootRows.map((row) => this.toNode(row));
+        if (filter.expanded) {
+          const children = await this.attachChildren(roots);
+          await this.attachChildren(children);
+        }
+
+        return this.toPage(roots, counts[0]?.total ?? 0, page, pageSize);
+      }),
+  };
+
+  readonly findCategoryChildren: FindCategoryChildrenQuery = {
+    execute: (parentId) =>
+      Result.tryAsync(async () => {
+        // A malformed id never matches the uuid column; skip the database error.
+        if (!this.isUuid(parentId)) return null;
+
+        const [parent, rows] = await Promise.all([
+          this.findReadRow(parentId),
+          this.findChildRows([parentId]),
+        ]);
+        if (!parent) return null;
+        return rows.map((row) => this.toNode(row));
       }),
   };
 
@@ -71,24 +190,8 @@ export class CategoryPrisma implements CategoryRepository {
         // A malformed id never matches the uuid column; skip the database error.
         if (!this.isUuid(id)) return null;
 
-        const row = await this.prisma.client.category.findFirst({
-          where: { id, deletedAt: null },
-        });
-        if (!row) return null;
-
-        // Walks up the live ancestors (at most two extra queries in a valid tree).
-        const chain: CategoryRow[] = [row];
-        let parentId = row.parentId;
-        while (parentId && chain.length <= MAX_ANCESTOR_HOPS) {
-          const parent = await this.prisma.client.category.findFirst({
-            where: { id: parentId, deletedAt: null },
-          });
-          if (!parent) break;
-          chain.push(parent);
-          parentId = parent.parentId;
-        }
-
-        return this.toDTO(row, this.lineageResolver(chain)(row));
+        const row = await this.findReadRow(id);
+        return row ? this.toDTO(row) : null;
       }),
   };
 
@@ -189,31 +292,47 @@ export class CategoryPrisma implements CategoryRepository {
     });
   }
 
-  // Returns a memoized function that computes `level` (root = 1) and `path` of a
-  // row from the given rows. A parent missing from them ends the chain.
-  private lineageResolver(rows: CategoryRow[]): (row: CategoryRow) => Lineage {
-    const byId = new Map(rows.map((row) => [row.id, row]));
-    const memo = new Map<string, Lineage>();
-
-    const resolve = (row: CategoryRow, hops: number): Lineage => {
-      const cached = memo.get(row.id);
-      if (cached) return cached;
-
-      const parent = row.parentId ? byId.get(row.parentId) : undefined;
-      const lineage =
-        parent && hops < MAX_ANCESTOR_HOPS
-          ? this.childLineage(resolve(parent, hops + 1), row.name)
-          : { level: 1, path: row.name };
-
-      memo.set(row.id, lineage);
-      return lineage;
-    };
-
-    return (row) => resolve(row, 0);
+  private async findReadRow(id: string): Promise<CategoryReadRow | null> {
+    const rows = await this.prisma.client.$queryRaw<CategoryReadRow[]>`
+      ${BASE_SELECT}
+      WHERE c.deleted_at IS NULL AND c.id = ${id}::uuid`;
+    return rows[0] ?? null;
   }
 
-  private childLineage(parent: Lineage, name: string): Lineage {
-    return { level: parent.level + 1, path: `${parent.path}${PATH_SEPARATOR}${name}` };
+  // Live children of the given parents, in sibling order.
+  private async findChildRows(parentIds: string[]): Promise<CategoryReadRow[]> {
+    if (parentIds.length === 0) return [];
+
+    return this.prisma.client.$queryRaw<CategoryReadRow[]>`
+      ${BASE_SELECT}
+      WHERE c.deleted_at IS NULL AND c.parent_id = ANY(${parentIds}::uuid[])
+      ORDER BY ${SIBLING_ORDER}`;
+  }
+
+  // Loads the children of `nodes` in one query and fills their `children`
+  // (the query order is kept per parent). Returns the loaded children.
+  private async attachChildren(nodes: CategoryTreeNodeDTO[]): Promise<CategoryTreeNodeDTO[]> {
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const rows = await this.findChildRows([...byId.keys()]);
+
+    const children = rows.map((row) => this.toNode(row));
+    for (const child of children) {
+      byId.get(child.parentId as string)?.children.push(child);
+    }
+    return children;
+  }
+
+  // Normalizes the paging the controller already validated, so a direct call
+  // with invalid numbers still produces a valid LIMIT/OFFSET.
+  private paging(filter: Paging): Paging {
+    return {
+      page: Math.max(1, Math.trunc(filter.page) || 1),
+      pageSize: Math.max(1, Math.trunc(filter.pageSize) || 1),
+    };
+  }
+
+  private toPage<T>(items: T[], total: number, page: number, pageSize: number) {
+    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
 
   private clientFor(tx?: TransactionContext) {
@@ -318,21 +437,26 @@ export class CategoryPrisma implements CategoryRepository {
     };
   }
 
-  private toDTO(row: CategoryRow, lineage: Lineage): CategoryDTO {
+  private toDTO(row: CategoryReadRow): CategoryDTO {
     return {
       id: row.id,
       name: row.name,
       slug: row.slug,
       description: row.description,
-      parentId: row.parentId,
+      parentId: row.parent_id,
       order: row.order,
-      isHighlighted: row.isHighlighted,
-      imageUrl: row.imageUrl,
-      isActive: row.isActive,
-      level: lineage.level,
-      path: lineage.path,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      isHighlighted: row.is_highlighted,
+      imageUrl: row.image_url,
+      isActive: row.is_active,
+      level: row.level,
+      path: row.path,
+      childrenCount: row.children_count,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
     };
+  }
+
+  private toNode(row: CategoryReadRow): CategoryTreeNodeDTO {
+    return { ...this.toDTO(row), children: [] };
   }
 }

@@ -8,7 +8,7 @@ import { toErrorMessage } from '@/shared/util/api-client.util';
 import { buildListHref, pageParam, parsePage, type ListQueryChanges } from '@/shared/util/list-query.util';
 import { deleteProduct, listProducts, type CatalogProductPage } from './product.api';
 import { useBrandOptions } from './use-brand-options.hook';
-import { useProductOptions } from './use-product-options.hook';
+import { useCategoryOptions } from './use-category-options.hook';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -48,9 +48,10 @@ function parseIsActive(value: string | null): boolean | undefined {
  * Listagem administrativa de produtos com o estado na URL: `page`, `search`,
  * `brandId`, `categoryId` e `isActive` vêm de `useSearchParams` (recarregar ou
  * compartilhar a URL reproduz a lista). Mudar um filtro faz `router.replace`
- * sem `page`; a busca aplica ~300 ms depois da última tecla. Carrega também as
- * opções dos filtros: categorias de uma vez e marcas com busca na API e
- * "Carregar mais" (`brandSelect`). `loading` é derivado: vale `true` enquanto a
+ * sem `page`; a busca aplica ~300 ms depois da última tecla. Monta também os
+ * seletores dos filtros, ambos com busca na API e "Carregar mais": marcas
+ * (`brandSelect`) e categorias pelo caminho (`categorySelect`), com a
+ * `categoryId` da URL já rotulada. `loading` é derivado: vale `true` enquanto a
  * página exibida não corresponde à URL atual. `listQuery` é a query string
  * atual, levada aos links do formulário para o retorno à mesma lista.
  */
@@ -68,8 +69,8 @@ export function useProducts() {
   const categoryId = searchParams.get('categoryId') ?? '';
   const isActive = parseIsActive(searchParams.get('isActive'));
 
-  const { categoryOptions } = useProductOptions();
   const brandSelect = useBrandOptions({ selectedId: brandId || undefined });
+  const categorySelect = useCategoryOptions({ selectedId: categoryId || undefined });
 
   // Texto do campo de busca; acompanha a URL quando ela muda por fora (voltar/avançar, limpar).
   const [searchInput, setSearchInput] = useState(search);
@@ -190,7 +191,7 @@ export function useProducts() {
     isActive,
     hasFilters: search !== '' || brandId !== '' || categoryId !== '' || isActive !== undefined,
     brandSelect,
-    categoryOptions,
+    categorySelect,
     listQuery,
     setFilter,
     setPage,

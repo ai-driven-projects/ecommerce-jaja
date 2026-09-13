@@ -12,7 +12,7 @@ import { ApiError, toErrorMessage } from '@/shared/util/api-client.util';
 import { createProduct, getProduct, updateProduct, type CatalogProduct, type ProductInput } from './product.api';
 import { PRODUCT_DEFAULT_UNIT, productSchema, type ProductFormData } from './product.schema';
 import { useBrandOptions, type BrandOption, type BrandSelectState } from './use-brand-options.hook';
-import { useProductOptions } from './use-product-options.hook';
+import { useCategoryOptions, type CategoryOption } from './use-category-options.hook';
 
 /** Valor da opção "Sem marca"; vira `brandId: null` no envio. */
 export const NO_BRAND_VALUE = '';
@@ -92,10 +92,11 @@ export type UseProductFormOptions = {
 };
 
 /**
- * Estado do formulário de produto em página. Carrega as opções de categoria
- * (rotuladas pelo `path`), o seletor de marca com busca na API e "Carregar
- * mais" ("Sem marca" + marcas; a marca do produto carregado já vem rotulada
- * pelo `brandName`) e, com `id`, o produto, convertendo os preços de centavos
+ * Estado do formulário de produto em página. Monta os seletores de categoria
+ * (`categorySelect`, rotulada pelo caminho; a do produto carregado vem pelo
+ * `categoryPath`) e de marca ("Sem marca" + marcas; a do produto carregado vem
+ * pelo `brandName`), ambos com busca na API e "Carregar mais", e, com `id`,
+ * carrega o produto, convertendo os preços de centavos
  * para reais; `404` (ou id malformado) vira `loadError.notFound`. No envio,
  * converte reais para centavos, gera `images[].order` pela posição e manda a
  * lista completa; `PRODUCT_SLUG_ALREADY_EXISTS`, `PRODUCT_SKU_ALREADY_EXISTS`,
@@ -117,8 +118,6 @@ export function useProductForm({ id, returnQuery = '' }: UseProductFormOptions =
   });
   const { reset, setError, control } = form;
 
-  const { categoryOptions, loading: optionsLoading } = useProductOptions();
-
   // Marca do produto carregado: rotula o valor inicial sem esperar a página em que ela aparece.
   const [loadedBrand, setLoadedBrand] = useState<BrandOption | null>(null);
   const brandId = useWatch({ control, name: 'brandId' }) ?? NO_BRAND_VALUE;
@@ -133,10 +132,18 @@ export function useProductForm({ id, returnQuery = '' }: UseProductFormOptions =
     selectedOption: brandId ? brands.selectedOption : NO_BRAND_OPTION,
   };
 
+  // Categoria do produto carregado: rotulada pelo `categoryPath`, sem buscar a categoria por id.
+  const [loadedCategory, setLoadedCategory] = useState<CategoryOption | null>(null);
+  const categoryId = useWatch({ control, name: 'categoryId' }) ?? '';
+  const categorySelect = useCategoryOptions({
+    selectedId: categoryId || undefined,
+    selectedLabel: loadedCategory && loadedCategory.value === categoryId ? loadedCategory.label : undefined,
+  });
+
   const [loadState, setLoadState] = useState<LoadState | null>(null);
   const productLoaded = !isEditing || loadState?.id === id;
   const loadError = isEditing && loadState?.id === id ? loadState.error : null;
-  const loading = !loadError && (optionsLoading || !productLoaded);
+  const loading = !loadError && !productLoaded;
 
   useEffect(() => {
     if (!id || !token) return;
@@ -150,6 +157,7 @@ export function useProductForm({ id, returnQuery = '' }: UseProductFormOptions =
         setLoadedBrand(
           product.brandId && product.brandName ? { value: product.brandId, label: product.brandName } : null,
         );
+        setLoadedCategory({ value: product.categoryId, label: product.categoryPath });
         setLoadState({ id, error: null });
       })
       .catch((error: unknown) => {
@@ -223,7 +231,7 @@ export function useProductForm({ id, returnQuery = '' }: UseProductFormOptions =
     loading,
     loadError,
     brandSelect,
-    categoryOptions,
+    categorySelect,
     listHref,
     submit: form.handleSubmit(onSubmit),
   };

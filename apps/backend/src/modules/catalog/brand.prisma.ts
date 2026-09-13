@@ -13,6 +13,7 @@ import {
   PrismaService,
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
+import { folded, toPrefixTsQuery } from './text-search.sql.js';
 
 // Maps the unique constraints of `brands` to the domain error they represent.
 // A primary key collision only happens when creating with the id of a deleted
@@ -22,15 +23,6 @@ const UNIQUE_VIOLATIONS = [
   { field: 'slug', constraint: 'brands_slug_key', code: BrandErrors.BRAND_SLUG_ALREADY_EXISTS },
   { field: 'id', constraint: 'brands_pkey', code: BrandErrors.BRAND_NOT_FOUND },
 ] as const;
-
-// Accent folding for the brand search, in both cases, done with `translate` so
-// the database needs no `unaccent` extension.
-const ACCENTED = 'áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ';
-const UNACCENTED = 'aaaaaeeeeiiiiooooouuuucnAAAAAEEEEIIIIOOOOOUUUUCN';
-
-function folded(expression: string): string {
-  return `lower(translate(${expression}, '${ACCENTED}', '${UNACCENTED}'))`;
-}
 
 // Full-text document of a brand: name and slug weigh more than the description.
 const SEARCH_DOCUMENT = Prisma.raw(
@@ -44,25 +36,6 @@ const SEARCH_DOCUMENT = Prisma.raw(
 // The database collation orders by bytes (uppercase first); the ICU collation
 // orders brand names ignoring case and accents. `id` keeps pages stable.
 const NAME_ORDER = Prisma.raw('name COLLATE "pt-BR-x-icu", id');
-
-const MAX_SEARCH_TERMS = 10;
-
-/**
- * Turns free text into a prefix tsquery where every term must match the start
- * of a word: `"Café  3M"` → `"cafe:* & 3m:*"`. Terms keep only `[a-z0-9]`, so
- * the query is always valid; text without terms yields `null` (no search).
- */
-function toPrefixTsQuery(search: string): string | null {
-  const terms = search
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean)
-    .slice(0, MAX_SEARCH_TERMS);
-
-  return terms.length > 0 ? terms.map((term) => `${term}:*`).join(' & ') : null;
-}
 
 type BrandSearchRow = {
   id: string;

@@ -1,3 +1,5 @@
 export * from './category.repository'
 export * from './find-categories.query'
 export * from './find-category-by-id.query'
+export * from './find-category-children.query'
+export * from './find-category-tree.query'

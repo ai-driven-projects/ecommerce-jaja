@@ -23,20 +23,37 @@ export function catalogBrandRoute(id: string, query?: string): string {
   return withQuery(`${CATALOG_BRANDS_ROUTE}/${encodeURIComponent(id)}`, query);
 }
 
-/** Árvore de categorias do catálogo. */
+/** Árvore paginada de categorias do catálogo. */
 export const CATALOG_CATEGORIES_ROUTE = `${CATALOG_ROUTE}/categories`;
+
+/** Lista de categorias com a página e a busca de `query` (ex.: retorno do formulário). */
+export function catalogCategoriesRoute(query?: string): string {
+  return withQuery(CATALOG_CATEGORIES_ROUTE, query);
+}
 
 /** Formulário de criação de categoria. */
 export const CATALOG_CATEGORY_NEW_ROUTE = `${CATALOG_CATEGORIES_ROUTE}/new`;
 
-/** Formulário de criação de subcategoria, com a categoria pai pré-selecionada. */
-export function catalogSubcategoryNewRoute(parentId: string): string {
-  return `${CATALOG_CATEGORY_NEW_ROUTE}?parentId=${encodeURIComponent(parentId)}`;
+/** Criação de categoria levando a query da lista, para voltar à mesma página e busca. */
+export function catalogCategoryNewRoute(query?: string): string {
+  return withQuery(CATALOG_CATEGORY_NEW_ROUTE, query);
 }
 
-/** Formulário de edição de uma categoria. */
-export function catalogCategoryRoute(id: string): string {
-  return `${CATALOG_CATEGORIES_ROUTE}/${encodeURIComponent(id)}`;
+/**
+ * Criação de subcategoria com a pai pré-selecionada (`?parentId=`), levando
+ * também a query da lista para o retorno.
+ */
+export function catalogSubcategoryNewRoute(parentId: string, query?: string): string {
+  const params = new URLSearchParams(query?.replace(/^\?/, '') ?? '');
+  params.delete('parentId');
+  const listQuery = params.toString();
+  const parentQuery = `parentId=${encodeURIComponent(parentId)}`;
+  return withQuery(CATALOG_CATEGORY_NEW_ROUTE, listQuery ? `${parentQuery}&${listQuery}` : parentQuery);
+}
+
+/** Formulário de edição de uma categoria; `query` é a da lista, usada no retorno. */
+export function catalogCategoryRoute(id: string, query?: string): string {
+  return withQuery(`${CATALOG_CATEGORIES_ROUTE}/${encodeURIComponent(id)}`, query);
 }
 
 /** Anexa a query string (com ou sem `?`) à rota; vazia devolve a rota como está. */

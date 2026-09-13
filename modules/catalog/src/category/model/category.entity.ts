@@ -24,8 +24,9 @@ export interface CategoryProps extends EntityProps {
   isActive?: boolean | null
 }
 
-// `level` and `path` depend on other categories, so they are not part of the
-// entity: they are computed by the read side and exposed only in `CategoryDTO`.
+// `level`, `path` and `childrenCount` depend on other categories, so they are
+// not part of the entity: they are computed by the read side and exposed only
+// in `CategoryDTO`.
 export class Category extends Entity<Category, CategoryProps> {
   private constructor(props: CategoryProps) {
     super(props)

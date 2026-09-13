@@ -135,6 +135,9 @@ export function Combobox({
             >
               {loading ? 'Carregando…' : loadMoreLabel}
             </button>
+          ) : loading && filtered.length > 0 ? (
+            // Carregando com opções já na lista (ex.: opção fixa no topo ou próxima página a caminho).
+            <p className="px-2 py-1.5 text-sm text-muted-foreground">Carregando…</p>
           ) : null}
         </div>
       </PopoverContent>

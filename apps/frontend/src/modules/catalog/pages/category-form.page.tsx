@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Button } from '@/shared/components/ui/button';
 import { FormSkeleton } from '@/shared/components/ui/form-skeleton';
 import { PageSectionHeader } from '@/shared/components/ui/page-section-header';
-import { CATALOG_CATEGORIES_ROUTE } from '@/shared/navigation/catalog-routes';
 import { CategoryForm } from '../components/category-form.component';
 import { useCategoryForm } from '../data/use-category-form.hook';
 
@@ -13,14 +12,16 @@ type CategoryFormPageProps = {
   id?: string;
   /** Pai pré-selecionada na criação (`?parentId=`). */
   parentId?: string;
+  /** Query string da lista (sem `?`) de onde o formulário foi aberto; salvar e cancelar voltam para ela. */
+  returnQuery?: string;
 };
 
 /**
  * Criação (`/admin/catalog/categories/new`, aceita `?parentId=`) e edição
  * (`/admin/catalog/categories/:id`) de categoria em página.
  */
-export function CategoryFormPage({ id, parentId }: CategoryFormPageProps) {
-  const { form, isEditing, loading, parentOptions, submit } = useCategoryForm({ id, parentId });
+export function CategoryFormPage({ id, parentId, returnQuery }: CategoryFormPageProps) {
+  const { form, isEditing, loading, listHref, parentSelect, submit } = useCategoryForm({ id, parentId, returnQuery });
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -33,7 +34,7 @@ export function CategoryFormPage({ id, parentId }: CategoryFormPageProps) {
         }
         aside={
           <Button asChild variant="outline" size="sm">
-            <Link href={CATALOG_CATEGORIES_ROUTE}>← Voltar para categorias</Link>
+            <Link href={listHref}>← Voltar para categorias</Link>
           </Button>
         }
       />
@@ -44,9 +45,9 @@ export function CategoryFormPage({ id, parentId }: CategoryFormPageProps) {
         <CategoryForm
           form={form}
           isEditing={isEditing}
-          parentOptions={parentOptions}
+          parentSelect={parentSelect}
           onSubmit={submit}
-          cancelHref={CATALOG_CATEGORIES_ROUTE}
+          cancelHref={listHref}
         />
       )}
     </div>

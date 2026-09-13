@@ -3,6 +3,7 @@ export * from './components/brand-list.component';
 export * from './components/brand-logo.component';
 export * from './components/catalog-dashboard.component';
 export * from './components/category-form.component';
+export * from './components/category-search-list.component';
 export * from './components/category-tree.component';
 export * from './components/product-detail.component';
 export * from './components/product-form.component';

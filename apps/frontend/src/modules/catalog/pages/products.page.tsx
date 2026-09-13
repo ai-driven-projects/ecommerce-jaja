@@ -83,7 +83,7 @@ export function ProductsPage() {
     isActive,
     hasFilters,
     brandSelect,
-    categoryOptions,
+    categorySelect,
     listQuery,
     setFilter,
     setPage,
@@ -96,7 +96,11 @@ export function ProductsPage() {
     () => (brandSelect.search.trim() ? brandSelect.options : [ALL_BRANDS_OPTION, ...brandSelect.options]),
     [brandSelect.search, brandSelect.options],
   );
-  const categoryFilterOptions = useMemo(() => [ALL_CATEGORIES_OPTION, ...categoryOptions], [categoryOptions]);
+  // "Todas as categorias" também só aparece sem busca no seletor.
+  const categoryFilterOptions = useMemo(
+    () => (categorySelect.search.trim() ? categorySelect.options : [ALL_CATEGORIES_OPTION, ...categorySelect.options]),
+    [categorySelect.search, categorySelect.options],
+  );
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -152,6 +156,11 @@ export function ProductsPage() {
             onChange={(value) => setFilter({ categoryId: value })}
             placeholder="Todas as categorias"
             emptyText="Nenhuma categoria encontrada."
+            onSearchChange={categorySelect.setSearch}
+            selectedOption={categorySelect.selectedOption}
+            loading={categorySelect.loading}
+            hasMore={categorySelect.hasMore}
+            onLoadMore={categorySelect.loadMore}
           />
         </div>
 

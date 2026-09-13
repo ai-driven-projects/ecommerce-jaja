@@ -12,10 +12,14 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { Id } from '@mentoria-360/shared';
 import {
   CategoryDTO,
   CategoryErrors,
   CategoryFiltersDTO,
+  CategoryPageDTO,
+  CategoryTreeNodeDTO,
+  CategoryTreePageDTO,
   DeleteCategory,
   SaveCategory,
   SaveCategoryInput,
@@ -37,6 +41,11 @@ export type SaveCategoryBody = {
   isActive?: boolean | null;
 };
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
+// Precedence of the HTTP status: 404 > 409 > 400 (anything else).
 const NOT_FOUND_CODES: string[] = [
   CategoryErrors.CATEGORY_NOT_FOUND,
   CategoryErrors.PARENT_CATEGORY_NOT_FOUND,
@@ -69,16 +78,58 @@ export class CategoryController {
   }
 
   @Get()
-  async findAll(@Query('isActive') isActive?: string): Promise<CategoryDTO[]> {
-    const filter: CategoryFiltersDTO = {};
+  async findAll(
+    @Query('page') page?: unknown,
+    @Query('pageSize') pageSize?: unknown,
+    @Query('search') search?: unknown,
+    @Query('isActive') isActive?: unknown,
+    @Query('maxLevel') maxLevel?: unknown,
+    @Query('excludeSubtreeOf') excludeSubtreeOf?: unknown,
+  ): Promise<CategoryPageDTO> {
+    const filter: CategoryFiltersDTO = this.paging(page, pageSize);
+    if (typeof search === 'string' && search.trim()) filter.search = search.trim();
     // Any value other than exactly "true" or "false" is ignored.
     if (isActive === 'true' || isActive === 'false') {
       filter.isActive = isActive === 'true';
+    }
+    const level = this.maxLevel(maxLevel);
+    if (level) filter.maxLevel = level;
+    // A malformed id is ignored instead of excluding nothing with an error.
+    if (typeof excludeSubtreeOf === 'string' && Id.isValid(excludeSubtreeOf)) {
+      filter.excludeSubtreeOf = excludeSubtreeOf;
     }
 
     const result = await this.categoryPrisma.findCategories.execute(filter);
 
     if (result.isFailure) this.throwFailure(result.errors);
+    return result.instance;
+  }
+
+  // Declared before `:id` so "tree" is never taken as an id.
+  @Get('tree')
+  async findTree(
+    @Query('page') page?: unknown,
+    @Query('pageSize') pageSize?: unknown,
+    @Query('expanded') expanded?: unknown,
+  ): Promise<CategoryTreePageDTO> {
+    const result = await this.categoryPrisma.findCategoryTree.execute({
+      ...this.paging(page, pageSize),
+      // Only exactly "true" expands; any other value keeps the tree collapsed.
+      expanded: expanded === 'true',
+    });
+
+    if (result.isFailure) this.throwFailure(result.errors);
+    return result.instance;
+  }
+
+  @Get(':id/children')
+  async findChildren(@Param('id') id: string): Promise<CategoryTreeNodeDTO[]> {
+    const result = await this.categoryPrisma.findCategoryChildren.execute(id);
+
+    if (result.isFailure) this.throwFailure(result.errors);
+    if (!result.instance) {
+      throw new NotFoundException([CategoryErrors.CATEGORY_NOT_FOUND]);
+    }
     return result.instance;
   }
 
@@ -113,7 +164,8 @@ export class CategoryController {
     if (result.isFailure) this.throwFailure(result.errors);
   }
 
-  // The use case returns only the id; `level` and `path` come from the query.
+  // The use case returns only the id; `level`, `path` and `childrenCount` come
+  // from the query.
   private async respondWith(id: string): Promise<CategoryDTO> {
     const result = await this.categoryPrisma.findCategoryById.execute(id);
 
@@ -136,6 +188,34 @@ export class CategoryController {
       imageUrl: body?.imageUrl,
       isActive: body?.isActive,
     };
+  }
+
+  // Invalid `page`/`pageSize` fall back to the defaults; `pageSize` is capped.
+  private paging(page: unknown, pageSize: unknown): { page: number; pageSize: number } {
+    return {
+      page: this.positiveInteger(page, DEFAULT_PAGE),
+      pageSize: Math.min(this.positiveInteger(pageSize, DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE),
+    };
+  }
+
+  private positiveInteger(value: unknown, fallback: number): number {
+    if (typeof value !== 'string' || !/^\d+$/.test(value.trim())) return fallback;
+    const parsed = Number(value.trim());
+    return Number.isSafeInteger(parsed) && parsed >= 1 ? parsed : fallback;
+  }
+
+  // Only exactly "1", "2" or "3"; any other value is ignored.
+  private maxLevel(value: unknown): CategoryFiltersDTO['maxLevel'] {
+    switch (value) {
+      case '1':
+        return 1;
+      case '2':
+        return 2;
+      case '3':
+        return 3;
+      default:
+        return undefined;
+    }
   }
 
   private throwFailure(errors: string[]): never {
