@@ -36,7 +36,7 @@ para uso inválido.
 | `doctor`  | 🔎 Doctor             | ação    | Verifica Node, npm, git, Docker, gh, dependências, submódulos, `.env`, banco e Prisma Client |
 | `setup`   | 🧰 Setup              | wizard  | .env, Docker, submódulos, dependências, banco, Prisma Client, build, reset*, migrations, seed |
 | `db`      | 🐘 Banco de dados     | menu    | `db:status`, `db:start`, `db:stop`, `db:logs`, `db:generate`, `db:migrate`, `db:seed`, `db:reset`, `db:studio` |
-| `scrape`  | 🕷️ Scraper da Kalunga | menu    | `scrape:products`, `scrape:categories`, `scrape:status` |
+| `scrape`  | 🕷️ Scraper da Kalunga | menu    | `scrape:products`, `scrape:seed`, `scrape:categories`, `scrape:status` |
 | `quality` | 🧪 Qualidade          | wizard  | lint, tipos, testes e build                                           |
 | `clean`   | 🧹 Limpeza            | wizard  | builds, caches, node_modules, lockfile e volume do banco              |
 | `deploy`  | 🚀 Deploy             | jornada | passos por área (`@prep`, `@db`, `@backend`, `@frontend`, `@cicd`) com estado detectado |
@@ -77,8 +77,8 @@ separadamente (`db:start` sobe o container se preciso; `db:migrate` e `db:seed` 
 
 ## Scraper da Kalunga
 
-Coleta o catálogo público de [kalunga.com.br](https://www.kalunga.com.br) para JSON, que depois
-será importado no banco. Fluxo de `scrape:products`:
+Coleta o catálogo público de [kalunga.com.br](https://www.kalunga.com.br) para JSON e, a partir
+dele, gera o seed do catálogo no backend (`scrape:seed`). Fluxo de `scrape:products`:
 
 1. Busca os **departamentos** (categorias principais) e pede para escolher quais raspar
    (checklist na paleta; no headless `--categorias=escolar,informatica`, por slug ou id).
@@ -92,6 +92,7 @@ será importado no banco. Fluxo de `scrape:products`:
    (`--sem-detalhes` pula essa etapa e grava só o que a listagem mostra).
 5. Grava `data/kalunga/categories/<slug>.json` e reconstrói `data/kalunga/brands.json` e
    `data/kalunga/index.json` (veja `data/kalunga/README.md`).
+6. Regenera o seed do backend a partir de tudo que está em `data/kalunga` (veja "Seed do backend").
 
 ```bash
 npm run cli -- scrape:categories                      # departamentos (com --grupos lista os grupos)
@@ -100,6 +101,33 @@ npm run cli -- scrape:products --categorias=escolar,gamers --produtos=50-100 --y
 npm run cli -- scrape:products --categorias=2 --produtos=30 --dry-run    # só mostra o plano
 npm run cli -- scrape:status                          # o que já existe em data/kalunga
 ```
+
+### Seed do backend
+
+O backend não conhece o CLI. Os seeds de catálogo (`apps/backend/prisma/seed/tasks/catalog-*.seed.ts`)
+leem só `apps/backend/prisma/seed/data/{brands,categories,products}.json`, já no formato do banco, e
+quem se adapta é o CLI: `scrape:seed` converte o que está em `data/kalunga` nesses arquivos
+(`scrape:products` faz o mesmo ao terminar).
+
+| arquivo           | conteúdo                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------ |
+| `brands.json`     | marcas com o slug normalizado pela regra do domínio, uma por slug                                  |
+| `categories.json` | árvore departamento → grupo → subgrupo com slugs únicos; as pais vêm antes das filhas (`parentSlug`) |
+| `products.json`   | produtos únicos por código (`sku`), preços em centavos, unidade, até 10 imagens, `brandSlug` e `categorySlug` |
+
+Com os arquivos gerados, o seed roda do jeito que preferir, com o mesmo resultado:
+
+```bash
+npm run cli -- scrape:seed                            # gera os JSON e pergunta se popula o banco
+npm run cli -- scrape:seed --popular --yes            # gera e roda só o seed de catálogo
+npm run cli -- scrape:seed --dry-run                  # mostra o que seria gerado, sem gravar
+npm run cli -- db:seed                                # seed completo (usuários + catálogo) pelo CLI
+npx prisma db seed                                    # dentro de apps/backend, sem o CLI
+npx prisma db seed -- --only=catalog                  # só marcas, categorias e produtos
+```
+
+Rodar o seed de novo é seguro (idempotente): marcas só são inseridas; categorias (por slug) e
+produtos (por sku) são atualizados, então edições feitas no admin nesses registros são sobrescritas.
 
 Outras opções: `--paralelo=4` (requisições simultâneas) e `--intervalo-ms=150` (pausa mínima entre
 requisições). Fontes usadas no site: `GET /apimenu/submenuTodasCategorias` (departamentos),
@@ -133,6 +161,7 @@ src/
     db/               db.commands.ts + lib.ts (docker compose, prisma, validação de credenciais)
     quality/ clean/ deploy/ monitor/   placeholders
     scrape/           scraper da Kalunga (scrape.commands.ts + kalunga/{api,client,parse,sampler,store,types}.ts)
+                      e conversão para o seed do backend (kalunga/seed/{brands,categories,products}.ts)
 data/kalunga/         JSON gerado pelo scraper (categorias, marcas e índice)
 ```
 

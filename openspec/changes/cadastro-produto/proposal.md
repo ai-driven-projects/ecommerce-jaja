@@ -1,0 +1,33 @@
+## Why
+
+Com marcas (funcionalidade 07) e categorias (funcionalidade 08) cadastradas, falta o produto: a entidade central do e-commerce, sem a qual não há o que listar, precificar nem vender. As regras "marca com produtos não pode ser excluída" e "categoria com produtos não pode ser excluída" também ficaram pendentes à espera do agregado `product`. Os dados raspados da Kalunga (1.200 entradas, 1.076 produtos únicos) permitem popular o catálogo com volume real, o que exige listagem paginada desde a primeira versão.
+
+## What Changes
+
+- **Pré-requisitos**: este change pressupõe aplicados, nesta ordem, `area-admin-base` (funcionalidade 06: `@AdminOnly()`, grupo `(shell)` e seção "Cadastros" do menu), o cadastro de marca (07: agregado `brand`, `BrandPrisma`, `api-client.util.ts`, `brand.api.ts`) e o cadastro de categoria (08: agregado `category`, `CategoryPrisma`, seeds de marcas e categorias). O change `cadastro-categoria` precisa ser arquivado antes deste.
+- **Domínio (`@jaja/catalog`)**: novo agregado `product` com os VOs `ProductName` (3–255), `ProductDescription` (até 5000, opcional), `MoneyCents` (inteiro ≥ 1) e `ProductImage` (`thumbUrl`, `largeUrl`, `order`); entidade com `name`, `slug` único, `sku` opcional e único, marca opcional, categoria obrigatória (qualquer nível), descrição, `priceCents`, `listPriceCents` (maior que o preço quando informado), `unit` (padrão `"unidade"`), até 10 imagens com `order` normalizado e `mainImage`, e `isActive`. Repositório com `findBySlug`, `findBySku`, `existsByBrandId` e `existsByCategoryId`; DTOs `ProductDTO`, `ProductListItemDTO`, `ProductPageDTO`; queries `FindProductsQuery` (paginada, com busca e filtros por marca, categoria com descendentes e status) e `FindProductByIdQuery`; casos de uso `SaveProduct` e `DeleteProduct` (soft delete). Testes unitários com jest.
+- **Regras pendentes de marca e categoria**: `DeleteBrand` passa a falhar com `BRAND_HAS_PRODUCTS` e `DeleteCategory` com `CATEGORY_HAS_PRODUCTS` (verificada após `CATEGORY_HAS_CHILDREN`) quando houver produtos não excluídos associados. **BREAKING (interno)**: os construtores de `DeleteBrand` e `DeleteCategory` passam a receber também o repositório de produto.
+- **Backend (`@jaja/backend`)**: models Prisma `Product` e `ProductImage` (com relações inversas em `Brand` e `Category`, `onDelete: Restrict` para marca/categoria e `Cascade` para imagens), migration `catalog_product`, adapter `ProductPrisma` (produto e imagens na mesma transação) e `ProductController` administrativo com `POST/GET/GET :id/PUT/DELETE /products`. `DELETE /brands/:id` e `DELETE /categories/:id` passam a responder `409` quando houver produtos. Seed `catalog-products` idempotente a partir dos arquivos da Kalunga (1.076 produtos) e testes de integração Rest Client.
+- **Frontend (`@jaja/frontend`)**: telas administrativas de produtos em `/admin/catalog/products` (lista paginada com busca e filtros por marca, categoria e status refletidos na query string) e `/admin/catalog/products/new` e `/[id]` (formulário em seções com preço em reais, imagens ordenáveis e slug automático); item "Produtos" na seção "Cadastros" do Catálogo; mensagens dos novos códigos de erro; as telas de marcas e categorias passam a exibir um toast quando a exclusão é bloqueada por produtos.
+- **Fora de escopo**: integrar a vitrine pública (`/`) à API (continua com `storefront.mock.ts`), parcelamento, avaliações, estoque, variações de produto e upload de arquivos de imagem (as imagens são URLs).
+
+## Capabilities
+
+### New Capabilities
+
+- `catalog/product-registration`: regras de negócio e contrato HTTP do cadastro de produto: atributos e validações, unicidade de slug e sku, vínculo com marca e categoria, preços em centavos, imagens ordenadas, listagem paginada com filtros, busca por id, alteração, exclusão lógica, acesso restrito a administradores e seed a partir dos dados da Kalunga.
+- `catalog/product-admin`: telas administrativas de produto: listagem paginada com filtros sincronizados à URL, formulário de criação e edição em seções, tratamento de erros por campo, retorno à lista preservando filtros e item "Produtos" no menu do Catálogo.
+
+### Modified Capabilities
+
+- `catalog/brand-management` (cadastro de marca, funcionalidade 07): ganha o requisito de que uma marca com produtos não pode ser excluída (`409` com `BRAND_HAS_PRODUCTS` e toast na tela de marcas).
+- `catalog/category-management` (introduzida pelo change `cadastro-categoria`, funcionalidade 08): ganha o requisito de que uma categoria com produtos não pode ser excluída (`409` com `CATEGORY_HAS_PRODUCTS`).
+- `admin/catalog-categories` (introduzida pelo change `cadastro-categoria`): a árvore de categorias exibe toast de erro quando a exclusão é bloqueada por produtos.
+- `admin/admin-area`: o módulo do catálogo passa a se chamar "Catálogo de Produtos", os sub-itens ficam sem o rótulo "Cadastros" e a sidebar destaca um único item por vez (com sub-item ativo, o item principal fica só expandido). O requisito de menu de `catalog/brand-management` acompanha a mudança.
+
+## Impact
+
+- `modules/catalog`: novo `src/product/` (`model/` com entidade e VOs, `provider/` com repositório e queries, `dto/`, `use-case/`), mock `test/mock/in-memory-product.repository.ts` e testes; `src/brand/use-case/delete-brand.use-case.ts`, `src/category/use-case/delete-category.use-case.ts` e seus testes alterados; `src/index.ts` exporta o agregado. Backend e frontend dependem de `npm run build --workspace=@jaja/catalog`.
+- `apps/backend`: `prisma/models/catalog.model.prisma` (models `Product` e `ProductImage`, relações inversas), nova migration `catalog_product`, `prisma/seed/tasks/catalog-products.seed.ts` registrado em `prisma/seed/main.ts`, `src/modules/catalog/product.prisma.ts`, `product.controller.ts`, `catalog.module.ts`, `brand.controller.ts`, `category.controller.ts` e `test/product.integration.http`. Lê (sem editar) `apps/cli/data/kalunga/categories/*.json`.
+- `apps/frontend`: `src/shared/i18n/messages.pt.ts` e `messages.en.ts`; `src/modules/catalog/data/` (`product.api.ts`, `product.schema.ts`, `use-products.hook.ts`, `use-product-form.hook.ts`, `index.ts`); `components/` (`product-list.component.tsx`, `product-form.component.tsx`); `pages/` (`products.page.tsx`, `product-form.page.tsx`); rotas `src/app/admin/(shell)/catalog/products/{page,new/page,[id]/page}.tsx`; `src/shared/navigation/catalog-routes.ts` e `app-modules.ts`; telas de marcas e categorias (tratamento do `409` na exclusão); `src/modules/catalog/index.ts`.
+- API: novos endpoints administrativos `/products`; `DELETE /brands/:id` e `DELETE /categories/:id` ganham a resposta `409`.

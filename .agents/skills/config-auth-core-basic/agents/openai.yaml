@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Config Auth Core Basic'
+  short_description: 'Criar módulo auth dominio e sincronizar dependências backend/frontend'
+  default_prompt: 'Crie ou recrie o módulo auth básico com node .agents/skills/config-auth-dominio-basic/scripts/create-auth-dominio-basic.mjs, detectando automaticamente se o destino correto é modules/auth ou modules/auth, gerando user/password (com create-user e user-exists em user/) + testes unitários (incluindo criação de usuário transacional com TransactionManager, User com avatarUrl opcional e admin default false), resolvendo namespace por configuração global, sincronizando dependência <scope>/auth em apps/backend e apps/frontend e executando npm install no root ao final.'

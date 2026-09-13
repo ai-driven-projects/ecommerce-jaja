@@ -1,9 +1,11 @@
 import path from 'node:path';
 import type { Command, CommandContext, CommandResult } from '../../core/command.js';
 import { menu } from '../../core/wizard.js';
+import { ensureDatabaseUp, prisma, requireBackend } from '../db/lib.js';
 import { fetchDepartments, fetchGroups, fetchListingPage, fetchProduct, productFromListing } from './kalunga/api.js';
 import { createClient, mapLimit, type HttpClient } from './kalunga/client.js';
 import { parseRange, planSampling, PRODUCT_RANGES, takeRound, type ProductRange } from './kalunga/sampler.js';
+import { buildSeedData, seedDataDir, writeSeedData } from './kalunga/seed/index.js';
 import { countProducts, dataDir, readCategories, rebuildSummaries, writeCategory } from './kalunga/store.js';
 import type { CategoryFile, KalungaDepartment, KalungaGroup, ListedProduct, ScrapedProduct } from './kalunga/types.js';
 
@@ -207,6 +209,12 @@ export const scrapeProducts: Command = {
 
     const { index, brands } = rebuildSummaries(root);
     ctx.report.info(`index.json: ${index.categories.length} categoria(s) · brands.json: ${brands.brands.length} marca(s) · ${client.requests} requisição(ões)`);
+    try {
+      generateSeed(ctx, readCategories(root));
+    } catch (error) {
+      failures.push('seed do backend');
+      ctx.report.error(`Seed do backend não gerado: ${error instanceof Error ? error.message : String(error)}`);
+    }
     if (ctx.signal.aborted) return { status: 'warn', summary: `Interrompido após ${total} produto(s)` };
     if (failures.length > 0) return { status: 'error', summary: `Falhou em: ${failures.join(', ')}` };
     return { status: 'ok', summary: `${total} produto(s) em ${chosen.length} categoria(s)` };
@@ -234,12 +242,68 @@ export const scrapeStatus: Command = {
   },
 };
 
+/**
+ * Converte as categorias raspadas nos JSON do seed do backend (`prisma/seed/data`), já no formato do banco.
+ * O backend não conhece o CLI: é o CLI que se adapta aos arquivos que o seed lê. Devolve o resumo gerado.
+ */
+function generateSeed(ctx: CommandContext, categories: CategoryFile[]): string {
+  const dir = seedDataDir(requireBackend(ctx));
+  const where = path.relative(ctx.project.rootDir, dir);
+  const { data, categoryCounts, productStats, warnings } = buildSeedData(categories);
+  for (const warning of warnings) ctx.report.detail(warning);
+
+  const groups = categoryCounts.listedGroups + categoryCounts.createdGroups;
+  const summary = `${data.brands.length} marca(s), ${data.categories.length} categoria(s) (${categoryCounts.roots} departamentos, ${groups} grupos, ${categoryCounts.subgroups} subgrupos), ${data.products.length} produto(s)`;
+  if (ctx.dryRun) {
+    ctx.report.info(`[dry-run] gravaria em ${where}: ${summary}`);
+    return summary;
+  }
+  writeSeedData(dir, data);
+  ctx.report.success(`Seed gravado em ${where}: ${summary}`);
+  ctx.report.detail(
+    `produtos: ${productStats.entries} entradas raspadas, ${productStats.withoutBrand} sem marca, ${productStats.suffixedSlugs} slug(s) com sufixo, ` +
+      `${productStats.fallbacks} no departamento, ${productStats.truncatedImages} com imagens cortadas, ${productStats.skipped} ignorado(s)`,
+  );
+  return summary;
+}
+
+export const scrapeSeed: Command = {
+  id: 'scrape:seed',
+  title: 'Gerar seed do catálogo',
+  description: 'Converte data/kalunga nos JSON do seed do backend (marcas, categorias e produtos) e, se quiser, popula o banco',
+  group: GROUP,
+  keywords: ['seed', 'importar', 'carregar', 'banco', 'database', 'prisma', 'json', 'kalunga', 'catalogo', 'backend'],
+  async run(ctx): Promise<CommandResult> {
+    const categories = readCategories(dataDir());
+    if (categories.length === 0) return { status: 'error', summary: 'Nada raspado em data/kalunga; rode scrape:products antes' };
+
+    const summary = generateSeed(ctx, categories);
+    if (ctx.dryRun) return { status: 'ok', summary: 'Dry-run: nada foi gravado' };
+
+    const args = ['db', 'seed', '--', '--only=catalog'];
+    const populate =
+      ctx.options.popular === 'true' ||
+      (await ctx.confirm('Popular o banco agora com o catálogo? Categorias e produtos que já existem são atualizados (edições feitas no admin neles são sobrescritas).', false));
+    if (!populate) {
+      ctx.report.info('Para popular o banco depois: db:seed no CLI ou `npx prisma db seed` no apps/backend.');
+      return { status: 'ok', summary: `Seed gerado: ${summary}` };
+    }
+
+    if (!(await ensureDatabaseUp(ctx))) return { status: 'error', summary: 'Seed gerado, mas o banco de dados está indisponível' };
+    ctx.report.info(`npx prisma ${args.join(' ')}`);
+    const result = await prisma(ctx, args);
+    if (ctx.signal.aborted) return { status: 'warn', summary: 'Interrompido' };
+    if (!result.ok) return { status: 'error', summary: `Seed gerado, mas a carga falhou (código ${result.code}); confira se as migrations foram aplicadas (db:migrate)` };
+    return { status: 'ok', summary: 'Seed gerado e catálogo carregado no banco' };
+  },
+};
+
 export const scrapeMenu: Command = menu({
   id: 'scrape',
   title: 'Scraper da Kalunga',
-  description: 'Coleta categorias, produtos e marcas do site da Kalunga para JSON (base para a importação)',
+  description: 'Coleta categorias, produtos e marcas do site da Kalunga e gera o seed do catálogo no backend',
   group: 'Catálogo',
   icon: '🕷️',
-  keywords: ['scraper', 'kalunga', 'calunga', 'catalogo', 'produtos', 'categorias', 'marcas'],
-  children: [scrapeProducts, scrapeCategories, scrapeStatus],
+  keywords: ['scraper', 'kalunga', 'calunga', 'catalogo', 'produtos', 'categorias', 'marcas', 'seed'],
+  children: [scrapeProducts, scrapeSeed, scrapeCategories, scrapeStatus],
 });

@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Config Auth Core Full'
+  short_description: 'Auth full-stack: core + backend Nest + frontend Next com Google OAuth'
+  default_prompt: 'Crie ou recrie a autenticação completa com node .agents/skills/confg-auth-core-full/scripts/create-auth-core-full.mjs --force: modules/auth (user/password/role/permission/oauth/application/audit, usecase/*.usecase.ts), apps/backend (Nest + Prisma + GoogleOAuthProvider em /auth/google/*) e apps/frontend (módulo auth + CTA Google no sign-in), resolvendo namespace e sincronizando <scope>/auth.'

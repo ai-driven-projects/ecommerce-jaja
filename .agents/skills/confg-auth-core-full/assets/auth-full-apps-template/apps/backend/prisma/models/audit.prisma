@@ -1,0 +1,20 @@
+model AuditEvent {
+    id              String   @default(dbgenerated("(gen_random_uuid())::text")) @db.Text
+    type            String   @db.Text
+    occurredAt      DateTime @map("occurred_at") @db.Timestamptz(6)
+    method          String   @db.Text
+    endpoint        String   @db.Text
+    userId          String?  @map("user_id") @db.Text
+    userEmail       String?  @map("user_email") @db.Text
+    permissionId    String?  @map("permission_id") @db.Text
+    permissionAlias String?  @map("permission_alias") @db.Text
+    action          String   @db.Text
+    criticality     String   @db.Text
+    statusCode      Int?     @map("status_code")
+    durationMs      Int      @map("duration_ms")
+
+    @@id([occurredAt, id])
+    @@index([occurredAt], type: Brin, map: "audit_events_occurred_at_brin_idx")
+    @@index([userId, occurredAt(sort: Desc)], map: "audit_events_user_id_occurred_at_idx")
+    @@map("audit_events")
+}

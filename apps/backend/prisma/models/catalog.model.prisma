@@ -1,2 +1,84 @@
 // Prisma models for module: catalog
-// Add concrete models for this module below.
+
+// `name` and `slug` stay unique even for soft-deleted brands (`deletedAt` set):
+// the values remain reserved and the seed upserts by `slug`.
+model Brand {
+  id          String    @id @db.Uuid
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  logoUrl     String?   @map("logo_url")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  products    Product[]
+
+  @@map("brands")
+}
+
+// Hierarchy of up to three levels (department → group → subgroup), enforced by
+// the domain. `slug` stays unique even for soft-deleted categories (`deletedAt`
+// set): the value remains reserved and the seed upserts by `slug`.
+model Category {
+  id            String     @id @db.Uuid
+  name          String
+  slug          String     @unique
+  description   String?
+  parentId      String?    @map("parent_id") @db.Uuid
+  order         Int        @default(0)
+  isHighlighted Boolean    @default(false) @map("is_highlighted")
+  imageUrl      String?    @map("image_url")
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  deletedAt     DateTime?  @map("deleted_at")
+  parent        Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Category[] @relation("CategoryHierarchy")
+  products      Product[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+// `slug` and `sku` stay unique even for soft-deleted products (`deletedAt` set):
+// the values remain reserved and the seed upserts by `sku`. The `Restrict`
+// relations only guard against physical deletes, since brands and categories
+// are soft-deleted after the domain checks for live products.
+model Product {
+  id             String         @id @db.Uuid
+  name           String
+  slug           String         @unique
+  sku            String?        @unique
+  brandId        String?        @map("brand_id") @db.Uuid
+  categoryId     String         @map("category_id") @db.Uuid
+  description    String?
+  priceCents     Int            @map("price_cents")
+  listPriceCents Int?           @map("list_price_cents")
+  unit           String         @default("unidade")
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+  brand          Brand?         @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  category       Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images         ProductImage[]
+
+  @@index([brandId])
+  @@index([categoryId])
+  @@map("products")
+}
+
+// The image list has no identity in the domain: it is replaced as a whole on
+// every write, with `order` normalized to 0..n-1 (0 = main image).
+model ProductImage {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  thumbUrl  String  @map("thumb_url")
+  largeUrl  String  @map("large_url")
+  order     Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, order])
+  @@map("product_images")
+}

@@ -1,12 +1,16 @@
 import { Module } from '@nestjs/common';
 import { DbModule } from '../../db/db.module.js';
-import { CatalogController } from './catalog.controller.js';
-import { CatalogPrisma } from './catalog.prisma.js';
+import { BrandController } from './brand.controller.js';
+import { BrandPrisma } from './brand.prisma.js';
+import { CategoryController } from './category.controller.js';
+import { CategoryPrisma } from './category.prisma.js';
+import { ProductController } from './product.controller.js';
+import { ProductPrisma } from './product.prisma.js';
 
 @Module({
   imports: [DbModule],
-  controllers: [CatalogController],
-  providers: [CatalogPrisma],
-  exports: [CatalogPrisma],
+  controllers: [BrandController, CategoryController, ProductController],
+  providers: [BrandPrisma, CategoryPrisma, ProductPrisma],
+  exports: [BrandPrisma, CategoryPrisma, ProductPrisma],
 })
 export class CatalogModule {}

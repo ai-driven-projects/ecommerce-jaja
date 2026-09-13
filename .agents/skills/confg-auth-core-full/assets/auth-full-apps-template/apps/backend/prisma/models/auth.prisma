@@ -1,0 +1,117 @@
+model User {
+  id        String  @id @default(uuid())
+  name      String
+  email     String  @unique
+  avatarUrl String? @map("avatar_url")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime?
+
+  roles     UserRole[]
+  passwords Password[]
+  oauthAccounts OAuthAccount[]
+
+  @@map("users")
+}
+
+enum OAuthProvider {
+  GOOGLE
+}
+
+model OAuthAccount {
+  id             String        @id @default(uuid())
+  provider       OAuthProvider
+  providerUserId String        @map("provider_user_id")
+  email          String
+  emailVerified  Boolean       @default(false) @map("email_verified")
+  name           String?
+  avatarUrl      String?       @map("avatar_url")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+model Password {
+  id        String         @id @default(uuid())
+  content   String
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  deletedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@map("passwords")
+}
+
+model Role {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime?
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  name        String
+  alias       String           @unique
+  description String
+  criticality CriticalityLevel @default(LOW)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime?
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, roleId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+enum CriticalityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}

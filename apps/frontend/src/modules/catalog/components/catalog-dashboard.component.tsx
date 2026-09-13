@@ -20,14 +20,14 @@ function stockBadge(stock: number) {
   return <Badge variant="success">{stock} un</Badge>;
 }
 
-/** Produtos & estoque: lista do catálogo com preço, estoque e destaque na vitrine. */
+/** Catálogo de Produtos: lista do catálogo com preço, estoque e destaque na vitrine. */
 export function CatalogDashboardComponent() {
   const lowStockCount = PRODUCTS.filter((product) => product.stock <= LOW_STOCK_THRESHOLD).length;
 
   return (
     <div className="flex flex-col gap-[22px]">
       <PageSectionHeader
-        title="Produtos & estoque"
+        title="Catálogo de Produtos"
         subtitle={`${PRODUCTS.length} produtos em ${CATEGORY_OPTIONS.length - 1} categorias · ${lowStockCount} com estoque baixo`}
         aside={
           <>

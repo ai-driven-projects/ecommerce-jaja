@@ -1,0 +1,166 @@
+# Testes de integração do cadastro de marcas (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations e seed aplicados
+# (npm run prisma:migrate:deploy && npm run prisma:seed) e backend rodando em
+# http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# Ordem sugerida: executar de cima para baixo. A marca criada no passo 5 usa um nome
+# com sufixo de timestamp para poder ser repetida; os cenários seguintes reutilizam
+# nome, slug e id da resposta do passo 5.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@userEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+
+### 1. Login do admin do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login de usuário do seed com admin = false -> 200 com token
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Listagem sem token -> 401
+GET {{baseUrl}}/brands
+
+### 4. Criação com token de não administrador -> 403 ADMIN_REQUIRED
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Marca Proibida {{$timestamp}}"
+}
+
+### 5. Criação válida -> 201 com id uuid, slug derivado do nome e isActive = true
+# @name createBrand
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Marca Teste {{$timestamp}}",
+  "description": "Materiais de escritório",
+  "logoUrl": "https://exemplo.com/marca-teste.png"
+}
+
+### 6. Nome duplicado (outro slug) -> 409 BRAND_NAME_ALREADY_EXISTS
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{createBrand.response.body.name}}",
+  "slug": "outro-slug-{{$timestamp}}"
+}
+
+### 7. Slug duplicado (outro nome) -> 409 BRAND_SLUG_ALREADY_EXISTS
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Outra Marca {{$timestamp}}",
+  "slug": "{{createBrand.response.body.slug}}"
+}
+
+### 8. URL de logo inválida -> 400 com o código de URL inválida
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Marca Logo Invalida {{$timestamp}}",
+  "logoUrl": "ftp://exemplo.com/logo.png"
+}
+
+### 9. Listagem com search -> 200 com { items, total, page, pageSize, totalPages } e a marca de slug spiral entre os itens (após o seed)
+GET {{baseUrl}}/brands?search=spir
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 10. Busca por id da marca criada -> 200
+GET {{baseUrl}}/brands/{{createBrand.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 11. Busca por uuid inexistente -> 404 BRAND_NOT_FOUND
+GET {{baseUrl}}/brands/{{missingId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 12. Alteração mantendo nome e slug -> 200 com isActive = false e descrição alterada
+PUT {{baseUrl}}/brands/{{createBrand.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{createBrand.response.body.name}}",
+  "slug": "{{createBrand.response.body.slug}}",
+  "description": "Descrição alterada",
+  "isActive": false
+}
+
+### 13. Exclusão da marca criada -> 204 sem corpo
+DELETE {{baseUrl}}/brands/{{createBrand.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 14. Busca da marca excluída -> 404 BRAND_NOT_FOUND
+GET {{baseUrl}}/brands/{{createBrand.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 15. Criação com o nome da marca excluída -> 409 (nome e slug continuam reservados)
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{createBrand.response.body.name}}"
+}
+
+### 16. PUT no id da marca excluída -> 404 BRAND_NOT_FOUND e a marca continua excluída
+PUT {{baseUrl}}/brands/{{createBrand.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Marca Ressuscitada {{$timestamp}}",
+  "slug": "marca-ressuscitada-{{$timestamp}}"
+}
+
+### 17. Listagem paginada -> 200 com 5 itens, page = 2, pageSize = 5 e total/totalPages de todas as marcas
+GET {{baseUrl}}/brands?page=2&pageSize=5
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 18. pageSize acima do máximo -> 200 com no máximo 100 itens e pageSize = 100
+GET {{baseUrl}}/brands?pageSize=500
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 19. Criação de marca com descrição (para a busca na descrição) -> 201
+# @name createDescribedBrand
+POST {{baseUrl}}/brands
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Marca Descrita {{$timestamp}}",
+  "description": "Papéis e cadernos escolares"
+}
+
+### 20. Busca textual na descrição, sem acentos e por prefixo -> 200 com a marca criada no passo 19 entre os itens
+GET {{baseUrl}}/brands?search=papeis%20escol
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 21. Exclusão da marca com descrição -> 204 (limpeza)
+DELETE {{baseUrl}}/brands/{{createDescribedBrand.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}

@@ -1,0 +1,307 @@
+# Testes de integração do cadastro de produtos (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations e seed aplicados
+# (npm run prisma:migrate:deploy && npm run prisma:seed, incluindo os 1.076 produtos
+# da Kalunga) e backend rodando em http://localhost:4000
+# (npm run dev --workspace=@jaja/backend).
+#
+# Ordem: executar de cima para baixo. Os ids de marca e categoria mudam a cada banco,
+# por isso os passos 5 a 7 os obtêm da API: o produto 027242 do seed (Faber-Castell) e
+# as categorias "Escolar", "Coffee Break" e "Cartuchos & Toners / Cartuchos HP / Ink-Jet"
+# (seleção por JSONPath com filtro).
+# Os produtos criados aqui usam nomes e skus com sufixo de timestamp (o arquivo pode ser
+# repetido), ficam fora de "Escolar" e não contêm "caneta" no nome, então os totais das
+# listagens filtradas (passos 17 a 20) não mudam entre execuções. Os passos finais só
+# tentam excluir marca e categoria do seed com produtos, e ambos respondem 409 (nada é excluído).
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@userEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+# uuid v4 válido que não existe (um id malformado responderia 400 INVALID_ID no PUT).
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+
+### 1. Login do admin do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login de usuário do seed com admin = false -> 200 com token
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Listagem sem token -> 401
+GET {{baseUrl}}/products
+
+### 4. Criação com token de não administrador -> 403 ADMIN_REQUIRED (nada é criado)
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Proibido {{$timestamp}}",
+  "categoryId": "{{missingId}}",
+  "priceCents": 1000
+}
+
+### 5. Fixture: busca do produto 027242 do seed -> 200 com 1 item (slug terminado em -027242)
+# @name seedProductSearch
+GET {{baseUrl}}/products?search=027242
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 6. Busca por id de produto do seed -> 200 com brandName "Faber-castell" (nome do seed de marcas),
+### categoryPath com a hierarquia e imagens em ordem (order 0..n-1)
+# @name seedProduct
+GET {{baseUrl}}/products/{{seedProductSearch.response.body.$.items[0].id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 7. Fixture: categorias (lista plana com path) -> 200
+# @name categories
+GET {{baseUrl}}/categories
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+@brandId = {{seedProduct.response.body.$.brandId}}
+@departmentId = {{categories.response.body.$[?(@.path=='Escolar')].id}}
+@rootCategoryId = {{categories.response.body.$[?(@.path=='Coffee Break')].id}}
+@leafCategoryId = {{categories.response.body.$[?(@.path=='Cartuchos & Toners / Cartuchos HP / Ink-Jet')].id}}
+
+### 8. Criação com marca e categoria -> 201 com slug derivado, brandName, categoryPath
+### "Cartuchos & Toners / Cartuchos HP / Ink-Jet", isActive true, unit "unidade" e as
+### imagens normalizadas: B (order 0), A (order 1), C (order 2)
+# @name createProduct
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Teste Integracao {{$timestamp}}",
+  "sku": "TESTE-{{$timestamp}}",
+  "brandId": "{{brandId}}",
+  "categoryId": "{{leafCategoryId}}",
+  "description": "Produto criado pelo teste de integração",
+  "priceCents": 1000,
+  "listPriceCents": 1290,
+  "images": [
+    { "thumbUrl": "https://exemplo.com/a-thumb.jpg", "largeUrl": "https://exemplo.com/a-large.jpg", "order": 5 },
+    { "thumbUrl": "https://exemplo.com/b-thumb.jpg", "largeUrl": "https://exemplo.com/b-large.jpg", "order": 2 },
+    { "thumbUrl": "https://exemplo.com/c-thumb.jpg", "largeUrl": "https://exemplo.com/c-large.jpg", "order": 9 }
+  ]
+}
+
+### 9. Criação sem marca e sem sku, em categoria raiz, com espaços no nome -> 201 com
+### brandId/brandName/sku null, categoryPath "Coffee Break", nome sem espaços e images []
+# @name createWithoutBrand
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "  Produto Sem Marca {{$timestamp}}  ",
+  "categoryId": "{{rootCategoryId}}",
+  "priceCents": 390
+}
+
+### 10. Marca inexistente -> 404 BRAND_NOT_FOUND
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Marca Inexistente {{$timestamp}}",
+  "brandId": "{{missingId}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1000
+}
+
+### 11. Categoria inexistente -> 404 CATEGORY_NOT_FOUND
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Categoria Inexistente {{$timestamp}}",
+  "categoryId": "{{missingId}}",
+  "priceCents": 1000
+}
+
+### 12. Preço zero -> 400 MONEY_CENTS_INVALID
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Preco Zero {{$timestamp}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 0
+}
+
+### 13. Preço "De:" menor que o preço -> 400 PRODUCT_LIST_PRICE_NOT_GREATER_THAN_PRICE
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Preco De Menor {{$timestamp}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1000,
+  "listPriceCents": 900
+}
+
+### 14. 11 imagens -> 400 PRODUCT_IMAGES_LIMIT_EXCEEDED
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Imagens Demais {{$timestamp}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1000,
+  "images": [
+    { "thumbUrl": "https://exemplo.com/1.jpg", "largeUrl": "https://exemplo.com/1g.jpg", "order": 0 },
+    { "thumbUrl": "https://exemplo.com/2.jpg", "largeUrl": "https://exemplo.com/2g.jpg", "order": 1 },
+    { "thumbUrl": "https://exemplo.com/3.jpg", "largeUrl": "https://exemplo.com/3g.jpg", "order": 2 },
+    { "thumbUrl": "https://exemplo.com/4.jpg", "largeUrl": "https://exemplo.com/4g.jpg", "order": 3 },
+    { "thumbUrl": "https://exemplo.com/5.jpg", "largeUrl": "https://exemplo.com/5g.jpg", "order": 4 },
+    { "thumbUrl": "https://exemplo.com/6.jpg", "largeUrl": "https://exemplo.com/6g.jpg", "order": 5 },
+    { "thumbUrl": "https://exemplo.com/7.jpg", "largeUrl": "https://exemplo.com/7g.jpg", "order": 6 },
+    { "thumbUrl": "https://exemplo.com/8.jpg", "largeUrl": "https://exemplo.com/8g.jpg", "order": 7 },
+    { "thumbUrl": "https://exemplo.com/9.jpg", "largeUrl": "https://exemplo.com/9g.jpg", "order": 8 },
+    { "thumbUrl": "https://exemplo.com/10.jpg", "largeUrl": "https://exemplo.com/10g.jpg", "order": 9 },
+    { "thumbUrl": "https://exemplo.com/11.jpg", "largeUrl": "https://exemplo.com/11g.jpg", "order": 10 }
+  ]
+}
+
+### 15. Slug duplicado (slug do produto do passo 8) -> 409 PRODUCT_SLUG_ALREADY_EXISTS
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Outro Produto {{$timestamp}}",
+  "slug": "{{createProduct.response.body.slug}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1000
+}
+
+### 16. SKU duplicado (026106, do seed) -> 409 PRODUCT_SKU_ALREADY_EXISTS
+POST {{baseUrl}}/products
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Sku Repetido {{$timestamp}}",
+  "sku": "026106",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1000
+}
+
+### 17. Listagem com search (sem distinção de maiúsculas) -> 200 com total 63, page 1,
+### pageSize 20, totalPages 4 e 20 itens contendo "caneta" no nome, slug ou sku
+GET {{baseUrl}}/products?search=CANETA
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 18. Listagem por marca + search -> 200 com total 8 e totalPages 1 (canetas Faber-Castell)
+GET {{baseUrl}}/products?brandId={{brandId}}&search=caneta
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 19. Listagem por departamento (inclui grupos e subgrupos) -> 200 com total 83,
+### pageSize 10 e totalPages 9
+GET {{baseUrl}}/products?categoryId={{departmentId}}&pageSize=10
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 20. Filtros combinados marca + isActive=false -> 200 com total 0 e items []
+GET {{baseUrl}}/products?brandId={{brandId}}&isActive=false
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 21. pageSize acima do máximo -> 200 com pageSize 100 e 100 itens
+GET {{baseUrl}}/products?pageSize=500
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 22. Página além da última -> 200 com items [] e total/totalPages corretos
+GET {{baseUrl}}/products?page=999
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 23. Busca por id do produto criado -> 200 com imagens em ordem (B, A, C)
+GET {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 24. Busca por uuid inexistente -> 404 PRODUCT_NOT_FOUND
+GET {{baseUrl}}/products/{{missingId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 25. Alteração substituindo imagens (B, A, C -> C, D) e mantendo o próprio slug e sku
+### -> 200 com exatamente C (order 0) e D (order 1), mesmo id/createdAt e updatedAt novo
+PUT {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{createProduct.response.body.name}}",
+  "slug": "{{createProduct.response.body.slug}}",
+  "sku": "{{createProduct.response.body.sku}}",
+  "brandId": "{{brandId}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1100,
+  "listPriceCents": 1290,
+  "images": [
+    { "thumbUrl": "https://exemplo.com/c-thumb.jpg", "largeUrl": "https://exemplo.com/c-large.jpg", "order": 0 },
+    { "thumbUrl": "https://exemplo.com/d-thumb.jpg", "largeUrl": "https://exemplo.com/d-large.jpg", "order": 1 }
+  ]
+}
+
+### 26. Alteração com preço "De:" menor -> 400 PRODUCT_LIST_PRICE_NOT_GREATER_THAN_PRICE (produto inalterado)
+PUT {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{createProduct.response.body.name}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1100,
+  "listPriceCents": 1000
+}
+
+### 27. Exclusão do produto criado -> 204 sem corpo
+DELETE {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 28. Busca do produto excluído -> 404 PRODUCT_NOT_FOUND
+GET {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 29. PUT no id do produto excluído -> 404 PRODUCT_NOT_FOUND (o produto continua excluído)
+PUT {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Ressuscitado {{$timestamp}}",
+  "categoryId": "{{leafCategoryId}}",
+  "priceCents": 1000
+}
+
+### 30. Exclusão do produto já excluído -> 404 PRODUCT_NOT_FOUND
+DELETE {{baseUrl}}/products/{{createProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 31. Exclusão da marca Faber-Castell (tem produtos) -> 409 BRAND_HAS_PRODUCTS (nada é excluído)
+DELETE {{baseUrl}}/brands/{{brandId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 32. Exclusão da categoria folha "Ink-Jet" (tem produtos) -> 409 CATEGORY_HAS_PRODUCTS (nada é excluído)
+DELETE {{baseUrl}}/categories/{{leafCategoryId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 33. Exclusão do departamento "Escolar" (tem filhas e produtos) -> 409 CATEGORY_HAS_CHILDREN
+DELETE {{baseUrl}}/categories/{{departmentId}}
+Authorization: Bearer {{loginAdmin.response.body.token}}

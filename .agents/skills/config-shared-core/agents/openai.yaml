@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Config Shared Core'
+  short_description: 'Inicializar core compartilhado'
+  default_prompt: 'Provisione packages/shared exclusivamente como submódulo Git (https://github.com/mentoria-360/shared.git) usando node scripts/create-shared.mjs, valide o contrato mínimo do pacote e sincronize dependências do workspace. Não usar template/skill anexada.'

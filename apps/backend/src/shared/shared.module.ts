@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './auth/jwt.strategy.js';
 import { JwtGuard } from './auth/jwt.guard.js';
+import { AdminGuard } from './auth/admin.guard.js';
 
 @Global()
 @Module({
@@ -19,7 +20,7 @@ import { JwtGuard } from './auth/jwt.guard.js';
       }),
     }),
   ],
-  providers: [JwtStrategy, JwtGuard],
-  exports: [JwtModule, JwtGuard],
+  providers: [JwtStrategy, JwtGuard, AdminGuard],
+  exports: [JwtModule, JwtGuard, AdminGuard],
 })
 export class SharedModule {}

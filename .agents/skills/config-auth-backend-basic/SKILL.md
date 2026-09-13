@@ -1,0 +1,102 @@
+---
+name: config-auth-backend-basic
+description: Criar/recriar de forma determinística o módulo de autenticação do backend NestJS com endpoints HTTP (register/login/me/usuários/senha), JWT com Passport, controle de acesso admin, adapters Prisma compatíveis com `@namespace/auth`, integração com `PrismaService`/`TransactionManager`, modelo Prisma de auth, migrations SQL e seed JSON com usuários padrão. Usar quando o pedido envolver bootstrap/rebootstrap da camada backend auth completa no `apps/backend`.
+---
+
+# Config Auth Backend Basic
+
+## Overview
+
+Executar setup idempotente do módulo de autenticação backend no padrão Genérico, cobrindo:
+
+- módulo NestJS simplificado em `apps/backend/src/modules/auth` com arquivos centrais:
+  - `auth.controller.ts`
+  - `auth.module.ts`
+  - `jwt-auth.guard.ts`
+  - `jwt.strategy.ts`
+  - `require-admin.decorator.ts`
+  - `require-admin.guard.ts`
+  - `user.prisma.ts`
+  - `password.prisma.ts`
+  - `bcrypt.provider.ts`
+- endpoints de autenticação e usuário com `JwtAuthGuard` e proteção administrativa por `RequireAdminGuard`
+- integração com `@namespace/auth` (use cases, entidades e providers)
+- implementação Prisma (repositories/queries + model `.prisma` com flag `admin`)
+- compatibilidade com infraestrutura de banco atual (`DbModule` + `PrismaService` implementando `runInTransaction`)
+- migrations de auth (criação inicial + evolução do campo `admin`)
+- seed com usuários padrão em JSON (incluindo `id` UUID, `admin` e metadados de auditoria)
+
+A skill aplica arquivos canônicos a partir de template versionado, convergindo arquivos existentes (`app.module.ts`, `apps/backend/package.json` e `prisma/seed/main.ts`) e removendo artefatos legados da implementação antiga.
+Antes de aplicar, o script valida pré-requisitos do banco (arquivos de `db` e contrato de transação) para evitar geração incompatível.
+
+## Workflow
+
+1. Garantir infraestrutura Prisma/base pronta (ex.: skill `config-prisma` já aplicada).
+2. Rodar simulação:
+   - `node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --dry-run`
+3. Aplicar mudanças:
+   - `node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply`
+4. Opcionalmente instalar dependências e validar build:
+   - `node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply --install --run-build`
+   - `--run-build` agora implica instalação do workspace `apps/backend` quando `--install` não for informado, e sempre executa `prisma:generate` antes do build.
+5. Rodar migration/seed no backend:
+   - `npm --workspace apps/backend run prisma:migrate:dev -- --name auth-basic-init`
+   - `npm --workspace apps/backend run prisma:seed`
+6. Fluxo de desenvolvimento local:
+   - `npm run dev` na raiz deve subir Postgres automaticamente (via `db:start`) antes de iniciar backend/frontend.
+
+## Commands
+
+Aplicar módulo auth backend básico:
+
+```bash
+node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply
+```
+
+Aplicar e instalar dependências:
+
+```bash
+node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply --install
+```
+
+Aplicar, instalar e validar build:
+
+```bash
+node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply --install --run-build
+```
+
+Aplicar e validar build sem precisar declarar `--install` explicitamente:
+
+```bash
+node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply --run-build
+```
+
+Forçar namespace fallback quando não for possível detectar pacote auth automaticamente:
+
+```bash
+node <SKILLS_DIR>/config-auth-backend-basic/scripts/init-config-auth-backend-basic.mjs --apply --scope @namespace
+```
+
+## Resources
+
+- `scripts/init-config-auth-backend-basic.mjs`: orquestrador idempotente da skill com validações de pré-requisito de DB/Prisma e placeholders.
+- `assets/config-auth-backend-basic-template`: template canônico dos arquivos gerados.
+- `references/config-auth-backend-basic-contract.md`: contrato de saída esperado.
+- Log local: `.log/skills.log`.
+- Quando `--run-build` é usado, a skill instala dependências do backend (se necessário) e roda `prisma:generate` antes do build para evitar client Prisma desatualizado.
+
+## Output Contract
+
+A skill deve convergir o backend para o contrato descrito em `references/config-auth-backend-basic-contract.md`, mantendo compatibilidade com o dominio `@namespace/auth` e com execução repetível sem duplicação estrutural.
+
+## Risk Logging Guardrails
+
+- Registrar fatos de execucao em `.log/skills.log` com marcador no inicio da linha.
+- Marcadores minimos esperados: `[CMD]`, `[FILE_CREATE]`, `[FILE_UPDATE]`, `[FILE_DELETE]`, `[DIR_CREATE]`, `[RISK]`, `[FAIL]`, `[AI]`.
+- Sempre registrar `[RISK]` quando houver sobrescrita, exclusao, rename/move, ou fallback forcado em arquivos/pastas.
+- Toda falha inesperada deve gerar `[FAIL]` com descricao factual curta do evento.
+- Operacoes de terminal e alteracoes de arquivos devem passar pelos utilitarios compartilhados em `../utils` para manter rastreabilidade consistente.
+
+## Global Standards
+
+- Consultar `../skills-standards.md` para padroes globais de nomenclatura e convencoes gerais entre skills.

@@ -12,5 +12,8 @@ data/kalunga/
 
 Cada produto traz: id/slug/url, nome, marca, caminho de categoria (departamento/grupo/subgrupo),
 preços (à vista, "De:", parcelamento), imagens (miniatura e zoom), descrição (HTML sanitizado e
-texto), avaliação, disponibilidade e data da coleta. O passo seguinte do fluxo é importar esses
-arquivos para o banco de dados.
+texto), avaliação, disponibilidade e data da coleta.
+
+Estes arquivos são a matéria-prima do scraper; o backend não os lê. `npm run cli -- scrape:seed` (e o
+próprio `scrape:products`, ao terminar) os converte em `apps/backend/prisma/seed/data/brands.json`,
+`categories.json` e `products.json`, já no formato do banco.
