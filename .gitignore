@@ -38,3 +38,6 @@ yarn-error.log*
 *.pem
 
 .log/
+
+# TypeScript build cache
+*.tsbuildinfo

@@ -1,0 +1,8 @@
+{
+  "name": "jaja",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "test": "pnpm -r test"
+  }
+}

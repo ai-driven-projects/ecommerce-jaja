@@ -1,6 +1,6 @@
 import { Request } from 'express';
-import { AuthenticatedUser } from '@mentoria-360/shared';
+import { AppUser } from './app-user.type.js';
 
 export interface AuthenticatedRequest extends Request {
-  user: AuthenticatedUser;
+  user: AppUser;
 }

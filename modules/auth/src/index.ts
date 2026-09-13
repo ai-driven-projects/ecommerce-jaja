@@ -1,5 +1,3 @@
-export function getModuleName(): string {
-  return "auth";
-}
-
-export * from './auth'
+export * from './app'
+export * from './password'
+export * from './user'

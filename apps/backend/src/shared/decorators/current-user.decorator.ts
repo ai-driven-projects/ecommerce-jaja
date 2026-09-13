@@ -1,9 +1,9 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { AuthenticatedUser } from '@mentoria-360/shared';
+import { AppUser } from '../types/app-user.type.js';
 import { AuthenticatedRequest } from '../types/authenticated-request.type.js';
 
 export const CurrentUser = createParamDecorator(
-  (field: keyof AuthenticatedUser | undefined, ctx: ExecutionContext) => {
+  (field: keyof AppUser | undefined, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
     return field ? user?.[field] : user;

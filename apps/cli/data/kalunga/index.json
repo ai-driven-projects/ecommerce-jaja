@@ -1,0 +1,103 @@
+{
+  "source": "kalunga",
+  "scrapedAt": "2026-09-12T19:28:21.751Z",
+  "categories": [
+    {
+      "id": 9,
+      "slug": "artes-pintura",
+      "name": "Artes & Pintura",
+      "file": "categories/artes-pintura.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:26:24.629Z"
+    },
+    {
+      "id": 20,
+      "slug": "cartuchos-toners",
+      "name": "Cartuchos & Toners",
+      "file": "categories/cartuchos-toners.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:20:54.009Z"
+    },
+    {
+      "id": 19,
+      "slug": "coffee-break",
+      "name": "Coffee Break",
+      "file": "categories/coffee-break.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:25:42.061Z"
+    },
+    {
+      "id": 37,
+      "slug": "cuidados-pessoais",
+      "name": "Cuidados Pessoais",
+      "file": "categories/cuidados-pessoais.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:28:21.722Z"
+    },
+    {
+      "id": 16,
+      "slug": "envelopes-etiquetas-formularios",
+      "name": "Envelopes e Etiquetas",
+      "file": "categories/envelopes-etiquetas-formularios.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:27:43.366Z"
+    },
+    {
+      "id": 2,
+      "slug": "escolar",
+      "name": "Escolar",
+      "file": "categories/escolar.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:21:40.824Z"
+    },
+    {
+      "id": 11,
+      "slug": "escrita-corretivos",
+      "name": "Escrita e Corretivos",
+      "file": "categories/escrita-corretivos.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:23:39.380Z"
+    },
+    {
+      "id": 26,
+      "slug": "escritorio",
+      "name": "Suprimentos para Escritório",
+      "file": "categories/escritorio.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:24:55.988Z"
+    },
+    {
+      "id": 3,
+      "slug": "higiene-limpeza",
+      "name": "Higiene e Limpeza",
+      "file": "categories/higiene-limpeza.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:27:03.152Z"
+    },
+    {
+      "id": 1,
+      "slug": "informatica",
+      "name": "Informática",
+      "file": "categories/informatica.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:22:58.518Z"
+    },
+    {
+      "id": 36,
+      "slug": "organizacao",
+      "name": "Organização",
+      "file": "categories/organizacao.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:24:19.339Z"
+    },
+    {
+      "id": 15,
+      "slug": "papeis-pastas",
+      "name": "Papéis e Pastas",
+      "file": "categories/papeis-pastas.json",
+      "products": 100,
+      "scrapedAt": "2026-09-12T19:22:20.269Z"
+    }
+  ],
+  "brands": 214
+}

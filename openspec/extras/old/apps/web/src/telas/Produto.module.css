@@ -1,0 +1,249 @@
+.caminho {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 13px;
+}
+.caminho a,
+.caminho button {
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.caminho a:hover,
+.caminho button:hover {
+  color: var(--accent);
+}
+.caminhoAtual {
+  color: #55524f;
+}
+
+.duasColunas {
+  display: flex;
+  flex-wrap: wrap;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+.colunaImagem {
+  flex: 45 1 300px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 32px;
+}
+.colunaImagem svg {
+  width: 70%;
+  max-width: 420px;
+}
+.colunaInfo {
+  flex: 55 1 340px;
+  border-left: 2px solid var(--ink);
+  min-width: 0;
+}
+@media (max-width: 700px) {
+  .colunaInfo {
+    border-left: none;
+    border-top: 2px solid var(--ink);
+  }
+}
+
+.bloco {
+  padding: 20px 24px;
+}
+.bloco + .bloco {
+  border-top: 2px solid var(--ink);
+}
+
+.nomeProduto {
+  font-family: "Bricolage Grotesque", var(--font-ui);
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-size: clamp(30px, 4.5vw, 46px);
+  line-height: 1.02;
+}
+.linkCategoria {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.linkCategoria:hover {
+  color: var(--accent);
+}
+
+.preco {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 32px;
+  font-weight: 600;
+}
+.unidade {
+  margin-left: 12px;
+  font-size: 16px;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  color: #55524f;
+}
+
+.disponibilidade {
+  font-size: 16px;
+}
+.disponibilidade b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.etaLinha {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  margin-bottom: 14px;
+}
+
+.acao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+}
+.quantidade {
+  display: flex;
+}
+.quantidade button {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.quantidade button:hover {
+  background: var(--surface);
+}
+.quantidade span {
+  width: 44px;
+  height: 44px;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.quantidade button:first-child {
+  border-right: none;
+}
+.quantidade button:last-child {
+  border-left: none;
+}
+
+/* Botão primário: tinta sobre papel, label à esquerda. */
+.adicionar {
+  flex: 1;
+  min-width: 220px;
+  background: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+  font-size: 16px;
+  padding: 12px 18px;
+  text-align: left;
+}
+.adicionar:hover {
+  background: #000;
+}
+
+.descricao {
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+.ficha {
+  width: 100%;
+}
+.linhaFicha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 2px solid var(--ink);
+}
+.chave {
+  color: #55524f;
+}
+
+.vaiJunto {
+  padding: 20px 24px 32px;
+}
+.tituloVaiJunto {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #55524f;
+  margin-bottom: 14px;
+}
+.relacionados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.relacionado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.relacionado:hover {
+  color: inherit;
+}
+.relacionado:hover .nomeRelacionado {
+  color: var(--accent);
+}
+.imagemRelacionado {
+  width: 96px;
+  background: var(--surface);
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.imagemRelacionado svg {
+  width: 60%;
+}
+.nomeRelacionado {
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.precoRelacionado {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+/* Carregando: estrutura com réguas e textos em #B0ADA4. Sem shimmer/spinner. */
+.carregandoTexto {
+  color: #b0ada4;
+}
+
+.naoAchamos {
+  padding: 48px 24px;
+}
+.naoAchamos h1 {
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 44px);
+}
+.naoAchamos a {
+  display: inline-block;
+  margin-top: 16px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

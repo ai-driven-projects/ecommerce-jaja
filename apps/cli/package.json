@@ -1,0 +1,40 @@
+{
+  "name": "@jaja/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CLI de manutenção do projeto Jaja (setup, banco, qualidade, limpeza, deploy)",
+  "type": "module",
+  "bin": {
+    "jaja": "./bin/jaja.js"
+  },
+  "scripts": {
+    "cli": "tsx src/main.tsx",
+    "build": "tsc -p tsconfig.json",
+    "start": "node bin/jaja.js",
+    "lint": "eslint src",
+    "check-types": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "ink": "^7.1.1",
+    "ink-spinner": "^5.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "19.2.8"
+  },
+  "devDependencies": {
+    "@jaja/eslint-config": "*",
+    "@jaja/typescript-config": "*",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19",
+    "eslint": "^9",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.46.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

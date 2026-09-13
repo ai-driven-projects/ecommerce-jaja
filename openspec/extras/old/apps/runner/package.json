@@ -1,0 +1,24 @@
+{
+  "name": "@jaja/runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "test": "echo runner: sem testes"
+  },
+  "dependencies": {
+    "@jaja/broker": "workspace:*",
+    "@jaja/catalogo": "workspace:*",
+    "@jaja/entregas": "workspace:*",
+    "@jaja/estoque": "workspace:*",
+    "@jaja/notificacoes": "workspace:*",
+    "@jaja/pagamentos": "workspace:*",
+    "@jaja/pedidos": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
+  }
+}

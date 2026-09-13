@@ -1,0 +1,56 @@
+.topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 28px;
+  padding: 14px 24px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.logo span {
+  color: var(--accent);
+}
+
+.seletor {
+  font: 600 16px var(--font-ui);
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+
+.eta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+}
+.eta b {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.sacola {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.contador {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  border: 2px solid var(--ink);
+  padding: 0 7px;
+  line-height: 20px;
+}

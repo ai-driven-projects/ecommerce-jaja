@@ -1,0 +1,642 @@
+[
+  {
+    "id": "a7aaaa32-dda3-431d-bec0-12796cc6e2df",
+    "name": "Usuário Formação",
+    "email": "usuario@formacao.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=1",
+    "admin": true,
+    "password": "#Senha123"
+  },
+  {
+    "id": "8da8a13c-316f-46ba-8a94-9aab573fb0ea",
+    "name": "Admin Jaja",
+    "email": "admin@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=2",
+    "admin": true,
+    "password": "#Senha123"
+  },
+  {
+    "id": "260fc02b-4f66-4b48-ad6d-31712625c685",
+    "name": "Ana Pereira Carvalho",
+    "email": "ana.pereira.carvalho@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=3",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "5e4bc468-b979-452e-b340-3174c6d7fb1d",
+    "name": "Bruno Martins",
+    "email": "bruno.martins@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=4",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "bc63bae2-3e1c-41d8-892f-9689e4268c46",
+    "name": "Carla Gomes",
+    "email": "carla.gomes@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=5",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "4bc7edc7-da84-4840-b947-89ce1e7d3738",
+    "name": "Diego Silva Moura",
+    "email": "diego.silva.moura@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "7486307b-b16c-4883-9161-5abfe47a77ec",
+    "name": "Eduarda Cavalcanti",
+    "email": "eduarda.cavalcanti@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=7",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "dad3fb83-1906-44f1-b33b-046bd2492c14",
+    "name": "Felipe Moura",
+    "email": "felipe.moura@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=8",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "3ba6738f-4c6d-479d-a70f-feb81690aff3",
+    "name": "Gabriela Borges Garcia",
+    "email": "gabriela.borges.garcia@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=9",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "1bb58369-cf44-44b1-9078-38f649d03cac",
+    "name": "Henrique Lins",
+    "email": "henrique.lins@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "ceaef530-7e96-4f62-a0cb-6f09fcd4a869",
+    "name": "Isabela Rezende",
+    "email": "isabela.rezende@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=11",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "3b668f3f-4286-4ae3-af43-f2e28a45b63d",
+    "name": "João Bezerra Silva",
+    "email": "joao.bezerra.silva@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=12",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "755bb36f-2ac4-4d0d-ace9-00f9b061a756",
+    "name": "Juliana Jesus",
+    "email": "juliana.jesus@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=13",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "5ca57d27-d49f-41a7-9280-973c51d221e9",
+    "name": "Lucas Souza",
+    "email": "lucas.souza@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "93f1ea6c-e70a-4aeb-a4a6-a01912a627b8",
+    "name": "Mariana Almeida Paiva",
+    "email": "mariana.almeida.paiva@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=15",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "6196f9e1-0f10-43d3-a76e-60c859ae7d6b",
+    "name": "Matheus Castro",
+    "email": "matheus.castro@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=16",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "58ab83e7-e927-4e57-a21f-b442465556d6",
+    "name": "Natália Rocha",
+    "email": "natalia.rocha@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=17",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "21354e46-5c50-4e94-8cc0-c2520e4d14ca",
+    "name": "Otávio Monteiro Martins",
+    "email": "otavio.monteiro.martins@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "93d3fc62-88fb-4b7c-950d-96095a9288c2",
+    "name": "Paula Machado",
+    "email": "paula.machado@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=19",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "302ce02e-1fce-4afe-a858-4abc496c9ea2",
+    "name": "Rafael Sales",
+    "email": "rafael.sales@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=20",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "c9007b3d-35f9-421c-951b-f0986e9fd95e",
+    "name": "Renata Farias Xavier",
+    "email": "renata.farias.xavier@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=21",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "68faf131-1206-42a1-b259-5c87a0cf69f7",
+    "name": "Rodrigo Pacheco",
+    "email": "rodrigo.pacheco@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "7d952251-c306-462a-9d5c-34cd2a13638d",
+    "name": "Sofia Vasconcelos",
+    "email": "sofia.vasconcelos@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=23",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "6ec63018-85a8-47fe-9aaf-c1c1f3f5fb05",
+    "name": "Thiago Fernandes Nogueira",
+    "email": "thiago.fernandes.nogueira@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=24",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "f4e8dfd6-4b7c-4161-87e9-44a0d4e49f14",
+    "name": "Vanessa Peixoto",
+    "email": "vanessa.peixoto@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=25",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "45a2f905-656c-42d3-9495-ca36ac722ba3",
+    "name": "Vinícius Lima",
+    "email": "vinicius.lima@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "05fe2b09-2b6e-4c80-9c01-e9cd47403892",
+    "name": "Yasmin Araújo Batista",
+    "email": "yasmin.araujo.batista@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=27",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "5a886313-2690-49dd-906d-ef662c4c6f73",
+    "name": "Caio Moreira",
+    "email": "caio.moreira@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=28",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "c64e98ac-0544-4518-95cd-1ce925daad1e",
+    "name": "Beatriz Mendes",
+    "email": "beatriz.mendes@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=29",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "3d991f50-4b3f-4494-aa9b-42b45e15c800",
+    "name": "Leonardo Duarte Tavares",
+    "email": "leonardo.duarte.tavares@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "cdb767d4-ca82-478f-a269-4e5151a90a85",
+    "name": "Larissa Pinto",
+    "email": "larissa.pinto@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=31",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "645e720b-f56a-42c7-8c04-4813147c3d5f",
+    "name": "Gustavo Braga",
+    "email": "gustavo.braga@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=32",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "cc4c7469-6cea-4579-9ee5-ae27650c4fa8",
+    "name": "Camila Marques Dias",
+    "email": "camila.marques.dias@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=33",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "2cf612df-5828-42ef-bd14-72726f759e68",
+    "name": "Pedro Sampaio",
+    "email": "pedro.sampaio@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "fe2e65b0-15ce-457e-8c57-58cbb9e8083d",
+    "name": "Fernanda Coelho",
+    "email": "fernanda.coelho@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=35",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "d0a1d42e-cdca-4dae-98e4-1df520a4d383",
+    "name": "André Lacerda Cunha",
+    "email": "andre.lacerda.cunha@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=36",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "a5bd07d5-cc78-449e-97a8-6b25a63a4f39",
+    "name": "Letícia Oliveira",
+    "email": "leticia.oliveira@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=37",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "9c28ce85-5a66-404d-96aa-8044bd1f489b",
+    "name": "Marcelo Costa",
+    "email": "marcelo.costa@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "78b9415a-f8b4-49e8-a28d-e08fcaf9d2c5",
+    "name": "Bianca Dias Oliveira",
+    "email": "bianca.dias.oliveira@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=39",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "c3f25f8b-deb0-4639-a526-7700b20fab06",
+    "name": "Ricardo Teixeira",
+    "email": "ricardo.teixeira@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=40",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "7a3ab240-18af-4150-93dd-f1a6554caeb3",
+    "name": "Amanda Batista",
+    "email": "amanda.batista@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=41",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "15aa84de-d8cb-43d5-ba3e-e2698d0def87",
+    "name": "Daniel Macedo Lopes",
+    "email": "daniel.macedo.lopes@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "cb33b495-9340-4126-ae36-6ad051de04c2",
+    "name": "Patrícia Xavier",
+    "email": "patricia.xavier@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=43",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "8fc76dc3-609e-455c-a033-00d23c307516",
+    "name": "Fábio Guimarães",
+    "email": "fabio.guimaraes@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=44",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "f627df2b-8904-4faa-8cae-87add144884a",
+    "name": "Tatiane Paiva Coelho",
+    "email": "tatiane.paiva.coelho@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=45",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "bf84787e-eeb3-40f8-a44c-9ebf80d8468b",
+    "name": "Alexandre Andrade",
+    "email": "alexandre.andrade@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "621d15fe-cb43-4649-9595-e4551392397d",
+    "name": "Simone Garcia",
+    "email": "simone.garcia@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=47",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "b5ca7d65-7729-4e91-8955-09796c3e981d",
+    "name": "Murilo Ramalho Nunes",
+    "email": "murilo.ramalho.nunes@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=48",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "94e314d5-9b51-4db2-8616-ce7958e44670",
+    "name": "Cristina Carvalho",
+    "email": "cristina.carvalho@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=49",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "176e672e-7466-45f0-a1e2-1c69b48010fc",
+    "name": "Roberto Barbosa",
+    "email": "roberto.barbosa@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "d9745ac7-9a4d-4576-b1b0-6774bde81534",
+    "name": "Aline Nascimento Marques",
+    "email": "aline.nascimento.marques@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=51",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "2444c051-af9f-4acc-9312-c7388cd077ca",
+    "name": "Sérgio Freitas",
+    "email": "sergio.freitas@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=52",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "756cd4e3-9cf5-49d2-8e2c-ff80fc9f0e5a",
+    "name": "Débora Fonseca",
+    "email": "debora.fonseca@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=53",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "74ef0253-a752-42ca-9620-9bec81cb1ce7",
+    "name": "Márcio Ramos Ribeiro",
+    "email": "marcio.ramos.ribeiro@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "d6916cac-b114-4f51-a024-58c629ce8db3",
+    "name": "Priscila Brito",
+    "email": "priscila.brito@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=55",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "f6dc6e8e-174c-4178-8938-4f80ca59795d",
+    "name": "Igor Medeiros",
+    "email": "igor.medeiros@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=56",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "96f732b3-3710-44cf-8201-05ba5f585602",
+    "name": "Luana Siqueira Pinto",
+    "email": "luana.siqueira.pinto@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=57",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "12e618bb-714d-40c9-bd18-14fc1d42fcea",
+    "name": "Wagner Dantas",
+    "email": "wagner.dantas@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "b08f5a28-6dae-4085-85ac-2dbc18664063",
+    "name": "Raquel Maia",
+    "email": "raquel.maia@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=59",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "a2eaf791-82cb-41a6-8c67-83108a73a64a",
+    "name": "Anderson Santos Henriques",
+    "email": "anderson.santos.henriques@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=60",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "b7fa57b9-2439-497e-a86c-e89cc9fa47d7",
+    "name": "Elaine Rodrigues",
+    "email": "elaine.rodrigues@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=61",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "d907f6ce-9d30-40d1-9298-fc2e02965a24",
+    "name": "Jorge Ferreira",
+    "email": "jorge.ferreira@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "40da6e24-155b-4e42-859a-09f47b1bd559",
+    "name": "Michele Vieira Mendes",
+    "email": "michele.vieira.mendes@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=63",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "47cbfc79-2fff-4204-963f-cdadec6a9dba",
+    "name": "Adriano Campos",
+    "email": "adriano.campos@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=64",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "f7f3e9da-d128-4d4d-9538-6e03cc4e940d",
+    "name": "Carolina Melo",
+    "email": "carolina.melo@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=65",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "3f07b033-8ace-49c4-8792-0b2efc413fdf",
+    "name": "Everton Azevedo Queiroz",
+    "email": "everton.azevedo.queiroz@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "808cdd82-fddb-4d93-9aa5-f02cd2d5f338",
+    "name": "Cláudia Leal",
+    "email": "claudia.leal@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=67",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "ae7a055b-0706-41ba-a539-d48f61d945a7",
+    "name": "Renan Queiroz",
+    "email": "renan.queiroz@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=68",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "f6d44301-8462-49e3-8df8-d49c41fef944",
+    "name": "Sabrina Amaral Araújo",
+    "email": "sabrina.amaral.araujo@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=69",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "cfa471b0-822b-499f-b12d-93d094aa574e",
+    "name": "Vitor Henriques",
+    "email": "vitor.henriques@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "624b35f4-a968-4f53-a9c4-809b6e004192",
+    "name": "Rosana Vaz",
+    "email": "rosana.vaz@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=71",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "d61726d3-2948-4417-8054-4f1f65598437",
+    "name": "Douglas Ribeiro Azevedo",
+    "email": "douglas.ribeiro.azevedo@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=72",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "f03d8c34-4aba-426a-a5e1-bce9cd4019ad",
+    "name": "Tainá Cardoso",
+    "email": "taina.cardoso@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=3",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "d3d6c17d-c796-4ced-9d9f-c48edbb0e983",
+    "name": "Emerson Nunes",
+    "email": "emerson.nunes@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "91066cb2-b959-42c1-b240-29b888aea14b",
+    "name": "Helena Correia Peixoto",
+    "email": "helena.correia.peixoto@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=5",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "62047b0d-463e-430c-b2f2-68a41ae2b076",
+    "name": "Leandro Lopes",
+    "email": "leandro.lopes@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=6",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "b6df4a34-ce45-431f-b54c-5b625389f349",
+    "name": "Kelly Reis",
+    "email": "kelly.reis@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=7",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "03eed0b2-fe1f-4974-a834-11df650cb3d4",
+    "name": "Nelson Cunha Campos",
+    "email": "nelson.cunha.campos@jaja.dev",
+    "avatarUrl": null,
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "549571a1-32e5-460d-a3d7-a72d1b75f6cd",
+    "name": "Bárbara Neves",
+    "email": "barbara.neves@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=9",
+    "admin": false,
+    "password": "#Senha123"
+  },
+  {
+    "id": "310bb7b4-25df-4c8d-af48-69398d39a0d1",
+    "name": "Osvaldo Tavares",
+    "email": "osvaldo.tavares@jaja.dev",
+    "avatarUrl": "https://i.pravatar.cc/150?img=10",
+    "admin": false,
+    "password": "#Senha123"
+  }
+]

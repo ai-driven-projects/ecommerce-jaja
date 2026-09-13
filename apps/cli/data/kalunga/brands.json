@@ -1,0 +1,2272 @@
+{
+  "source": "kalunga",
+  "scrapedAt": "2026-09-12T19:28:21.751Z",
+  "brands": [
+    {
+      "id": "00005267",
+      "name": "Spiral",
+      "slug": "spiral",
+      "url": "https://www.kalunga.com.br/marca/spiral/00005267/0001",
+      "products": 87,
+      "categories": [
+        "artes-pintura",
+        "envelopes-etiquetas-formularios",
+        "escolar",
+        "escrita-corretivos",
+        "escritorio",
+        "informatica",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "62202189",
+      "name": "Brother",
+      "slug": "brother",
+      "url": "https://www.kalunga.com.br/marca/brother/62202189/0001",
+      "products": 42,
+      "categories": [
+        "cartuchos-toners",
+        "envelopes-etiquetas-formularios",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00007739",
+      "name": "Oval",
+      "slug": "oval",
+      "url": "https://www.kalunga.com.br/marca/oval/00007739/0001",
+      "products": 42,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "63935829",
+      "name": "Spiral",
+      "slug": "spiral",
+      "url": "https://www.kalunga.com.br/marca/spiral/63935829/0001",
+      "products": 32,
+      "categories": [
+        "artes-pintura",
+        "envelopes-etiquetas-formularios",
+        "escolar",
+        "escritorio",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "61797924",
+      "name": "HP",
+      "slug": "hp",
+      "url": "https://www.kalunga.com.br/marca/hp/61797924/0007",
+      "products": 30,
+      "categories": [
+        "cartuchos-toners",
+        "informatica"
+      ]
+    },
+    {
+      "id": "59596908",
+      "name": "Faber-castell",
+      "slug": "faber-castell",
+      "url": "https://www.kalunga.com.br/marca/faber-castell/59596908/0001",
+      "products": 27,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "61140349",
+      "name": "BIC",
+      "slug": "bic",
+      "url": "https://www.kalunga.com.br/marca/bic/61140349/0001",
+      "products": 26,
+      "categories": [
+        "artes-pintura",
+        "coffee-break",
+        "cuidados-pessoais",
+        "escolar",
+        "escrita-corretivos",
+        "escritorio",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "33011578",
+      "name": "Pimaco",
+      "slug": "pimaco",
+      "url": "https://www.kalunga.com.br/marca/pimaco/33011578/0001",
+      "products": 26,
+      "categories": [
+        "envelopes-etiquetas-formularios",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "50770643",
+      "name": "Audax",
+      "slug": "audax",
+      "url": "https://www.kalunga.com.br/marca/audax/50770643/0010",
+      "products": 24,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "43140862",
+      "name": "Dac",
+      "slug": "dac",
+      "url": "https://www.kalunga.com.br/marca/dac/43140862/0001",
+      "products": 22,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escritorio",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "61611141",
+      "name": "Pentel",
+      "slug": "pentel",
+      "url": "https://www.kalunga.com.br/marca/pentel/61611141/0001",
+      "products": 22,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "63310411",
+      "name": "Três Corações",
+      "slug": "tres-coracoes",
+      "url": "https://www.kalunga.com.br/marca/tres-coracoes/63310411/0030",
+      "products": 22,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "61379343",
+      "name": "Romitec",
+      "slug": "romitec",
+      "url": "https://www.kalunga.com.br/marca/romitec/61379343/0001",
+      "products": 20,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "00006661",
+      "name": "Canon",
+      "slug": "canon",
+      "url": "https://www.kalunga.com.br/marca/canon/00006661/0001",
+      "products": 19,
+      "categories": [
+        "cartuchos-toners"
+      ]
+    },
+    {
+      "id": "52106911",
+      "name": "Epson",
+      "slug": "epson",
+      "url": "https://www.kalunga.com.br/marca/epson/52106911/0003",
+      "products": 19,
+      "categories": [
+        "cartuchos-toners",
+        "informatica",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00001135",
+      "name": "Spiral Brf Ex",
+      "slug": "spiral-brf-ex",
+      "url": "https://www.kalunga.com.br/marca/spiral-brf-ex/00001135/0001",
+      "products": 18,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "23947651",
+      "name": "Freecô",
+      "slug": "freeco",
+      "url": "https://www.kalunga.com.br/marca/freeco/23947651/0001",
+      "products": 16,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "14301927",
+      "name": "Maxcril",
+      "slug": "maxcril",
+      "url": "https://www.kalunga.com.br/marca/maxcril/14301927/0001",
+      "products": 16,
+      "categories": [
+        "artes-pintura",
+        "envelopes-etiquetas-formularios",
+        "escolar",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "45985371",
+      "name": "3M",
+      "slug": "3m",
+      "url": "https://www.kalunga.com.br/marca/3m/45985371/0001",
+      "products": 15,
+      "categories": [
+        "artes-pintura",
+        "cuidados-pessoais",
+        "escritorio",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00005976",
+      "name": "2Plug",
+      "slug": "2plug",
+      "url": "https://www.kalunga.com.br/marca/2plug/00005976/0001",
+      "products": 12,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00007664",
+      "name": "APP-TECH",
+      "slug": "app-tech",
+      "url": "https://www.kalunga.com.br/marca/app-tech/00007664/0001",
+      "products": 12,
+      "categories": [
+        "envelopes-etiquetas-formularios",
+        "informatica",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "50306471",
+      "name": "Etilux",
+      "slug": "etilux",
+      "url": "https://www.kalunga.com.br/marca/etilux/50306471/0001",
+      "products": 12,
+      "categories": [
+        "artes-pintura",
+        "cuidados-pessoais",
+        "envelopes-etiquetas-formularios",
+        "informatica",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00501707",
+      "name": "Goodie",
+      "slug": "goodie",
+      "url": "https://www.kalunga.com.br/marca/goodie/00501707/0001",
+      "products": 12,
+      "categories": [
+        "artes-pintura",
+        "envelopes-etiquetas-formularios",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "47882618",
+      "name": "Plascony",
+      "slug": "plascony",
+      "url": "https://www.kalunga.com.br/marca/plascony/47882618/0001",
+      "products": 12,
+      "categories": [
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "19677625",
+      "name": "Premisse",
+      "slug": "premisse",
+      "url": "https://www.kalunga.com.br/marca/premisse/19677625/0001",
+      "products": 12,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "01144673",
+      "name": "Engetech Comércio E",
+      "slug": "engetech-comercio-e",
+      "url": "https://www.kalunga.com.br/marca/engetech-comercio-e/01144673/0001",
+      "products": 11,
+      "categories": [
+        "coffee-break",
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "01856241",
+      "name": "Dello",
+      "slug": "dello",
+      "url": "https://www.kalunga.com.br/marca/dello/01856241/0001",
+      "products": 10,
+      "categories": [
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00007694",
+      "name": "Easy Office",
+      "slug": "easy-office",
+      "url": "https://www.kalunga.com.br/marca/easy-office/00007694/0001",
+      "products": 10,
+      "categories": [
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "61203931",
+      "name": "Pilot",
+      "slug": "pilot",
+      "url": "https://www.kalunga.com.br/marca/pilot/61203931/0001",
+      "products": 10,
+      "categories": [
+        "escolar",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "58697640",
+      "name": "Plastpark",
+      "slug": "plastpark",
+      "url": "https://www.kalunga.com.br/marca/plastpark/58697640/0001",
+      "products": 10,
+      "categories": [
+        "artes-pintura",
+        "envelopes-etiquetas-formularios",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "02290277",
+      "name": "Kimberly",
+      "slug": "kimberly",
+      "url": "https://www.kalunga.com.br/marca/kimberly/02290277/0023",
+      "products": 9,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "08573862",
+      "name": "Logitech",
+      "slug": "logitech",
+      "url": "https://www.kalunga.com.br/marca/logitech/08573862/0001",
+      "products": 9,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "93896397",
+      "name": "Mercur S A",
+      "slug": "mercur-s-a",
+      "url": "https://www.kalunga.com.br/marca/mercur-s-a/93896397/0002",
+      "products": 9,
+      "categories": [
+        "escolar",
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "00000132",
+      "name": "Spiral Brf",
+      "slug": "spiral-brf",
+      "url": "https://www.kalunga.com.br/marca/spiral-brf/00000132/0001",
+      "products": 9,
+      "categories": [
+        "escolar",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "60881299",
+      "name": "Coperalcool",
+      "slug": "coperalcool",
+      "url": "https://www.kalunga.com.br/marca/coperalcool/60881299/0001",
+      "products": 8,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "19731267",
+      "name": "Make+",
+      "slug": "make-",
+      "url": "https://www.kalunga.com.br/marca/make-/19731267/0001",
+      "products": 8,
+      "categories": [
+        "artes-pintura",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "63939607",
+      "name": "Md9",
+      "slug": "md9",
+      "url": "https://www.kalunga.com.br/marca/md9/63939607/0001",
+      "products": 8,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "59717553",
+      "name": "Multi",
+      "slug": "multi",
+      "url": "https://www.kalunga.com.br/marca/multi/59717553/0006",
+      "products": 8,
+      "categories": [
+        "cuidados-pessoais",
+        "informatica"
+      ]
+    },
+    {
+      "id": "89738173",
+      "name": "Sanremo",
+      "slug": "sanremo",
+      "url": "https://www.kalunga.com.br/marca/sanremo/89738173/0006",
+      "products": 8,
+      "categories": [
+        "cuidados-pessoais",
+        "escritorio",
+        "higiene-limpeza",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "72109960",
+      "name": "Sizely",
+      "slug": "sizely",
+      "url": "https://www.kalunga.com.br/marca/sizely/72109960/0001",
+      "products": 8,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "00007738",
+      "name": "Stick Note",
+      "slug": "stick-note",
+      "url": "https://www.kalunga.com.br/marca/stick-note/00007738/0001",
+      "products": 8,
+      "categories": [
+        "escritorio",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "07439329",
+      "name": "Talge",
+      "slug": "talge",
+      "url": "https://www.kalunga.com.br/marca/talge/07439329/0001",
+      "products": 8,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "00036949",
+      "name": "Chamex",
+      "slug": "chamex",
+      "url": "https://www.kalunga.com.br/marca/chamex/00036949/0001",
+      "products": 7,
+      "categories": [
+        "escritorio",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "05012368",
+      "name": "Elg",
+      "slug": "elg",
+      "url": "https://www.kalunga.com.br/marca/elg/05012368/0001",
+      "products": 7,
+      "categories": [
+        "escritorio",
+        "informatica"
+      ]
+    },
+    {
+      "id": "54516661",
+      "name": "Johnson",
+      "slug": "johnson",
+      "url": "https://www.kalunga.com.br/marca/johnson/54516661/0001",
+      "products": 7,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "00007720",
+      "name": "Mentos",
+      "slug": "mentos",
+      "url": "https://www.kalunga.com.br/marca/mentos/00007720/0001",
+      "products": 7,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "73445454",
+      "name": "Ou",
+      "slug": "ou",
+      "url": "https://www.kalunga.com.br/marca/ou/73445454/0007",
+      "products": 7,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "28858361",
+      "name": "Proteja-se",
+      "slug": "proteja-se",
+      "url": "https://www.kalunga.com.br/marca/proteja-se/28858361/0002",
+      "products": 7,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "44145845",
+      "name": "Softys",
+      "slug": "softys",
+      "url": "https://www.kalunga.com.br/marca/softys/44145845/0011",
+      "products": 7,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "60840691",
+      "name": "Cis",
+      "slug": "cis",
+      "url": "https://www.kalunga.com.br/marca/cis/60840691/0001",
+      "products": 6,
+      "categories": [
+        "escolar",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "00000153",
+      "name": "Dymo",
+      "slug": "dymo",
+      "url": "https://www.kalunga.com.br/marca/dymo/00000153/0001",
+      "products": 6,
+      "categories": [
+        "envelopes-etiquetas-formularios",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "72430184",
+      "name": "Geguton",
+      "slug": "geguton",
+      "url": "https://www.kalunga.com.br/marca/geguton/72430184/0001",
+      "products": 6,
+      "categories": [
+        "escritorio",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "61146320",
+      "name": "Radex",
+      "slug": "radex",
+      "url": "https://www.kalunga.com.br/marca/radex/61146320/0001",
+      "products": 6,
+      "categories": [
+        "artes-pintura",
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "00006660",
+      "name": "Stabilo",
+      "slug": "stabilo",
+      "url": "https://www.kalunga.com.br/marca/stabilo/00006660/0001",
+      "products": 6,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "22685341",
+      "name": "Start Quimica",
+      "slug": "start-quimica",
+      "url": "https://www.kalunga.com.br/marca/start-quimica/22685341/0006",
+      "products": 6,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "05685641",
+      "name": "Abyara",
+      "slug": "abyara",
+      "url": "https://www.kalunga.com.br/marca/abyara/05685641/0001",
+      "products": 5,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "03335431",
+      "name": "Atlhetica",
+      "slug": "atlhetica",
+      "url": "https://www.kalunga.com.br/marca/atlhetica/03335431/0001",
+      "products": 5,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "61192522",
+      "name": "Bignardi",
+      "slug": "bignardi",
+      "url": "https://www.kalunga.com.br/marca/bignardi/61192522/0001",
+      "products": 5,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "00736949",
+      "name": "Chamequinho",
+      "slug": "chamequinho",
+      "url": "https://www.kalunga.com.br/marca/chamequinho/00736949/0001",
+      "products": 5,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "90348681",
+      "name": "Chies",
+      "slug": "chies",
+      "url": "https://www.kalunga.com.br/marca/chies/90348681/0001",
+      "products": 5,
+      "categories": [
+        "escolar",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00007737",
+      "name": "Coca Cola",
+      "slug": "coca-cola",
+      "url": "https://www.kalunga.com.br/marca/coca-cola/00007737/0001",
+      "products": 5,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "54430327",
+      "name": "Cortiarte",
+      "slug": "cortiarte",
+      "url": "https://www.kalunga.com.br/marca/cortiarte/54430327/0001",
+      "products": 5,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "00000150",
+      "name": "Fiorucci",
+      "slug": "fiorucci",
+      "url": "https://www.kalunga.com.br/marca/fiorucci/00000150/0001",
+      "products": 5,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "60397874",
+      "name": "Fuji Film",
+      "slug": "fuji-film",
+      "url": "https://www.kalunga.com.br/marca/fuji-film/60397874/0001",
+      "products": 5,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "85777555",
+      "name": "Ical",
+      "slug": "ical",
+      "url": "https://www.kalunga.com.br/marca/ical/85777555/0001",
+      "products": 5,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00000825",
+      "name": "Illy",
+      "slug": "illy",
+      "url": "https://www.kalunga.com.br/marca/illy/00000825/0001",
+      "products": 5,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "00785482",
+      "name": "Jadefrog",
+      "slug": "jadefrog",
+      "url": "https://www.kalunga.com.br/marca/jadefrog/00785482/0002",
+      "products": 5,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "60316817",
+      "name": "Microsoft",
+      "slug": "microsoft",
+      "url": "https://www.kalunga.com.br/marca/microsoft/60316817/0001",
+      "products": 5,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "88610191",
+      "name": "Mundial",
+      "slug": "mundial",
+      "url": "https://www.kalunga.com.br/marca/mundial/88610191/0039",
+      "products": 5,
+      "categories": [
+        "artes-pintura",
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "58732058",
+      "name": "Panini",
+      "slug": "panini",
+      "url": "https://www.kalunga.com.br/marca/panini/58732058/0001",
+      "products": 5,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "04253650",
+      "name": "Polibrás",
+      "slug": "polibras",
+      "url": "https://www.kalunga.com.br/marca/polibras/04253650/0003",
+      "products": 5,
+      "categories": [
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "03350452",
+      "name": "Sinalize",
+      "slug": "sinalize",
+      "url": "https://www.kalunga.com.br/marca/sinalize/03350452/0001",
+      "products": 5,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00011099",
+      "name": "Stick Tape",
+      "slug": "stick-tape",
+      "url": "https://www.kalunga.com.br/marca/stick-tape/00011099/0001",
+      "products": 5,
+      "categories": [
+        "escritorio"
+      ]
+    },
+    {
+      "id": "02158379",
+      "name": "Tex-print",
+      "slug": "tex-print",
+      "url": "https://www.kalunga.com.br/marca/tex-print/02158379/0001",
+      "products": 5,
+      "categories": [
+        "cartuchos-toners"
+      ]
+    },
+    {
+      "id": "31908825",
+      "name": "Art-latex",
+      "slug": "art-latex",
+      "url": "https://www.kalunga.com.br/marca/art-latex/31908825/0001",
+      "products": 4,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "09027414",
+      "name": "Canson",
+      "slug": "canson",
+      "url": "https://www.kalunga.com.br/marca/canson/09027414/0001",
+      "products": 4,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "21505556",
+      "name": "Decorex",
+      "slug": "decorex",
+      "url": "https://www.kalunga.com.br/marca/decorex/21505556/0001",
+      "products": 4,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "08789058",
+      "name": "Green Lakes Comércio",
+      "slug": "green-lakes-comercio",
+      "url": "https://www.kalunga.com.br/marca/green-lakes-comercio/08789058/0001",
+      "products": 4,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "00043130",
+      "name": "HP",
+      "slug": "hp",
+      "url": "https://www.kalunga.com.br/marca/hp/00043130/0001",
+      "products": 4,
+      "categories": [
+        "escritorio",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "09267418",
+      "name": "Inject",
+      "slug": "inject",
+      "url": "https://www.kalunga.com.br/marca/inject/09267418/0001",
+      "products": 4,
+      "categories": [
+        "escolar",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "71900237",
+      "name": "Manikraft",
+      "slug": "manikraft",
+      "url": "https://www.kalunga.com.br/marca/manikraft/71900237/0001",
+      "products": 4,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "00008003",
+      "name": "Monster",
+      "slug": "monster",
+      "url": "https://www.kalunga.com.br/marca/monster/00008003/0001",
+      "products": 4,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "04381287",
+      "name": "Ordene",
+      "slug": "ordene",
+      "url": "https://www.kalunga.com.br/marca/ordene/04381287/0001",
+      "products": 4,
+      "categories": [
+        "escritorio",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00008016",
+      "name": "Outdoors",
+      "slug": "outdoors",
+      "url": "https://www.kalunga.com.br/marca/outdoors/00008016/0001",
+      "products": 4,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "00007709",
+      "name": "Paper Mate",
+      "slug": "paper-mate",
+      "url": "https://www.kalunga.com.br/marca/paper-mate/00007709/0001",
+      "products": 4,
+      "categories": [
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "06282745",
+      "name": "Plaspiral",
+      "slug": "plaspiral",
+      "url": "https://www.kalunga.com.br/marca/plaspiral/06282745/0001",
+      "products": 4,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "90050238",
+      "name": "Tramontina",
+      "slug": "tramontina",
+      "url": "https://www.kalunga.com.br/marca/tramontina/90050238/0001",
+      "products": 4,
+      "categories": [
+        "artes-pintura",
+        "informatica"
+      ]
+    },
+    {
+      "id": "64904295",
+      "name": "União",
+      "slug": "uniao",
+      "url": "https://www.kalunga.com.br/marca/uniao/64904295/0038",
+      "products": 4,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "58508748",
+      "name": "ARTHI",
+      "slug": "arthi",
+      "url": "https://www.kalunga.com.br/marca/arthi/58508748/0001",
+      "products": 3,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "57443988",
+      "name": "Brasforma",
+      "slug": "brasforma",
+      "url": "https://www.kalunga.com.br/marca/brasforma/57443988/0001",
+      "products": 3,
+      "categories": [
+        "escritorio"
+      ]
+    },
+    {
+      "id": "01184287",
+      "name": "Bright",
+      "slug": "bright",
+      "url": "https://www.kalunga.com.br/marca/bright/01184287/0001",
+      "products": 3,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "07933371",
+      "name": "Brw",
+      "slug": "brw",
+      "url": "https://www.kalunga.com.br/marca/brw/07933371/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura",
+        "escrita-corretivos",
+        "escritorio"
+      ]
+    },
+    {
+      "id": "00107311",
+      "name": "Caneta Fixa",
+      "slug": "caneta-fixa",
+      "url": "https://www.kalunga.com.br/marca/caneta-fixa/00107311/0001",
+      "products": 3,
+      "categories": [
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "68216860",
+      "name": "Ciranda Cultural",
+      "slug": "ciranda-cultural",
+      "url": "https://www.kalunga.com.br/marca/ciranda-cultural/68216860/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura",
+        "escolar"
+      ]
+    },
+    {
+      "id": "11837610",
+      "name": "Colormake",
+      "slug": "colormake",
+      "url": "https://www.kalunga.com.br/marca/colormake/11837610/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "00011085",
+      "name": "Daler Rowney",
+      "slug": "daler-rowney",
+      "url": "https://www.kalunga.com.br/marca/daler-rowney/00011085/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "73151326",
+      "name": "Duler",
+      "slug": "duler",
+      "url": "https://www.kalunga.com.br/marca/duler/73151326/0001",
+      "products": 3,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "06239190",
+      "name": "Ferrero",
+      "slug": "ferrero",
+      "url": "https://www.kalunga.com.br/marca/ferrero/06239190/0001",
+      "products": 3,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "05861238",
+      "name": "Gala",
+      "slug": "gala",
+      "url": "https://www.kalunga.com.br/marca/gala/05861238/0001",
+      "products": 3,
+      "categories": [
+        "escolar",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00011086",
+      "name": "Giotto",
+      "slug": "giotto",
+      "url": "https://www.kalunga.com.br/marca/giotto/00011086/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "00008009",
+      "name": "GShield",
+      "slug": "gshield",
+      "url": "https://www.kalunga.com.br/marca/gshield/00008009/0001",
+      "products": 3,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "03064692",
+      "name": "Leonora",
+      "slug": "leonora",
+      "url": "https://www.kalunga.com.br/marca/leonora/03064692/0005",
+      "products": 3,
+      "categories": [
+        "artes-pintura",
+        "escolar"
+      ]
+    },
+    {
+      "id": "05317331",
+      "name": "Maped",
+      "slug": "maped",
+      "url": "https://www.kalunga.com.br/marca/maped/05317331/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura",
+        "escolar",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "18627195",
+      "name": "Master",
+      "slug": "master",
+      "url": "https://www.kalunga.com.br/marca/master/18627195/0001",
+      "products": 3,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "64952880",
+      "name": "Maxtoy",
+      "slug": "maxtoy",
+      "url": "https://www.kalunga.com.br/marca/maxtoy/64952880/0001",
+      "products": 3,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "61426243",
+      "name": "Mecanica e Estampari",
+      "slug": "mecanica-e-estampari",
+      "url": "https://www.kalunga.com.br/marca/mecanica-e-estampari/61426243/0002",
+      "products": 3,
+      "categories": [
+        "cuidados-pessoais",
+        "escritorio",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00000996",
+      "name": "Mercusys",
+      "slug": "mercusys",
+      "url": "https://www.kalunga.com.br/marca/mercusys/00000996/0001",
+      "products": 3,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "60409075",
+      "name": "Nestlé",
+      "slug": "nestle",
+      "url": "https://www.kalunga.com.br/marca/nestle/60409075/0149",
+      "products": 3,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "14240001",
+      "name": "Onpaper",
+      "slug": "onpaper",
+      "url": "https://www.kalunga.com.br/marca/onpaper/14240001/0001",
+      "products": 3,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "44769321",
+      "name": "Quimatic",
+      "slug": "quimatic",
+      "url": "https://www.kalunga.com.br/marca/quimatic/44769321/0001",
+      "products": 3,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "21284408",
+      "name": "RIDET LTDA",
+      "slug": "ridet-ltda",
+      "url": "https://www.kalunga.com.br/marca/ridet-ltda/21284408/0001",
+      "products": 3,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00005354",
+      "name": "Spiral Hki",
+      "slug": "spiral-hki",
+      "url": "https://www.kalunga.com.br/marca/spiral-hki/00005354/0001",
+      "products": 3,
+      "categories": [
+        "escolar",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00000207",
+      "name": "Spiral Lumi",
+      "slug": "spiral-lumi",
+      "url": "https://www.kalunga.com.br/marca/spiral-lumi/00000207/0001",
+      "products": 3,
+      "categories": [
+        "escolar",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00000018",
+      "name": "Spiral Pooh",
+      "slug": "spiral-pooh",
+      "url": "https://www.kalunga.com.br/marca/spiral-pooh/00000018/0001",
+      "products": 3,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "00001136",
+      "name": "Spiral Soot",
+      "slug": "spiral-soot",
+      "url": "https://www.kalunga.com.br/marca/spiral-soot/00001136/0001",
+      "products": 3,
+      "categories": [
+        "escolar",
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "65487605",
+      "name": "Stalo",
+      "slug": "stalo",
+      "url": "https://www.kalunga.com.br/marca/stalo/65487605/0001",
+      "products": 3,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "00007700",
+      "name": "Tp Link",
+      "slug": "tp-link",
+      "url": "https://www.kalunga.com.br/marca/tp-link/00007700/0001",
+      "products": 3,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "53182051",
+      "name": "Voyagem",
+      "slug": "voyagem",
+      "url": "https://www.kalunga.com.br/marca/voyagem/53182051/0001",
+      "products": 3,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "67854034",
+      "name": "WYDA",
+      "slug": "wyda",
+      "url": "https://www.kalunga.com.br/marca/wyda/67854034/0001",
+      "products": 3,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "57503229",
+      "name": "Acc",
+      "slug": "acc",
+      "url": "https://www.kalunga.com.br/marca/acc/57503229/0001",
+      "products": 2,
+      "categories": [
+        "escritorio"
+      ]
+    },
+    {
+      "id": "00007966",
+      "name": "Asus",
+      "slug": "asus",
+      "url": "https://www.kalunga.com.br/marca/asus/00007966/0001",
+      "products": 2,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00000214",
+      "name": "Bestclean",
+      "slug": "bestclean",
+      "url": "https://www.kalunga.com.br/marca/bestclean/00000214/0001",
+      "products": 2,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "47715276",
+      "name": "Cart Paper",
+      "slug": "cart-paper",
+      "url": "https://www.kalunga.com.br/marca/cart-paper/47715276/0001",
+      "products": 2,
+      "categories": [
+        "escritorio",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "73196644",
+      "name": "Cromus",
+      "slug": "cromus",
+      "url": "https://www.kalunga.com.br/marca/cromus/73196644/0001",
+      "products": 2,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00007734",
+      "name": "Crystal",
+      "slug": "crystal",
+      "url": "https://www.kalunga.com.br/marca/crystal/00007734/0001",
+      "products": 2,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "10322423",
+      "name": "Easyline",
+      "slug": "easyline",
+      "url": "https://www.kalunga.com.br/marca/easyline/10322423/0001",
+      "products": 2,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "11185397",
+      "name": "Evamax",
+      "slug": "evamax",
+      "url": "https://www.kalunga.com.br/marca/evamax/11185397/0001",
+      "products": 2,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "61365151",
+      "name": "Fênix",
+      "slug": "fenix",
+      "url": "https://www.kalunga.com.br/marca/fenix/61365151/0001",
+      "products": 2,
+      "categories": [
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "04182827",
+      "name": "Gold",
+      "slug": "gold",
+      "url": "https://www.kalunga.com.br/marca/gold/04182827/0001",
+      "products": 2,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "02116034",
+      "name": "Gramp Line",
+      "slug": "gramp-line",
+      "url": "https://www.kalunga.com.br/marca/gramp-line/02116034/0001",
+      "products": 2,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00626948",
+      "name": "Hanes",
+      "slug": "hanes",
+      "url": "https://www.kalunga.com.br/marca/hanes/00626948/0001",
+      "products": 2,
+      "categories": [
+        "cuidados-pessoais",
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "31098155",
+      "name": "Hxin",
+      "slug": "hxin",
+      "url": "https://www.kalunga.com.br/marca/hxin/31098155/0004",
+      "products": 2,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "82901000",
+      "name": "Intelbras",
+      "slug": "intelbras",
+      "url": "https://www.kalunga.com.br/marca/intelbras/82901000/0014",
+      "products": 2,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "08965001",
+      "name": "Kingston",
+      "slug": "kingston",
+      "url": "https://www.kalunga.com.br/marca/kingston/08965001/0001",
+      "products": 2,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00153282",
+      "name": "Mallory",
+      "slug": "mallory",
+      "url": "https://www.kalunga.com.br/marca/mallory/00153282/0003",
+      "products": 2,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "01148183",
+      "name": "Molin",
+      "slug": "molin",
+      "url": "https://www.kalunga.com.br/marca/molin/01148183/0001",
+      "products": 2,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "44743946",
+      "name": "Newpen",
+      "slug": "newpen",
+      "url": "https://www.kalunga.com.br/marca/newpen/44743946/0001",
+      "products": 2,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "01715468",
+      "name": "Off Paper",
+      "slug": "off-paper",
+      "url": "https://www.kalunga.com.br/marca/off-paper/01715468/0001",
+      "products": 2,
+      "categories": [
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "00006638",
+      "name": "Pilão",
+      "slug": "pilao",
+      "url": "https://www.kalunga.com.br/marca/pilao/00006638/0001",
+      "products": 2,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "05943957",
+      "name": "Rgt Eletronica Ltda",
+      "slug": "rgt-eletronica-ltda",
+      "url": "https://www.kalunga.com.br/marca/rgt-eletronica-ltda/05943957/0001",
+      "products": 2,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00007731",
+      "name": "Spiral Office",
+      "slug": "spiral-office",
+      "url": "https://www.kalunga.com.br/marca/spiral-office/00007731/0001",
+      "products": 2,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00000163",
+      "name": "Spiral Sno",
+      "slug": "spiral-sno",
+      "url": "https://www.kalunga.com.br/marca/spiral-sno/00000163/0001",
+      "products": 2,
+      "categories": [
+        "escolar",
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00005660",
+      "name": "Staedtler",
+      "slug": "staedtler",
+      "url": "https://www.kalunga.com.br/marca/staedtler/00005660/0001",
+      "products": 2,
+      "categories": [
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "00007635",
+      "name": "Tris",
+      "slug": "tris",
+      "url": "https://www.kalunga.com.br/marca/tris/00007635/0001",
+      "products": 2,
+      "categories": [
+        "escolar",
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "64600422",
+      "name": "Ts Shara Tecnologia",
+      "slug": "ts-shara-tecnologia",
+      "url": "https://www.kalunga.com.br/marca/ts-shara-tecnologia/64600422/0001",
+      "products": 2,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00007810",
+      "name": "Wd",
+      "slug": "wd",
+      "url": "https://www.kalunga.com.br/marca/wd/00007810/0001",
+      "products": 2,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "45989050",
+      "name": "Westrock",
+      "slug": "westrock",
+      "url": "https://www.kalunga.com.br/marca/westrock/45989050/0007",
+      "products": 2,
+      "categories": [
+        "organizacao",
+        "papeis-pastas"
+      ]
+    },
+    {
+      "id": "44379329",
+      "name": "Acrimet",
+      "slug": "acrimet",
+      "url": "https://www.kalunga.com.br/marca/acrimet/44379329/0001",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "26333520",
+      "name": "ALFASHOW",
+      "slug": "alfashow",
+      "url": "https://www.kalunga.com.br/marca/alfashow/26333520/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "07173771",
+      "name": "Apparatos",
+      "slug": "apparatos",
+      "url": "https://www.kalunga.com.br/marca/apparatos/07173771/0001",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "54360656",
+      "name": "Arcor",
+      "slug": "arcor",
+      "url": "https://www.kalunga.com.br/marca/arcor/54360656/0017",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "00008045",
+      "name": "Assugrin",
+      "slug": "assugrin",
+      "url": "https://www.kalunga.com.br/marca/assugrin/00008045/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "00385650",
+      "name": "Atco",
+      "slug": "atco",
+      "url": "https://www.kalunga.com.br/marca/atco/00385650/0001",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "06698091",
+      "name": "Autopel",
+      "slug": "autopel",
+      "url": "https://www.kalunga.com.br/marca/autopel/06698091/0005",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "00008035",
+      "name": "Azulim",
+      "slug": "azulim",
+      "url": "https://www.kalunga.com.br/marca/azulim/00008035/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "07037893",
+      "name": "Beltgroup do Brasil",
+      "slug": "beltgroup-do-brasil",
+      "url": "https://www.kalunga.com.br/marca/beltgroup-do-brasil/07037893/0001",
+      "products": 1,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "89724447",
+      "name": "Bettanin",
+      "slug": "bettanin",
+      "url": "https://www.kalunga.com.br/marca/bettanin/89724447/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "03626459",
+      "name": "Bralimpia Indústria",
+      "slug": "bralimpia-industria",
+      "url": "https://www.kalunga.com.br/marca/bralimpia-industria/03626459/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "92038108",
+      "name": "Brinox",
+      "slug": "brinox",
+      "url": "https://www.kalunga.com.br/marca/brinox/92038108/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "61539813",
+      "name": "Catavento",
+      "slug": "catavento",
+      "url": "https://www.kalunga.com.br/marca/catavento/61539813/0001",
+      "products": 1,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "04677565",
+      "name": "D Link",
+      "slug": "d-link",
+      "url": "https://www.kalunga.com.br/marca/d-link/04677565/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "08227782",
+      "name": "Detect Money",
+      "slug": "detect-money",
+      "url": "https://www.kalunga.com.br/marca/detect-money/08227782/0001",
+      "products": 1,
+      "categories": [
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "00005597",
+      "name": "Ed Online",
+      "slug": "ed-online",
+      "url": "https://www.kalunga.com.br/marca/ed-online/00005597/0001",
+      "products": 1,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "07005196",
+      "name": "Edifier",
+      "slug": "edifier",
+      "url": "https://www.kalunga.com.br/marca/edifier/07005196/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "76487032",
+      "name": "Electrolux",
+      "slug": "electrolux",
+      "url": "https://www.kalunga.com.br/marca/electrolux/76487032/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "00005110",
+      "name": "Ergo",
+      "slug": "ergo",
+      "url": "https://www.kalunga.com.br/marca/ergo/00005110/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "95836995",
+      "name": "Fixxar",
+      "slug": "fixxar",
+      "url": "https://www.kalunga.com.br/marca/fixxar/95836995/0001",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "00007722",
+      "name": "Fruit-tella",
+      "slug": "fruit-tella",
+      "url": "https://www.kalunga.com.br/marca/fruit-tella/00007722/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "90406117",
+      "name": "Future",
+      "slug": "future",
+      "url": "https://www.kalunga.com.br/marca/future/90406117/0001",
+      "products": 1,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "04623539",
+      "name": "Girardi",
+      "slug": "girardi",
+      "url": "https://www.kalunga.com.br/marca/girardi/04623539/0001",
+      "products": 1,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "24856865",
+      "name": "Happy Books",
+      "slug": "happy-books",
+      "url": "https://www.kalunga.com.br/marca/happy-books/24856865/0001",
+      "products": 1,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "00000097",
+      "name": "Happy-time",
+      "slug": "happy-time",
+      "url": "https://www.kalunga.com.br/marca/happy-time/00000097/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "02777131",
+      "name": "Henkel",
+      "slug": "henkel",
+      "url": "https://www.kalunga.com.br/marca/henkel/02777131/0001",
+      "products": 1,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "00009998",
+      "name": "Hp",
+      "slug": "hp",
+      "url": "https://www.kalunga.com.br/marca/hp/00009998/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "55124820",
+      "name": "Jr",
+      "slug": "jr",
+      "url": "https://www.kalunga.com.br/marca/jr/55124820/0001",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "00004400",
+      "name": "Letron",
+      "slug": "letron",
+      "url": "https://www.kalunga.com.br/marca/letron/00004400/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00767378",
+      "name": "Lexmark",
+      "slug": "lexmark",
+      "url": "https://www.kalunga.com.br/marca/lexmark/00767378/0001",
+      "products": 1,
+      "categories": [
+        "cartuchos-toners"
+      ]
+    },
+    {
+      "id": "10447922",
+      "name": "Maxlog Importacao E",
+      "slug": "maxlog-importacao-e",
+      "url": "https://www.kalunga.com.br/marca/maxlog-importacao-e/10447922/0003",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "03197889",
+      "name": "Metiq",
+      "slug": "metiq",
+      "url": "https://www.kalunga.com.br/marca/metiq/03197889/0001",
+      "products": 1,
+      "categories": [
+        "envelopes-etiquetas-formularios"
+      ]
+    },
+    {
+      "id": "48573767",
+      "name": "Mmc Brasil",
+      "slug": "mmc-brasil",
+      "url": "https://www.kalunga.com.br/marca/mmc-brasil/48573767/0003",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "43643857",
+      "name": "Montevérgine",
+      "slug": "montevergine",
+      "url": "https://www.kalunga.com.br/marca/montevergine/43643857/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "54886460",
+      "name": "Nitronplast",
+      "slug": "nitronplast",
+      "url": "https://www.kalunga.com.br/marca/nitronplast/54886460/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "06159294",
+      "name": "Nonus",
+      "slug": "nonus",
+      "url": "https://www.kalunga.com.br/marca/nonus/06159294/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "01619318",
+      "name": "OKI",
+      "slug": "oki",
+      "url": "https://www.kalunga.com.br/marca/oki/01619318/0001",
+      "products": 1,
+      "categories": [
+        "cartuchos-toners"
+      ]
+    },
+    {
+      "id": "66589490",
+      "name": "Ouro Branco",
+      "slug": "ouro-branco",
+      "url": "https://www.kalunga.com.br/marca/ouro-branco/66589490/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "56697493",
+      "name": "Pascoal",
+      "slug": "pascoal",
+      "url": "https://www.kalunga.com.br/marca/pascoal/56697493/0001",
+      "products": 1,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "56450877",
+      "name": "Plasutilind Com de P",
+      "slug": "plasutilind-com-de-p",
+      "url": "https://www.kalunga.com.br/marca/plasutilind-com-de-p/56450877/0003",
+      "products": 1,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "02327775",
+      "name": "Pombo",
+      "slug": "pombo",
+      "url": "https://www.kalunga.com.br/marca/pombo/02327775/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "02946761",
+      "name": "Red Bull",
+      "slug": "red-bull",
+      "url": "https://www.kalunga.com.br/marca/red-bull/02946761/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "51771459",
+      "name": "Redoma Indústria Grá",
+      "slug": "redoma-industria-gra",
+      "url": "https://www.kalunga.com.br/marca/redoma-industria-gra/51771459/0001",
+      "products": 1,
+      "categories": [
+        "escritorio"
+      ]
+    },
+    {
+      "id": "00005293",
+      "name": "SanDisk",
+      "slug": "sandisk",
+      "url": "https://www.kalunga.com.br/marca/sandisk/00005293/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "45256997",
+      "name": "Santa Helena",
+      "slug": "santa-helena",
+      "url": "https://www.kalunga.com.br/marca/santa-helena/45256997/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "50590553",
+      "name": "Secar",
+      "slug": "secar",
+      "url": "https://www.kalunga.com.br/marca/secar/50590553/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "02873296",
+      "name": "Seller",
+      "slug": "seller",
+      "url": "https://www.kalunga.com.br/marca/seller/02873296/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "10389282",
+      "name": "Sinoart",
+      "slug": "sinoart",
+      "url": "https://www.kalunga.com.br/marca/sinoart/10389282/0001",
+      "products": 1,
+      "categories": [
+        "escrita-corretivos"
+      ]
+    },
+    {
+      "id": "00007703",
+      "name": "Smarts",
+      "slug": "smarts",
+      "url": "https://www.kalunga.com.br/marca/smarts/00007703/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "48715759",
+      "name": "SMS",
+      "slug": "sms",
+      "url": "https://www.kalunga.com.br/marca/sms/48715759/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "00005234",
+      "name": "Spiral Cbf",
+      "slug": "spiral-cbf",
+      "url": "https://www.kalunga.com.br/marca/spiral-cbf/00005234/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "00000136",
+      "name": "Spiral Fem",
+      "slug": "spiral-fem",
+      "url": "https://www.kalunga.com.br/marca/spiral-fem/00000136/0001",
+      "products": 1,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00008026",
+      "name": "Spiral Hka",
+      "slug": "spiral-hka",
+      "url": "https://www.kalunga.com.br/marca/spiral-hka/00008026/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "00000011",
+      "name": "Spiral Hpc",
+      "slug": "spiral-hpc",
+      "url": "https://www.kalunga.com.br/marca/spiral-hpc/00000011/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "00004900",
+      "name": "Spiral Hpt",
+      "slug": "spiral-hpt",
+      "url": "https://www.kalunga.com.br/marca/spiral-hpt/00004900/0001",
+      "products": 1,
+      "categories": [
+        "organizacao"
+      ]
+    },
+    {
+      "id": "00000149",
+      "name": "Spiral Zen",
+      "slug": "spiral-zen",
+      "url": "https://www.kalunga.com.br/marca/spiral-zen/00000149/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "79906426",
+      "name": "Stolf",
+      "slug": "stolf",
+      "url": "https://www.kalunga.com.br/marca/stolf/79906426/0001",
+      "products": 1,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "92780634",
+      "name": "Termolar",
+      "slug": "termolar",
+      "url": "https://www.kalunga.com.br/marca/termolar/92780634/0014",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "37184014",
+      "name": "Texstan",
+      "slug": "texstan",
+      "url": "https://www.kalunga.com.br/marca/texstan/37184014/0001",
+      "products": 1,
+      "categories": [
+        "cuidados-pessoais"
+      ]
+    },
+    {
+      "id": "00007118",
+      "name": "TOCHAIN",
+      "slug": "tochain",
+      "url": "https://www.kalunga.com.br/marca/tochain/00007118/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "50029602",
+      "name": "Trident",
+      "slug": "trident",
+      "url": "https://www.kalunga.com.br/marca/trident/50029602/0001",
+      "products": 1,
+      "categories": [
+        "artes-pintura"
+      ]
+    },
+    {
+      "id": "00007723",
+      "name": "Trident",
+      "slug": "trident",
+      "url": "https://www.kalunga.com.br/marca/trident/00007723/0001",
+      "products": 1,
+      "categories": [
+        "coffee-break"
+      ]
+    },
+    {
+      "id": "05275378",
+      "name": "Trousses",
+      "slug": "trousses",
+      "url": "https://www.kalunga.com.br/marca/trousses/05275378/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "17213672",
+      "name": "União Master",
+      "slug": "uniao-master",
+      "url": "https://www.kalunga.com.br/marca/uniao-master/17213672/0001",
+      "products": 1,
+      "categories": [
+        "higiene-limpeza"
+      ]
+    },
+    {
+      "id": "00007665",
+      "name": "Up",
+      "slug": "up",
+      "url": "https://www.kalunga.com.br/marca/up/00007665/0001",
+      "products": 1,
+      "categories": [
+        "informatica"
+      ]
+    },
+    {
+      "id": "33066952",
+      "name": "Vulcan",
+      "slug": "vulcan",
+      "url": "https://www.kalunga.com.br/marca/vulcan/33066952/0001",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    },
+    {
+      "id": "07764744",
+      "name": "XERYU S IMPORT E DIS",
+      "slug": "xeryu-s-import-e-dis",
+      "url": "https://www.kalunga.com.br/marca/xeryu-s-import-e-dis/07764744/0002",
+      "products": 1,
+      "categories": [
+        "escolar"
+      ]
+    }
+  ]
+}

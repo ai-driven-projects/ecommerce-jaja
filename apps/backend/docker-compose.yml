@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: jaja
       POSTGRES_DB: jaja
     ports:
-      - '5432:5432'
+      # Porta do host vem do DB_PORT do .env (5433 por padrão: 5432 costuma estar ocupada por outro projeto).
+      - '${DB_PORT:-5433}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

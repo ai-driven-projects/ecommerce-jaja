@@ -1,0 +1,138 @@
+# Testes de integração do módulo auth (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), seed aplicado (npm run prisma:seed)
+# e backend rodando em http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# Ordem sugerida: executar de cima para baixo. O registro usa um email com sufixo
+# de timestamp para poder ser repetido; o cenário 409 reutiliza o mesmo email.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@seedPassword = #Senha123
+@newEmail = ana.souza+{{$timestamp}}@exemplo.com
+
+### 1. Registro válido -> 201 sem corpo
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "{{newEmail}}",
+  "password": "{{seedPassword}}",
+  "avatarUrl": "https://i.pravatar.cc/150?img=5"
+}
+
+### 2. Email duplicado -> 409 EMAIL_ALREADY_EXISTS
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "{{newEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Senha fraca -> 400 STRONG_PASSWORD_TOO_WEAK
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "senha.fraca+{{$timestamp}}@exemplo.com",
+  "password": "123456"
+}
+
+### 4. Nome sem sobrenome -> 400 PERSON_NAME_SURNAME_MISSING
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana",
+  "email": "nome.invalido+{{$timestamp}}@exemplo.com",
+  "password": "{{seedPassword}}"
+}
+
+### 5. Email inválido -> 400 INVALID_EMAIL
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ana Souza",
+  "email": "ana@",
+  "password": "{{seedPassword}}"
+}
+
+### 6. Registro com admin: true no corpo -> 201 e usuário nasce com admin = false
+# (confira com o login logo abaixo)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Bruno Lima",
+  "email": "bruno.lima+{{$timestamp}}@exemplo.com",
+  "password": "{{seedPassword}}",
+  "admin": true
+}
+
+### 7. Login do admin do seed -> 200 com token e user.admin = true
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 8. Login de usuário comum (registrado no passo 1) -> 200 com user.admin = false
+# Usa o email registrado no passo 1: registro seguido de login com as mesmas credenciais.
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{newEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 9. Senha errada -> 401 INVALID_CREDENTIALS
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "senha-errada"
+}
+
+### 10. Email inexistente -> 401 INVALID_CREDENTIALS (mesmo corpo do passo 9)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ninguem@exemplo.com",
+  "password": "{{seedPassword}}"
+}
+
+### 11. Email malformado no login -> 400 INVALID_EMAIL
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana@",
+  "password": "{{seedPassword}}"
+}
+
+### 12. GET /auth/me com token do admin -> 200 { id, name, email, admin: true }
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 13. GET /auth/me com token do usuário comum -> 200 com admin: false
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 14. GET /auth/me sem token -> 401
+GET {{baseUrl}}/auth/me
+
+### 15. GET /auth/me com token adulterado -> 401
+GET {{baseUrl}}/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ4In0.invalid

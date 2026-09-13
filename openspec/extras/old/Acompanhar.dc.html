@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f3f2f2;color:#201e1d;font-family:Archivo,system-ui,sans-serif}
+a{color:#201e1d}a:hover{color:#ec3013}
+::selection{background:rgba(236,48,19,.2)}
+:focus-visible{outline:2px solid #ec3013;outline-offset:2px}
+@keyframes aparecer{from{opacity:0}}
+</style>
+</helmet>
+<div data-screen-label="Acompanhar pedido" style="min-height:100vh;background:#f3f2f2;color:#201e1d;font-family:Archivo,system-ui,sans-serif;font-size:16px;line-height:1.4">
+  <header style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap;padding:18px 24px;border-bottom:2px solid #201e1d">
+    <div style="font-weight:800;font-size:26px;letter-spacing:-0.5px;white-space:nowrap">já já<span style="color:{{ corPonto }};transition:color 300ms">.</span></div>
+    <div aria-live="polite" style="margin-left:auto;display:flex;align-items:baseline;gap:10px">
+      <sc-if value="{{ mostraRotuloChega }}" hint-placeholder-val="{{ true }}">
+        <span style="font-size:14px;color:#55524f">chega em</span>
+      </sc-if>
+      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:28px;font-weight:600;color:#ec3013">{{ contador }}</span>
+    </div>
+  </header>
+  <div style="padding:14px 24px;font-size:14px;color:#55524f;border-bottom:2px solid #201e1d">pedido 0427 · 3 itens · Av. Santos Dumont, 1500 · 12º andar</div>
+  <main style="max-width:820px;padding:32px 24px 48px">
+    <div style="border-top:2px solid #201e1d;border-bottom:2px solid #201e1d">
+      <sc-for list="{{ linhas }}" as="l" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:16px;padding:14px 2px;border-top:{{ l.borda }};animation:{{ l.anim }}">
+          <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;font-size:15px;color:{{ l.corHora }}">{{ l.hora }}</span>
+          <span style="color:{{ l.corEtapa }}">{{ l.etapa }}</span>
+          <span style="justify-self:end">
+            <sc-if value="{{ l.feita }}" hint-placeholder-val="{{ false }}">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#201e1d" stroke-width="2" role="img" aria-label="concluída"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </sc-if>
+            <sc-if value="{{ l.emAndamento }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border:2px solid #ec3013;color:#b3260f;padding:2px 8px;white-space:nowrap">em andamento</span>
+            </sc-if>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+    <sc-if value="{{ mostraEntregador }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 2px;font-size:15px;color:#55524f;animation:{{ animRodape }}">{{ rodapeEntregador }}</div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;velocidade&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 1, &quot;min&quot;: 0.3, &quot;max&quot;: 3, &quot;step&quot;: 0.1, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Simulação&quot;}, &quot;simularAtraso&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Simulação&quot;}}">
+class Component extends DCLogic {
+  state = { eventos: {}, agora: Date.now(), previsao: 0 };
+
+  iniciar() {
+    this.limpar();
+    const v = this.props.velocidade ?? 1;
+    const agora = Date.now();
+    // Histórico já presente ao carregar (nada anima): criado e pago.
+    const eventos = {
+      criado: { hora: agora - 92000, vivo: false },
+      pago: { hora: agora - 71000, vivo: false },
+    };
+    this.setState({
+      eventos,
+      agora,
+      previsao: agora + (this.props.simularAtraso ? 8000 : 12 * 60000),
+    });
+    const plano = [
+      ["confirmado", 2],
+      ["atribuida", 3.2],
+      ["separado", 5.5],
+      ["a_caminho", 6.8],
+      ["chegando", 10],
+      ["concluida", 13.5],
+    ];
+    this.timers = plano.map(([tipo, seg]) =>
+      setTimeout(() => {
+        this.setState((st) => ({ eventos: { ...st.eventos, [tipo]: { hora: Date.now(), vivo: true } } }));
+      }, (seg * 1000) / v)
+    );
+    this.tick = setInterval(() => this.setState({ agora: Date.now() }), 1000);
+  }
+
+  limpar() {
+    (this.timers || []).forEach(clearTimeout);
+    if (this.tick) clearInterval(this.tick);
+  }
+
+  componentDidMount() {
+    document.title = "Pedido 0427 · já já.";
+    this.iniciar();
+  }
+  componentDidUpdate(prevProps) {
+    if (prevProps.velocidade !== this.props.velocidade || prevProps.simularAtraso !== this.props.simularAtraso)
+      this.iniciar();
+  }
+  componentWillUnmount() {
+    this.limpar();
+  }
+
+  renderVals() {
+    const ETAPAS = [
+      ["criado", "Pedido criado"],
+      ["pago", "Pago"],
+      ["confirmado", "Confirmado"],
+      ["separado", "Separado no hub"],
+      ["a_caminho", "A caminho"],
+      ["chegando", "Chegando"],
+      ["concluida", "Entregue"],
+    ];
+    const ev = this.state.eventos;
+    const hhmmss = (t) => new Date(t).toLocaleTimeString("pt-BR", { hour12: false });
+    const proxima = ETAPAS.findIndex(([t]) => !ev[t]);
+    const entregue = !!ev.concluida;
+
+    const linhas = ETAPAS.map(([tipo, rotulo], i) => {
+      const feita = !!ev[tipo];
+      const emAndamento = !feita && i === proxima;
+      return {
+        etapa: rotulo,
+        feita,
+        emAndamento,
+        hora: feita ? hhmmss(ev[tipo].hora) : emAndamento ? "agora" : "—",
+        corHora: feita ? "#201e1d" : emAndamento ? "#b3260f" : "#b0ada4",
+        corEtapa: feita || emAndamento ? "#201e1d" : "#b0ada4",
+        anim: feita && ev[tipo].vivo ? "aparecer 200ms ease-out" : "none",
+        borda: i === 0 ? "none" : "1px solid #d5d3cf",
+      };
+    });
+
+    const restante = this.state.previsao - this.state.agora;
+    const dois = (n) => String(n).padStart(2, "0");
+    const contador = entregue
+      ? "chegou"
+      : restante <= 0
+        ? "já já…"
+        : dois(Math.floor(restante / 60000)) + ":" + dois(Math.floor((restante % 60000) / 1000));
+
+    return {
+      linhas,
+      contador,
+      mostraRotuloChega: !entregue && restante > 0,
+      corPonto: entregue ? "#ec3013" : "#201e1d",
+      mostraEntregador: !!ev.atribuida,
+      rodapeEntregador: "Rafael, de bike · saiu do Hub Aldeota",
+      animRodape: ev.atribuida && ev.atribuida.vivo ? "aparecer 200ms ease-out" : "none",
+    };
+  }
+}
+</script>
+</body>
+</html>
