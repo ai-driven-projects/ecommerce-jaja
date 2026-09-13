@@ -7,15 +7,15 @@ Define o comportamento da vitrine pública do Jaja na rota `/`: como o visitante
 ## Requirements
 
 ### Requirement: Vitrine na rota raiz
-O sistema SHALL servir a vitrine pública na rota `/`, sem exigir sessão, dentro do shell da loja (cabeçalho com logo, bairro, ETA e sacola). O redirect anterior de `/` para `/principal` MUST deixar de existir. A rota `/principal` MUST continuar acessível na área privada. O título do documento MUST ser "já já.".
+O sistema SHALL servir a vitrine pública na rota `/`, sem exigir sessão, dentro do shell da loja (cabeçalho com logo, bairro, ETA e sacola). O redirect anterior de `/` para `/principal` MUST deixar de existir. A área administrativa MUST viver em `/admin` e exigir sessão de administrador; a rota `/principal` MUST deixar de existir. O título do documento MUST ser "já já.".
 
 #### Scenario: Acesso anônimo à raiz
 - **WHEN** um visitante sem sessão acessa `/`
 - **THEN** a vitrine é exibida com o cabeçalho da loja e o título do documento "já já."
 
 #### Scenario: Área privada preservada
-- **WHEN** um usuário acessa `/principal`
-- **THEN** a página principal da área privada é exibida no shell administrativo
+- **WHEN** um administrador autenticado acessa `/admin`
+- **THEN** o dashboard administrativo é exibido no shell administrativo, e `/principal` responde com a página não encontrada
 
 ### Requirement: Catálogo com dados locais
 Nesta entrega a vitrine SHALL usar um catálogo local (sem chamadas à API) com as categorias `papelaria`, `impressão`, `café e lanches`, `limpeza de escritório` e `tecnologia básica`, ao menos 16 produtos distribuídos entre elas, cada um com identificador de URL único, nome, categoria, preço em centavos e unidade de venda, e os bairros atendidos agrupados por hub com tempo estimado de entrega em minutos.
@@ -79,3 +79,14 @@ Cada card da grade SHALL ser um link para `/p/<identificador>` que preserva os p
 #### Scenario: Produto inexistente
 - **WHEN** o visitante acessa `/p/nao-existe`
 - **THEN** a resposta é a página não encontrada
+
+### Requirement: Fechar pedido leva ao checkout
+O botão "Fechar pedido" da sacola SHALL fechar o painel da sacola e navegar para `/checkout` preservando os parâmetros `bairro` e `categoria` da vitrine. A navegação MUST NOT depender de sessão: quem não estiver autenticado é identificado na própria página de checkout. Nesta entrega a sacola continua sem itens e o painel só exibe "Fechar pedido" quando há itens; o comportamento SHALL valer assim que houver itens na sacola.
+
+#### Scenario: Fechar pedido com bairro e categoria
+- **WHEN** um visitante em `/?bairro=Meireles&categoria=papelaria` clica em "Fechar pedido" na sacola
+- **THEN** o painel da sacola fecha e a página passa a `/checkout?bairro=Meireles&categoria=papelaria`
+
+#### Scenario: Fechar pedido sem sessão
+- **WHEN** um visitante sem sessão clica em "Fechar pedido"
+- **THEN** chega a `/checkout` e vê o formulário de entrar/criar conta, sem ser redirecionado para `/entrar`

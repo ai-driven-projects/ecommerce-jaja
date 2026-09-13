@@ -88,7 +88,7 @@ Campos de texto compartilhados SHALL ter fundo superfície, borda inferior de 2p
 - **THEN** ela exibe sublinhado de 2px vermelho e as demais exibem sublinhado fino em tinta
 
 ### Requirement: Cabeçalho da loja
-O cabeçalho reutilizável da loja SHALL exibir, da esquerda para a direita: o logo, um seletor de bairro sublinhado (sem borda além da inferior de 2px), o tempo estimado de entrega no formato "chega em X min" em mono com o número em vermelho, e o botão da sacola com ícone de sacola e contador numérico em mono com borda de 2px. O cabeçalho MUST ter borda inferior de 2px. Quando o tempo de entrega não estiver disponível, o texto de ETA MUST ser omitido.
+O cabeçalho reutilizável da loja SHALL exibir, da esquerda para a direita: o logo, um seletor de bairro sublinhado (sem borda além da inferior de 2px), o tempo estimado de entrega no formato "chega em X min" em mono com o número em vermelho, o controle de conta e o botão da sacola com ícone de sacola e contador numérico em mono com borda de 2px. O controle de conta MUST ser: com nome de usuário informado, o texto "olá, <primeiro nome>" em tinta atenuada e o botão de texto "sair" com hover vermelho; sem nome e com destino de login informado, o link de texto "entrar" sublinhado; sem nenhum dos dois, nada. O cabeçalho MUST ter borda inferior de 2px. Quando o tempo de entrega não estiver disponível, o texto de ETA MUST ser omitido.
 
 #### Scenario: Bairro atendido
 - **WHEN** o cabeçalho recebe bairro "Aldeota", ETA 18 minutos e 0 itens na sacola
@@ -101,6 +101,10 @@ O cabeçalho reutilizável da loja SHALL exibir, da esquerda para a direita: o l
 #### Scenario: Troca de bairro
 - **WHEN** o visitante escolhe outro bairro no seletor
 - **THEN** o cabeçalho notifica o bairro escolhido para a página que o contém
+
+#### Scenario: Controle de conta
+- **WHEN** o cabeçalho recebe o nome "Ana Souza" e uma ação de sair
+- **THEN** exibe "olá, Ana" e o botão "sair" antes da sacola; sem nome e com destino de login, exibe apenas o link "entrar"
 
 ### Requirement: Filtros de categoria
 Os filtros de categoria reutilizáveis SHALL ser botões de texto sublinhado, dispostos em linha com quebra à esquerda da barra, com borda inferior de 2px; o campo de busca, quando presente, fica à direita. O filtro ativo MUST ter sublinhado de 2px vermelho e peso 600; os demais MUST ter sublinhado de 1px em tinta e ficar vermelhos em hover.
@@ -166,10 +170,10 @@ O painel reutilizável da sacola SHALL abrir fixo à direita com largura de 420p
 - **THEN** exibe o item com subtotal `R$ 25,80` e o rodapé com total `R$ 25,80` e o botão "Fechar pedido"
 
 ### Requirement: Shell administrativo flat
-A área privada SHALL manter a navegação lateral recolhível, o menu lateral em folha no mobile e o menu do usuário no cabeçalho, mas com fundo papel, sidebar e cabeçalho separados por divisores de 2px em tinta, sem fundo escuro, gradientes, desfoque, sombras ou cantos arredondados. O item de navegação ativo MUST ser marcado com borda esquerda de 2px vermelha. O avatar do usuário MUST ser quadrado com borda de 2px.
+A área administrativa SHALL manter a navegação lateral recolhível, o menu lateral em folha no mobile e o menu do usuário no cabeçalho, mas com fundo papel, sidebar e cabeçalho separados por divisores de 2px em tinta, sem fundo escuro, gradientes, desfoque, sombras ou cantos arredondados. O item de navegação ativo MUST ser marcado com borda esquerda de 2px vermelha. O avatar do usuário MUST ser quadrado com borda de 2px. O menu do usuário MUST exibir o nome, o email e o avatar (quando houver) do usuário logado e a ação "Sair".
 
 #### Scenario: Área privada aberta
-- **WHEN** o usuário acessa `/principal`
+- **WHEN** um administrador autenticado acessa `/admin`
 - **THEN** a sidebar e o cabeçalho aparecem em papel, separados do conteúdo por linhas de 2px em tinta, sem gradiente
 
 #### Scenario: Item de navegação ativo
@@ -179,6 +183,10 @@ A área privada SHALL manter a navegação lateral recolhível, o menu lateral e
 #### Scenario: Sidebar recolhida
 - **WHEN** o usuário recolhe a sidebar no desktop
 - **THEN** ela continua recolhível e expansível como antes, exibindo só ícones e o logo reduzido
+
+#### Scenario: Menu do usuário logado
+- **WHEN** o administrador abre o menu do usuário no cabeçalho
+- **THEN** vê seu nome, email e avatar quadrado com borda de 2px, e a ação "Sair"
 
 ### Requirement: Rodapé da loja
 Toda página pública da loja SHALL terminar com um rodapé de loja, separado do conteúdo por régua de 2px em tinta, contendo: o logo grande com uma linha de contexto sobre o serviço; o endereço da loja em São Paulo e o horário; telefone (em mono) e e-mail de contato; links "Política de privacidade" e "Termos de uso" (reservados, sem página nesta entrega); e a linha de copyright em mono. Em telas largas as colunas MUST ser centralizadas em até 1100px; o rodapé MUST ficar no fim da tela quando o conteúdo for curto.
