@@ -213,7 +213,7 @@
 
 ## 8. Verificação integrada e fechamento (subagente Frontend)
 
-- [ ] 8.1 Com o banco semeado, backend e frontend no ar e o painel do navegador visível, entrar como `usuario@formacao.dev` em `/admin/customers` e verificar os cenários de `customers/customer-admin`:
+- [x] 8.1 Com o banco semeado, backend e frontend no ar e o painel do navegador visível, entrar como `usuario@formacao.dev` em `/admin/customers` e verificar os cenários de `customers/customer-admin`:
   - 40 clientes em 2 páginas, com CPF e telefone formatados e sem ações de criar ou excluir;
   - busca por nome e por CPF com máscara refletida na URL;
   - filtro de status e reload preservando a lista;
@@ -221,12 +221,12 @@
   - edição com CPF de outro cliente mostrando o erro no campo;
   - desativar, voltando à mesma página com "Inativo";
   - `/admin/customers/new` voltando para a lista com toaster.
-- [ ] 8.2 Na loja, verificar os cenários de `orders/checkout-access`:
+- [x] 8.2 Na loja, verificar os cenários de `orders/checkout-access`:
   - **conta nova criada em `/checkout?bairro=Aldeota&categoria=todas`:** formulário com Aldeota, Fortaleza e CE; "Confirmar pedido" desabilitado com o texto de pendência; validação no navegador sem chamada à API; salvar mostrando o toaster e o resumo;
   - **cliente com cadastro:** "Alterar" + "Cancelar" sem salvar; reload mostrando o resumo;
   - **CPF de um cliente do seed:** erro no campo CPF;
-  - **troca de conta:** sair e entrar com um usuário que já tem cadastro no seed mostra direto o resumo dele.
-- [ ] 8.3 Verificar que não houve regressão:
+  - **troca de conta:** sair e entrar com um usuário que já tem cadastro no seed mostra direto o resumo dele (o cabeçalho compacto do `/checkout` não tem "Sair" desde o commit `fa20034`, conforme `apps/frontend/DESIGN.md`; a saída é feita pelo menu da conta no cabeçalho da vitrine, voltando depois a `/checkout`).
+- [ ] 8.3 Verificar que não houve regressão ("sair" em `/checkout` exercido pelo menu da conta na vitrine, pelo mesmo motivo da 8.2):
   - `/admin/catalog/brands`, `/admin/catalog/categories` e `/admin/catalog/products` continuam listando e buscando;
   - `/entrar` e `/admin/login` continuam exibindo "Email ou senha inválidos" e "Este email já está cadastrado";
   - "sair" em `/checkout` volta ao formulário de entrar/criar conta.
