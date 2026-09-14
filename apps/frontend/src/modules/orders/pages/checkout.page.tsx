@@ -1,20 +1,20 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Clock } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuthForm } from '@/modules/auth/components/auth-form.component';
 import { useAuth } from '@/modules/auth/data/auth.context';
 import { welcomeMessage } from '@/modules/auth/pages/storefront-login.page';
-import { useCart } from '@/modules/catalog/data/cart.context';
 import { useStorefront } from '@/modules/catalog/data/use-storefront.hook';
 import { CustomerDeliveryForm } from '@/modules/customers/components/customer-delivery-form.component';
 import { CustomerDeliverySummary } from '@/modules/customers/components/customer-delivery-summary.component';
 import { useMyCustomer } from '@/modules/customers/data/use-my-customer.hook';
 import { BikeIcon } from '@/shared/components/branding/app-logo.component';
 import { ProductArt } from '@/shared/components/store/product-art.component';
+import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
@@ -23,6 +23,7 @@ import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
 import { cn } from '@/shared/lib/class-name.util';
 import { formatPrice } from '@/shared/util/price.util';
+import { useCart } from '../data/cart.context';
 import { nextOrderId } from '../data/tracking.mock';
 
 type PaymentMethod = 'pix' | 'card' | 'corp';
@@ -71,6 +72,22 @@ function DeliverySkeleton() {
   );
 }
 
+// Estrutura estática (sem shimmer) das linhas do resumo enquanto o carrinho da conta carrega.
+function SummaryLinesSkeleton() {
+  return (
+    <div role="status" className="mb-4 flex flex-col gap-3">
+      <span className="sr-only">Carregando carrinho…</span>
+      {[0, 1].map((index) => (
+        <div key={index} className="flex items-center gap-[11px]" aria-hidden="true">
+          <div className="size-11 shrink-0 rounded-[11px] bg-surface" />
+          <div className="h-4 flex-1 rounded-md bg-surface" />
+          <div className="h-4 w-14 rounded-md bg-surface" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Janela de chegada relativa ao ETA do bairro: depende do relógio, então só
 // existe no cliente (o servidor renderiza "…").
 function useEtaWindow(etaMinutes: number | null): string | null {
@@ -91,14 +108,29 @@ function CheckoutForm() {
   const [isConfirming, setIsConfirming] = useState(false);
   const etaWindow = useEtaWindow(storefront.etaMinutes);
   const backHref = `${STOREFRONT_ROUTE}?${storefront.query}`;
+  const refreshCart = cart.refresh;
+  const { detail } = cart;
+  const cartReady = !cart.loading && !cart.isSyncing && cart.count > 0 && !cart.hasUnavailableItems;
   // Confirmar exige cadastro de cliente salvo e o formulário de dados de entrega fechado.
   const deliveryReady = myCustomer.hasCustomer && !editingDelivery;
-  const canConfirm = cart.items.length > 0 && storefront.served && deliveryReady && !isConfirming;
+  const canConfirm = cartReady && storefront.served && deliveryReady && !isConfirming;
 
-  const handleConfirm = () => {
+  // O carrinho da conta pode ter mudado em outro dispositivo: recarrega ao abrir o checkout.
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  // Confirmação simulada: esvazia o carrinho da conta antes de ir ao acompanhamento.
+  // Se esvaziar falhar, o carrinho já exibiu o erro e a página continua aqui.
+  const handleConfirm = async () => {
     setIsConfirming(true);
+    const cleared = await cart.clear();
+    if (!cleared) {
+      setIsConfirming(false);
+      return;
+    }
+
     const orderId = nextOrderId();
-    cart.clear();
     toast.success(`Pedido #${orderId} confirmado`, { description: 'A bike já sai da loja.' });
     router.push(orderTrackingRoute(orderId));
   };
@@ -208,15 +240,44 @@ function CheckoutForm() {
         <aside className={cn(CARD_CLASS, 'lg:sticky lg:top-5')}>
           <h2 className="mb-3.5 font-display text-lg font-extrabold">Resumo do pedido</h2>
 
-          {cart.items.length > 0 ? (
+          {cart.loading ? (
+            <SummaryLinesSkeleton />
+          ) : cart.lines.length > 0 ? (
             <div className="mb-4 flex flex-col gap-3">
-              {cart.items.map((item) => (
-                <div key={item.productId} className="flex items-center gap-[11px]">
-                  <ProductArt emoji={item.emoji} category={item.category} size="xs" className="size-11 rounded-[11px] text-[22px]" />
-                  <div className="flex-1 text-[13.5px] font-bold leading-[1.3]">
-                    {item.name} <span className="font-semibold text-muted-ink">× {item.quantity}</span>
+              {cart.lines.map((line) => (
+                <div key={line.productId} className="flex items-center gap-[11px]">
+                  <div className={cn('flex min-w-0 flex-1 items-center gap-[11px]', !line.isAvailable && 'opacity-55')}>
+                    <ProductArt
+                      category={line.rootCategorySlug}
+                      imageUrl={line.thumbUrl}
+                      alt={line.name}
+                      size="xs"
+                      className="size-11 rounded-[11px] text-[22px]"
+                    />
+                    <div className="min-w-0 flex-1 text-[13.5px] font-bold leading-[1.3]">
+                      <span className="line-clamp-2" title={line.name}>
+                        {line.name}
+                      </span>
+                      <span className="font-semibold text-muted-ink">× {line.quantity}</span>
+                    </div>
                   </div>
-                  <span className="text-[13.5px] font-extrabold">{formatPrice(item.priceCents * item.quantity)}</span>
+                  {line.isAvailable && line.lineTotalCents !== null ? (
+                    <span className="shrink-0 text-[13.5px] font-extrabold tabular-nums">{formatPrice(line.lineTotalCents)}</span>
+                  ) : (
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <Badge variant="danger">Indisponível</Badge>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        aria-label={`Remover ${line.name} do carrinho`}
+                        onClick={() => cart.remove(line.productId)}
+                      >
+                        <Trash2 className="size-3.5" strokeWidth={2.2} aria-hidden="true" />
+                        Remover
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -229,22 +290,28 @@ function CheckoutForm() {
             </p>
           )}
 
-          <div className="flex flex-col gap-[7px] border-t border-dashed border-line pt-3 text-[13.5px]">
+          <div
+            aria-busy={cart.isSyncing}
+            className={cn(
+              'flex flex-col gap-[7px] border-t border-dashed border-line pt-3 text-[13.5px] transition-opacity duration-150',
+              cart.isSyncing && 'opacity-50',
+            )}
+          >
             <div className="flex justify-between text-muted-ink">
               <span>Subtotal</span>
-              <span className="font-bold text-ink">{formatPrice(cart.totals.subtotalCents)}</span>
+              <span className="font-bold tabular-nums text-ink">{formatPrice(detail.subtotalCents)}</span>
             </div>
             <div className="flex justify-between text-muted-ink">
               <span>Entrega de bike</span>
-              {cart.totals.deliveryFeeCents === 0 ? (
+              {detail.deliveryFeeCents === 0 ? (
                 <span className="font-extrabold text-success">Grátis</span>
               ) : (
-                <span className="font-bold text-ink">{formatPrice(cart.totals.deliveryFeeCents)}</span>
+                <span className="font-bold tabular-nums text-ink">{formatPrice(detail.deliveryFeeCents)}</span>
               )}
             </div>
             <div className="mt-1 flex justify-between text-[17px] font-extrabold">
               <span>Total</span>
-              <span>{formatPrice(cart.totals.totalCents)}</span>
+              <span className="tabular-nums">{formatPrice(detail.totalCents)}</span>
             </div>
           </div>
 
@@ -258,8 +325,13 @@ function CheckoutForm() {
           )}
 
           <Button size="xl" className="w-full" disabled={!canConfirm} onClick={handleConfirm}>
-            {isConfirming ? 'Confirmando…' : `Confirmar pedido · ${formatPrice(cart.totals.totalCents)}`}
+            {isConfirming ? 'Confirmando…' : `Confirmar pedido · ${formatPrice(detail.totalCents)}`}
           </Button>
+          {!cart.loading && cart.hasUnavailableItems ? (
+            <p role="status" className="mt-2.5 text-center text-[13px] font-bold text-danger">
+              Remova os itens indisponíveis para confirmar o pedido.
+            </p>
+          ) : null}
           {/* Só depois de consultar o cadastro, para o aviso não piscar durante o carregamento. */}
           {!myCustomer.loading && !deliveryReady ? (
             <p className="mt-2.5 text-center text-[13px] font-bold text-ink-soft">

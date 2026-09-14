@@ -19,7 +19,7 @@ import {
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
 import { folded, toPrefixTsQuery } from '../../db/text-search.sql.js';
-import { visibleProducts } from './storefront.sql.js';
+import { visibleProducts } from '../../db/visible-products.sql.js';
 
 // Maps the unique constraints of `categories` to the domain error they represent.
 // A primary key collision only happens when creating with the id of a deleted

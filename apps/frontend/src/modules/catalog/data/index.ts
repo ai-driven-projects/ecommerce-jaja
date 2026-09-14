@@ -2,7 +2,6 @@
 
 export * from './brand.api';
 export * from './brand.schema';
-export * from './cart.context';
 export * from './category.api';
 export * from './category.schema';
 export * from './category.util';

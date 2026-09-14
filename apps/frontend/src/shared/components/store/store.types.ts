@@ -1,9 +1,11 @@
 /**
  * Tipos mínimos dos componentes de loja. Ficam no shared para não acoplar os
- * componentes ao módulo `catalog`; o módulo mapeia seus tipos para estes.
+ * componentes aos módulos `catalog` e `orders`; os módulos mapeiam seus tipos
+ * para estes.
  */
 
 export type StoreProduct = {
+  id: string;
   slug: string;
   name: string;
   /** Slug da categoria raiz: só define o tom e o emoji de reserva da área de imagem. */
@@ -22,17 +24,23 @@ export type StoreProduct = {
   badge?: 'featured' | null;
 };
 
+/** Linha exibida do carrinho, com os dados atuais do produto. */
 export type CartItem = {
   productId: string;
+  slug: string;
   name: string;
+  unit: string;
+  /** Slug da categoria raiz: tom e emoji de reserva da área de imagem. */
   category: string;
-  emoji: string;
+  /** Foto do produto (miniatura); sem ela, o emoji da categoria. */
+  imageUrl: string | null;
+  /** Preço unitário atual. */
   priceCents: number;
   quantity: number;
+  /** Total da linha; `null` quando o produto está indisponível. */
+  lineTotalCents: number | null;
+  isAvailable: boolean;
 };
-
-/** @deprecated Use `CartItem`. */
-export type BagItem = CartItem;
 
 export type Zone = {
   neighborhood: string;
@@ -40,6 +48,8 @@ export type Zone = {
 };
 
 export type CartTotals = {
+  /** Soma das quantidades de todas as linhas, inclusive as indisponíveis. */
+  itemCount: number;
   subtotalCents: number;
   deliveryFeeCents: number;
   totalCents: number;

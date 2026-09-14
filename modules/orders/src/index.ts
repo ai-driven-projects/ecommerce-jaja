@@ -2,4 +2,4 @@ export function getModuleName(): string {
   return "orders";
 }
 
-export * from './orders'
+export * from './cart'

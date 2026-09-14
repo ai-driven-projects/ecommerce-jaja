@@ -10,6 +10,7 @@ model User {
   updatedAt DateTime  @updatedAt @map("updated_at")
   password  Password?
   customer  Customer?
+  cart      Cart?
 
   @@map("users")
 }

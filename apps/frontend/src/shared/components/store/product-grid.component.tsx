@@ -10,7 +10,10 @@ type ProductGridProps = {
   getHref?: (product: StoreProduct) => string;
   etaMinutes?: number | null;
   getQuantity?: (product: StoreProduct) => number;
+  /** Sem esta ação os cards não exibem o "+". */
   onChangeQuantity?: (product: StoreProduct, quantity: number) => void;
+  /** Quantidade máxima por produto: o "+" do stepper fica indisponível ao atingi-la. */
+  max?: number;
   /** Largura mínima dos cards (180 padrão; 220 nas ofertas). */
   minCardWidth?: 180 | 220;
   cardSize?: 'md' | 'lg';
@@ -28,6 +31,7 @@ export function ProductGrid({
   etaMinutes,
   getQuantity,
   onChangeQuantity,
+  max,
   minCardWidth = 180,
   cardSize = 'md',
   className,
@@ -44,13 +48,14 @@ export function ProductGrid({
     >
       {products.map((product) => (
         <ProductCard
-          key={product.slug}
+          key={product.id}
           product={product}
           href={getHref(product)}
           etaMinutes={etaMinutes}
           size={cardSize}
           quantity={getQuantity?.(product) ?? 0}
           onChangeQuantity={onChangeQuantity ? (quantity) => onChangeQuantity(product, quantity) : undefined}
+          max={max}
         />
       ))}
     </div>

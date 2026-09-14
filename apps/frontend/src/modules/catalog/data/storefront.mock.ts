@@ -143,7 +143,3 @@ export const PRODUCTS: readonly Product[] = [
     'Filtro de linha com cinco tomadas 10 A, chave liga/desliga iluminada e proteção contra surtos.',
     [['Tomadas', '5'], ['Corrente', '10 A'], ['Cabo', '1,5 m'], ['Proteção', 'Surto']], 21),
 ];
-
-export function findProduct(slug: string): Product | undefined {
-  return PRODUCTS.find((product) => product.slug === slug);
-}

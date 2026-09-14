@@ -3,6 +3,8 @@
 import { useId, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useCart } from '@/modules/orders/data/cart.context';
+import { CART_ITEM_MAX_QUANTITY, DELIVERY_FEE_CENTS, FREE_DELIVERY_THRESHOLD_CENTS } from '@/modules/orders/data/cart.util';
 import { BikeIcon } from '@/shared/components/branding/app-logo.component';
 import { Price } from '@/shared/components/store/price.component';
 import { QuantityStepper } from '@/shared/components/store/quantity-stepper.component';
@@ -11,7 +13,6 @@ import { Button } from '@/shared/components/ui/button';
 import { cn } from '@/shared/lib/class-name.util';
 import { STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
 import { withQuery } from '@/shared/navigation/with-query.util';
-import { DELIVERY_FEE_CENTS, FREE_DELIVERY_THRESHOLD_CENTS } from '@/shared/util/cart.util';
 import { formatPrice } from '@/shared/util/price.util';
 import type { StorefrontProductDetail } from '../data/storefront.api';
 import { buildStorefrontHref, hasCatalogFilters, storefrontBaseParams } from '../data/storefront-query.util';
@@ -86,12 +87,33 @@ function RelatedProducts({ product }: ProductDetailProps) {
 /**
  * Detalhe do produto do catálogo: trilha de categorias (e "← Voltar aos
  * resultados" quando a URL tem busca ou filtros), galeria, selos, marca, nome,
- * unidade, código, preço, quantidade com "Adicionar" (ainda sem carrinho: só o
- * aviso), cartão de entrega, descrição, ficha e "Mais de <categoria>".
+ * unidade, código, preço, quantidade (1 a 99) com "Adicionar" (inclui no
+ * carrinho exibido, com o aviso "Ver carrinho", e fica indisponível em bairro
+ * não atendido), "Você já tem N no carrinho.", cartão de entrega, descrição,
+ * ficha e "Mais de <categoria>".
  */
 export function ProductDetail({ product }: ProductDetailProps) {
   const storefront = useStorefront();
+  const cart = useCart();
   const [quantity, setQuantity] = useState(1);
+  const [isAdding, setIsAdding] = useState(false);
+  const inCart = cart.getQuantity(product.id);
+
+  // Erros (limite, produto indisponível) já viram toaster no carrinho.
+  const handleAdd = async () => {
+    const added = quantity;
+    const total = formatPrice(product.priceCents * added);
+    setIsAdding(true);
+    const ok = await cart.add(product.id, added);
+    setIsAdding(false);
+    if (!ok) return;
+
+    toast.success('Adicionado ao carrinho', {
+      description: `${added} un · ${total}`,
+      action: { label: 'Ver carrinho', onClick: cart.open },
+    });
+    setQuantity(1);
+  };
 
   const eta = storefront.etaMinutes;
   const base = storefrontBaseParams(storefront.params);
@@ -191,17 +213,24 @@ export function ProductDetail({ product }: ProductDetailProps) {
             ) : null}
           </div>
 
-          <div className="mb-3.5 flex flex-wrap items-center gap-3">
-            <QuantityStepper size="lg" quantity={quantity} onChange={setQuantity} min={1} itemName={product.name} />
-            <Button
-              size="xl"
-              onClick={() => toast('Carrinho chega já já.')}
-              disabled={!storefront.served}
-              className="min-w-[200px] flex-1"
-            >
-              Adicionar · {formatPrice(product.priceCents * quantity)}
+          <div className={cn('flex flex-wrap items-center gap-3', inCart > 0 ? 'mb-2.5' : 'mb-3.5')}>
+            <QuantityStepper
+              size="lg"
+              quantity={quantity}
+              onChange={setQuantity}
+              min={1}
+              max={CART_ITEM_MAX_QUANTITY}
+              itemName={product.name}
+            />
+            <Button size="xl" onClick={handleAdd} disabled={!storefront.served || isAdding} className="min-w-[200px] flex-1">
+              {isAdding ? 'Adicionando…' : `Adicionar · ${formatPrice(product.priceCents * quantity)}`}
             </Button>
           </div>
+          {inCart > 0 ? (
+            <p role="status" className="mb-3.5 text-[13.5px] font-bold text-ink-soft">
+              Você já tem {inCart} no carrinho.
+            </p>
+          ) : null}
 
           <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-line bg-card px-[18px] py-4">
             <div className="flex items-center gap-[11px]">

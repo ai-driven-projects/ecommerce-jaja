@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { DbModule } from '../../db/db.module.js';
-import { OrdersController } from './orders.controller.js';
-import { OrdersPrisma } from './orders.prisma.js';
+import { CartController } from './cart.controller.js';
+import { CartPrisma } from './cart.prisma.js';
+import { MyCartController } from './my-cart.controller.js';
 
 @Module({
   imports: [DbModule],
-  controllers: [OrdersController],
-  providers: [OrdersPrisma],
-  exports: [OrdersPrisma],
+  controllers: [MyCartController, CartController],
+  providers: [CartPrisma],
+  exports: [CartPrisma],
 })
 export class OrdersModule {}

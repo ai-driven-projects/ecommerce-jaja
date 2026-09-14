@@ -28,7 +28,7 @@ import {
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
 import { folded, toPrefixTsQuery } from '../../db/text-search.sql.js';
-import { visibleProducts } from './storefront.sql.js';
+import { visibleProducts } from '../../db/visible-products.sql.js';
 
 type ConstraintViolation = {
   fields: readonly string[];

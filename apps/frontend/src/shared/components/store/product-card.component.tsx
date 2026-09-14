@@ -17,6 +17,8 @@ type ProductCardProps = {
   quantity?: number;
   /** Sem esta ação o card não exibe o "+". */
   onChangeQuantity?: (quantity: number) => void;
+  /** Quantidade máxima no carrinho: o "+" do stepper fica indisponível ao atingi-la. */
+  max?: number;
   /** Área de imagem maior (usado nas ofertas). */
   size?: 'md' | 'lg';
   className?: string;
@@ -38,6 +40,7 @@ export function ProductCard({
   etaMinutes,
   quantity = 0,
   onChangeQuantity,
+  max,
   size = 'md',
   className,
 }: ProductCardProps) {
@@ -86,7 +89,7 @@ export function ProductCard({
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <Price cents={product.priceCents} oldCents={product.oldPriceCents} className="whitespace-nowrap text-base" />
         {onChangeQuantity ? (
-          <AddToCartControl quantity={quantity} onChange={onChangeQuantity} itemName={product.name} />
+          <AddToCartControl quantity={quantity} onChange={onChangeQuantity} max={max} itemName={product.name} />
         ) : null}
       </div>
     </article>

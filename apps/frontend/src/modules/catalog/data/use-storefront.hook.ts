@@ -35,7 +35,8 @@ export type StorefrontNavigateOptions = {
  * `navigate` leva à vitrine com as mudanças: filtros, categoria e ordem usam
  * `router.replace` sem rolar; página e busca usam `router.push`. `query`
  * preserva todos os parâmetros e vai nos links dos cards e do checkout. O
- * carrinho vive em `useCart`. A memoização fica a cargo do React Compiler.
+ * carrinho não passa por aqui: vive em `useCart` (`modules/orders/data/cart.context`).
+ * A memoização fica a cargo do React Compiler.
  */
 export function useStorefront() {
   const router = useRouter();

@@ -1,0 +1,461 @@
+# Testes de integração do carrinho (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations aplicadas
+# (npm run prisma:migrate:deploy), seeds `auth` e `catalog` aplicados
+# (npm run prisma:seed -- --only=auth,catalog) e backend rodando em
+# http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# Ordem: executar de cima para baixo. O passo 1 registra um usuário novo com email de
+# sufixo de timestamp, para o arquivo poder ser executado de novo; os passos seguintes
+# reutilizam o token e os ids dos produtos por requisições nomeadas:
+# - A, B, C e E: os quatro produtos disponíveis mais baratos da vitrine (passo 4);
+# - D: o produto disponível mais barato com preço >= R$ 79,00 (passo 5);
+# - X: o produto inativo do seed (`10n0595`), obtido pelo cadastro do administrador (passo 6).
+#
+# O bloco de indisponibilidade desativa o produto B pelo cadastro e o REATIVA no passo 34,
+# deixando o seed como estava. Se a execução parar no meio desse bloco, rode o passo 34.
+# Carrinhos criados por este arquivo continuam no banco (não há seed de carrinhos).
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@seedPassword = #Senha123
+# uuid v4 válido que não corresponde a nenhum produto.
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+@token = {{loginNewUser.response.body.token}}
+@adminToken = {{loginAdmin.response.body.token}}
+@productA = {{cheapProducts.response.body.$.items[0].id}}
+@productB = {{cheapProducts.response.body.$.items[1].id}}
+@productC = {{cheapProducts.response.body.$.items[2].id}}
+@productE = {{cheapProducts.response.body.$.items[3].id}}
+@productD = {{freeDeliveryProduct.response.body.$.items[0].id}}
+@productX = {{inactiveProduct.response.body.$.items[0].id}}
+
+# ---------------------------------------------------------------------------
+# Preparação: usuário novo, administrador e produtos
+# ---------------------------------------------------------------------------
+
+### 1. Registro de usuário novo -> 201 sem corpo
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Cliente Carrinho",
+  "email": "cliente.carrinho+{{$timestamp}}@jaja.dev",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login do usuário do passo 1 -> 200 com token
+# @name loginNewUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{registerUser.request.body.$.email}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Login do administrador do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 4. Fixture: os quatro produtos disponíveis mais baratos (A, B, C e E) -> 200 com 4 itens
+# @name cheapProducts
+GET {{baseUrl}}/storefront/products?sort=price-asc&pageSize=4
+
+### 5. Fixture: produto disponível mais barato com preço >= R$ 79,00 (D) -> 200 com 1 item
+# @name freeDeliveryProduct
+GET {{baseUrl}}/storefront/products?minPriceCents=7900&sort=price-asc&pageSize=1
+
+### 6. Fixture: produto inativo do seed (X) pelo cadastro -> 200 com 1 item e isActive false
+# @name inactiveProduct
+GET {{baseUrl}}/products?search=10n0595&isActive=false
+Authorization: Bearer {{adminToken}}
+
+### 7. Fixture: cadastro do produto B (categoryId e imagens, para desativar e reativar) -> 200
+# @name adminProductB
+GET {{baseUrl}}/products/{{productB}}
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Acesso
+# ---------------------------------------------------------------------------
+
+### 8. GET /me/cart sem token -> 401
+GET {{baseUrl}}/me/cart
+
+### 9. GET /me/cart com token inválido -> 401
+GET {{baseUrl}}/me/cart
+Authorization: Bearer token-invalido
+
+### 10. POST /cart/preview sem token -> 200 com o carrinho vazio (lines [], totais 0,
+### freeDeliveryThresholdCents 7900, hasUnavailableItems false)
+POST {{baseUrl}}/cart/preview
+Content-Type: application/json
+
+{
+  "items": []
+}
+
+# ---------------------------------------------------------------------------
+# Usuário novo
+# ---------------------------------------------------------------------------
+
+### 11. Usuário sem carrinho -> 200 com lines [], itemCount 0, subtotalCents 0,
+### deliveryFeeCents 0, totalCents 0 e hasUnavailableItems false
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{token}}
+
+# ---------------------------------------------------------------------------
+# Inclusão e quantidade
+# ---------------------------------------------------------------------------
+
+### 12. Primeiro produto: A com quantity 2 -> 200 com uma linha de A (slug, nome, unit,
+### rootCategorySlug, thumbUrl e priceCents iguais aos da vitrine no passo 4), quantity 2,
+### isAvailable true, lineTotalCents = priceCents * 2, itemCount 2, subtotalCents =
+### lineTotalCents, deliveryFeeCents 490, totalCents = subtotal + 490 e
+### missingForFreeDeliveryCents = 7900 - subtotal
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": 2
+}
+
+### 13. A de novo com quantity 3 -> 200 com A em quantity 5, na mesma posição
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": 3
+}
+
+### 14. B sem quantity -> 200 com B no fim em quantity 1 (linhas A, B) e itemCount 6
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productB}}"
+}
+
+### 15. PUT de A com quantity 1 -> 200 com A em quantity 1 e ainda antes de B
+PUT {{baseUrl}}/me/cart/items/{{productA}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}
+
+### 16. PUT de C, fora do carrinho, com quantity 2 -> 200 com C no fim (linhas A, B, C)
+PUT {{baseUrl}}/me/cart/items/{{productC}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 17. Carrinho salvo entre sessões: novo login do mesmo usuário -> 200 com token
+# @name loginAgain
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{registerUser.request.body.$.email}}",
+  "password": "{{seedPassword}}"
+}
+
+### 18. GET /me/cart com o token do passo 17 -> 200 com A (1), B (1) e C (2), nessa ordem
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{loginAgain.response.body.token}}
+
+# ---------------------------------------------------------------------------
+# Erros (o carrinho continua A (1), B (1), C (2))
+# ---------------------------------------------------------------------------
+
+### 19. quantity 0 -> 400 CART_ITEM_QUANTITY_INVALID
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": 0
+}
+
+### 20. quantity 100 -> 400 CART_ITEM_QUANTITY_INVALID
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": 100
+}
+
+### 21. quantity 1.5 -> 400 CART_ITEM_QUANTITY_INVALID
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": 1.5
+}
+
+### 22. quantity "abc" -> 400 CART_ITEM_QUANTITY_INVALID
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": "abc"
+}
+
+### 23. PUT com quantity 0 -> 400 CART_ITEM_QUANTITY_INVALID (zerar é pelo DELETE)
+PUT {{baseUrl}}/me/cart/items/{{productA}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 0
+}
+
+### 24. A com quantity 99 quando já tem 1 -> 400 CART_ITEM_QUANTITY_EXCEEDED
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}",
+  "quantity": 99
+}
+
+### 25. productId malformado -> 400 INVALID_ID
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "abc",
+  "quantity": 1
+}
+
+### 26. uuid inexistente -> 404 CART_PRODUCT_NOT_FOUND
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{missingId}}",
+  "quantity": 1
+}
+
+### 27. Produto inativo do seed (X) -> 404 CART_PRODUCT_NOT_FOUND
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productX}}",
+  "quantity": 1
+}
+
+### 28. Depois dos erros -> 200 com o carrinho igual ao do passo 18
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{token}}
+
+# ---------------------------------------------------------------------------
+# Entrega grátis
+# ---------------------------------------------------------------------------
+
+### 29. D (preço >= R$ 79,00) -> 200 com D no fim, subtotalCents >= 7900,
+### deliveryFeeCents 0, missingForFreeDeliveryCents 0 e totalCents = subtotalCents
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "productId": "{{productD}}",
+  "quantity": 1
+}
+
+# ---------------------------------------------------------------------------
+# Indisponibilidade (desativa e REATIVA o produto B)
+# ---------------------------------------------------------------------------
+
+### 30. Desativar o produto B pelo cadastro -> 200 com isActive false. Campos omitidos mantêm
+### o valor atual; as imagens são reenviadas porque a lista enviada substitui a anterior.
+PUT {{baseUrl}}/products/{{productB}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProductB.response.body.name}}",
+  "categoryId": "{{adminProductB.response.body.categoryId}}",
+  "priceCents": {{adminProductB.response.body.priceCents}},
+  "images": {{adminProductB.response.body.$.images}},
+  "isActive": false
+}
+
+### 31. GET /me/cart -> 200 com a linha B em isAvailable false e lineTotalCents null,
+### hasUnavailableItems true, itemCount contando B e subtotalCents só com A, C e D
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{token}}
+
+### 32. PUT de B (indisponível, já no carrinho) -> 404 CART_PRODUCT_NOT_FOUND e B continua com 1
+PUT {{baseUrl}}/me/cart/items/{{productB}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+### 33. DELETE de B -> 200 sem a linha B e com hasUnavailableItems false (linhas A, C, D)
+DELETE {{baseUrl}}/me/cart/items/{{productB}}
+Authorization: Bearer {{token}}
+
+### 34. Reativar o produto B (restaura o seed) -> 200 com isActive true
+PUT {{baseUrl}}/products/{{productB}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProductB.response.body.name}}",
+  "categoryId": "{{adminProductB.response.body.categoryId}}",
+  "priceCents": {{adminProductB.response.body.priceCents}},
+  "images": {{adminProductB.response.body.$.images}},
+  "isActive": true
+}
+
+### 35. B voltou à vitrine -> 200
+GET {{baseUrl}}/storefront/products/{{adminProductB.response.body.slug}}
+
+# ---------------------------------------------------------------------------
+# Remoção idempotente
+# ---------------------------------------------------------------------------
+
+### 36. DELETE de E, que não está no carrinho -> 200 com o mesmo carrinho (A, C, D)
+DELETE {{baseUrl}}/me/cart/items/{{productE}}
+Authorization: Bearer {{token}}
+
+### 37. DELETE com productId malformado -> 400 INVALID_ID
+DELETE {{baseUrl}}/me/cart/items/abc
+Authorization: Bearer {{token}}
+
+# ---------------------------------------------------------------------------
+# Mescla do carrinho do visitante
+# ---------------------------------------------------------------------------
+
+### 38. Mescla com A (99, somando ao 1 do carrinho), E (novo), X (inativo), uuid inexistente,
+### id malformado e B com quantity 0 -> 200 com A em 99 na posição original, C (2), D (1)
+### e E (1) no fim; nenhuma linha de X, do uuid inexistente, do id malformado nem de B
+POST {{baseUrl}}/me/cart/merge
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": "{{productA}}", "quantity": 99 },
+    { "productId": "{{productE}}", "quantity": 1 },
+    { "productId": "{{productX}}", "quantity": 1 },
+    { "productId": "{{missingId}}", "quantity": 1 },
+    { "productId": "abc", "quantity": 1 },
+    { "productId": "{{productB}}", "quantity": 0 }
+  ]
+}
+
+### 39. Mescla com items que não é lista -> 200 com o carrinho do passo 38 (sem 400)
+POST {{baseUrl}}/me/cart/merge
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": "nao-e-lista"
+}
+
+# ---------------------------------------------------------------------------
+# Prévia do visitante (sem token; não grava nada)
+# ---------------------------------------------------------------------------
+
+### 40. Normalização -> 200 com as linhas A (1 + 2 = 3), C (150 limitado a 99) e X
+### (isAvailable false, lineTotalCents null), nessa ordem; nenhuma linha do id malformado nem
+### do uuid inexistente; hasUnavailableItems true e subtotal só com A e C
+POST {{baseUrl}}/cart/preview
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": "{{productA}}", "quantity": 1 },
+    { "productId": "{{productC}}", "quantity": 150 },
+    { "productId": "abc", "quantity": 1 },
+    { "productId": "{{productA}}", "quantity": 2 },
+    { "productId": "{{missingId}}", "quantity": 1 },
+    { "productId": "{{productX}}", "quantity": 1 }
+  ]
+}
+
+### 41. Prévia com um produto disponível e cabeçalho Authorization inválido -> 200 com a linha
+### de A em quantity 2, o preço atual e os totais (o cabeçalho é ignorado)
+POST {{baseUrl}}/cart/preview
+Authorization: Bearer token-invalido
+Content-Type: application/json
+
+{
+  "items": [
+    { "productId": "{{productA}}", "quantity": 2 }
+  ]
+}
+
+### 42. Prévia sem items -> 200 com o carrinho vazio (sem 400)
+POST {{baseUrl}}/cart/preview
+Content-Type: application/json
+
+{}
+
+### 43. A prévia não alterou o carrinho da conta -> 200 igual ao passo 38
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{token}}
+
+# ---------------------------------------------------------------------------
+# Esvaziar
+# ---------------------------------------------------------------------------
+
+### 44. DELETE /me/cart -> 200 com o carrinho vazio
+DELETE {{baseUrl}}/me/cart
+Authorization: Bearer {{token}}
+
+### 45. DELETE /me/cart de novo -> 200 com o carrinho vazio
+DELETE {{baseUrl}}/me/cart
+Authorization: Bearer {{token}}
+
+### 46. Mescla com lista vazia -> 200 com o carrinho vazio
+POST {{baseUrl}}/me/cart/merge
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": []
+}
+
+# ---------------------------------------------------------------------------
+# Administrador
+# ---------------------------------------------------------------------------
+
+### 47. GET /me/cart com o token do administrador -> 200 com o carrinho do próprio
+### administrador, sem os produtos do usuário do passo 1
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{adminToken}}

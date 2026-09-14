@@ -6,21 +6,40 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/modules/auth/data/auth.context';
+import type { CartLine } from '@/modules/orders/data/cart.api';
+import { CartProvider, useCart } from '@/modules/orders/data/cart.context';
+import { CART_ITEM_MAX_QUANTITY } from '@/modules/orders/data/cart.util';
 import { AppLogo } from '@/shared/components/branding/app-logo.component';
 import { CartDrawer } from '@/shared/components/store/cart-drawer.component';
+import type { CartItem } from '@/shared/components/store/store.types';
 import { StorefrontFooter } from '@/shared/components/store/storefront-footer.component';
 import { CompactStorefrontHeader, StorefrontHeader } from '@/shared/components/store/storefront-header.component';
 import { StorefrontLayout } from '@/shared/template/storefront-layout.component';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
 import { ADMIN_ROUTE } from '@/shared/navigation/admin-routes';
-import { CHECKOUT_ROUTE, STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
-import { CartProvider, useCart } from '../data/cart.context';
+import { CHECKOUT_ROUTE, STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE, productRoute } from '@/shared/navigation/storefront-routes';
 import { StorefrontCatalogProvider } from '../data/storefront-catalog.context';
 import { ZONES } from '../data/storefront.mock';
 import { DEFAULT_NEIGHBORHOOD } from '../data/storefront-query.util';
 import { useStorefront } from '../data/use-storefront.hook';
 
 const TRACKING_PATH_PATTERN = /^\/pedidos\/[^/]+\/acompanhar$/;
+
+/** Linha do carrinho da API → linha exibida na gaveta. */
+function toCartItem(line: CartLine): CartItem {
+  return {
+    productId: line.productId,
+    slug: line.slug,
+    name: line.name,
+    unit: line.unit,
+    category: line.rootCategorySlug,
+    imageUrl: line.thumbUrl,
+    priceCents: line.priceCents,
+    quantity: line.quantity,
+    lineTotalCents: line.lineTotalCents,
+    isAvailable: line.isAvailable,
+  };
+}
 
 // Cabeçalho + carrinho ligados ao estado da vitrine (bairro e busca na URL)
 // e à sessão do cliente. Fica em um componente próprio porque `useSearchParams`
@@ -60,7 +79,7 @@ function ConnectedHeader() {
         neighborhood={storefront.neighborhood}
         neighborhoods={storefront.neighborhoods}
         etaMinutes={storefront.etaMinutes}
-        cartCount={cart.count}
+        cartCount={hydrated ? cart.count : 0}
         onNeighborhoodChange={storefront.setNeighborhood}
         onOpenCart={cart.open}
         userName={hydrated ? (user?.name ?? null) : null}
@@ -74,10 +93,16 @@ function ConnectedHeader() {
       <CartDrawer
         open={cart.isOpen}
         onClose={cart.close}
-        items={cart.items}
-        totals={cart.totals}
+        items={cart.lines.map(toCartItem)}
+        totals={cart.detail}
         etaMinutes={storefront.etaMinutes}
+        loading={cart.loading}
+        busy={cart.isSyncing}
+        hasUnavailableItems={cart.hasUnavailableItems}
+        maxQuantity={CART_ITEM_MAX_QUANTITY}
+        getHref={(item) => productRoute(item.slug, storefront.query)}
         onChangeQuantity={cart.setQuantity}
+        onRemove={cart.remove}
         onCheckout={handleCheckout}
       />
     </>

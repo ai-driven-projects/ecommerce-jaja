@@ -119,8 +119,9 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   nesta prioridade: `−N%` laranja, "Destaque" e o ETA branco; nome 700 em até
   3 linhas (o nome inteiro no `title`), unidade cinza e preço 800. O "+"
   redondo laranja em contorno, que vira o stepper `− n +` (pêssego) quando o
-  item está no carrinho, só aparece onde a página oferece carrinho: a vitrine
-  e o detalhe ainda não o exibem.
+  item está no carrinho, aparece nas grades da loja (página inicial, listagem e
+  "Mais de <categoria>") só quando o bairro é atendido; o "+" do stepper fica
+  desabilitado em 99 unidades. Fora da área atendida, os cards não têm "+".
 - Rodapé branco: wordmark + horário, "Áreas atendidas" em pílulas creme e o
   link discreto "Área administrativa".
 - Bairro não atendido: cartão branco com "Ainda não chegamos aí. Já já." em
@@ -128,13 +129,33 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   qualquer modo (página inicial ou listagem).
 
 ## Carrinho (gaveta)
-- Painel branco de 400px à direita, canto interno de 22px, `shadow-drawer`;
-  título "Seu carrinho" em Bricolage; faixa verde "Saindo de bike · chega em
-  ~X min"; itens com emoji pastel, nome, preço unitário, stepper pequeno e o
-  total da linha; rodapé com subtotal, "Entrega de bike" (**Grátis** em verde
-  acima de R$ 79, senão R$ 4,90), total e o botão "Finalizar pedido · R$ X".
-- Persistido em `localStorage` (`jaja.cart`) via store externo com
-  `useSyncExternalStore`: servidor e hidratação veem o carrinho vazio.
+- Painel branco de 400px à direita (a largura da tela no mobile), canto
+  interno de 22px, `shadow-drawer`; título "Seu carrinho" em Bricolage; faixa
+  verde "Saindo de bike · chega em ~X min".
+- Linhas: foto do produto (`ProductArt` `sm`, emoji pastel de reserva), o nome
+  em até 2 linhas como link para o produto (preserva a query da vitrine e
+  fecha a gaveta), unidade e preço unitário em cinza, stepper pequeno (0
+  remove; "+" desabilitado em 99), o total da linha e a lixeira (`Trash2`,
+  "Remover <nome> do carrinho").
+- Linha indisponível: conteúdo atenuado, badge vermelha "Indisponível" e o
+  botão "Remover" em contorno, sem stepper nem total.
+- Primeira carga (inclusive a mescla ao entrar): blocos creme estáticos no
+  lugar das linhas. Vazio: 🛒 "Seu carrinho está vazio."
+- Rodapé com subtotal, "Entrega de bike" (**Grátis** em verde a partir de
+  R$ 79, senão R$ 4,90, com "Faltam R$ X para a entrega grátis."), total e o
+  botão "Finalizar pedido · R$ X". Os valores vêm sempre da API: enquanto uma
+  mudança não foi confirmada, ficam atenuados com `aria-busy`. Com itens
+  indisponíveis, aviso vermelho "Remova os itens indisponíveis para
+  continuar.". O botão fica desabilitado sem itens, com itens indisponíveis ou
+  enquanto sincroniza.
+- Contador do cabeçalho e quantidades mudam na hora (0 até hidratar).
+- Persistência: sem sessão, o carrinho do visitante fica em `localStorage`
+  (`jaja.guest-cart`, `[{ productId, quantity }]`) via store externo com
+  `useSyncExternalStore` (servidor e hidratação veem o carrinho vazio; o
+  evento `storage` sincroniza as abas), com linhas e totais da prévia da API.
+  Com sessão, o carrinho é o da conta, no servidor; ao entrar ou criar conta
+  os itens do visitante são mesclados nele e apagados do navegador. Sair volta
+  ao carrinho do visitante.
 
 ## Detalhe do produto (`/p/:slug`)
 - Caminho "Início / <categorias da raiz à folha> / Nome" em cinza, o nome em
@@ -157,10 +178,14 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   mais"/"Ler menos") e a ficha (Marca, Categoria, Código, Unidade) em pares
   `rótulo · valor` sobre blocos creme de raio 10. Nada de estoque ou ficha
   técnica inventados.
-- "Adicionar" **ainda sem carrinho**: o clique não muda o carrinho e só mostra
-  o aviso "Carrinho chega já já."; fica indisponível em bairro não atendido.
+- "Adicionar" inclui a quantidade escolhida (stepper de 1 a 99) no carrinho:
+  "Adicionando…" desabilitado enquanto espera; no sucesso, toast "Adicionado
+  ao carrinho" com "<n> un · R$ X" e a ação "Ver carrinho" (abre a gaveta), e a
+  quantidade volta a 1; no erro (limite de 99, produto indisponível), toast de
+  erro. Abaixo do botão, "Você já tem N no carrinho." quando o produto já está
+  nele. Indisponível em bairro não atendido.
 - "Mais de <categoria>": até 4 outros produtos da mesma categoria, nos mesmos
-  cards (sem "+"); a seção some sem itens.
+  cards (com o "+" quando o bairro é atendido); a seção some sem itens.
 
 ## Checkout (`/checkout`)
 - Cabeçalho compacto: logo à esquerda, "🔒 Checkout seguro" em verde à direita.
@@ -171,8 +196,15 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   **1 Endereço** (faixa verde "Dentro da área de cobertura · entrega em ~X
   min", campos com rótulo 13px/700 em `--ink-soft`) e **2 Pagamento** (pílulas
   Pix / Cartão / Faturado; a ativa laranja sobre pêssego; explicação em bloco
-  creme). Resumo fixo à direita: itens, régua tracejada, subtotal, entrega,
-  total, faixa verde com a janela de chegada e o botão "Confirmar pedido".
+  creme). Resumo fixo à direita, com o carrinho da conta recarregado ao abrir:
+  itens com a foto (`ProductArt`), o nome em até 2 linhas, "× quantidade" e o
+  total da linha (indisponível: atenuado, badge "Indisponível" e "Remover");
+  blocos creme estáticos na primeira carga (inclusive a mescla logo depois de
+  entrar); régua tracejada, subtotal, entrega e total da API (atenuados
+  enquanto sincroniza), faixa verde com a janela de chegada e o botão
+  "Confirmar pedido", desabilitado enquanto o carrinho carrega ou sincroniza,
+  vazio ou com itens indisponíveis ("Remova os itens indisponíveis para
+  confirmar o pedido."). Confirmar esvazia o carrinho da conta.
 
 ## Acompanhamento (`/pedidos/:id/acompanhar`)
 - Cabeçalho compacto com "Voltar para a loja →". `h1` "Pedido #4211" + badge

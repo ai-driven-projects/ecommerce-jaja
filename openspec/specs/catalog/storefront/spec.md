@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define o comportamento da vitrine pública do Jaja na rota `/`: o catálogo real exibido a partir da API, como o visitante escolhe bairro e categoria, busca, filtra e ordena produtos, o que vê quando o bairro é atendido ou não, como a sacola se comporta nesta entrega e o detalhe do produto.
+Define o comportamento da vitrine pública do Jaja na rota `/`: o catálogo real exibido a partir da API, como o visitante escolhe bairro e categoria, busca, filtra e ordena produtos, o que vê quando o bairro é atendido ou não, o detalhe do produto e a passagem do carrinho para o checkout. O carrinho na loja é definido em `orders/storefront-cart`.
 
 ## Requirements
 
@@ -90,17 +90,6 @@ Quando o bairro selecionado não pertencer a nenhuma loja, a vitrine SHALL ocult
 - **WHEN** no estado vazio o visitante clica em "Aldeota"
 - **THEN** a URL passa a conter `bairro=Aldeota` e a grade de produtos volta a ser exibida
 
-### Requirement: Sacola vazia nesta entrega
-O botão da sacola no cabeçalho SHALL exibir o contador "0" e abrir o painel da sacola no estado vazio. Nenhuma ação da vitrine MUST adicionar itens à sacola nesta entrega, e nada MUST ser persistido no navegador.
-
-#### Scenario: Abrir a sacola
-- **WHEN** o visitante clica no botão da sacola
-- **THEN** o painel abre exibindo "Sua sacola está vazia. Já já enche."
-
-#### Scenario: Recarga da página
-- **WHEN** o visitante recarrega a vitrine
-- **THEN** o contador da sacola continua em "0"
-
 ### Requirement: Navegação para o detalhe do produto
 Cada card da vitrine SHALL ser um link para `/p/<slug>` que preserva todos os parâmetros atuais da vitrine (bairro, categoria, busca, filtros, ordenação e página). A rota `/p/<slug>` SHALL manter o cabeçalho da loja (logo, bairro, ETA, busca e carrinho) e o rodapé compartilhados, e exibir o produto lido da API:
 - trilha "Início / <categorias da raiz até a do produto> / <nome>", em que cada categoria leva à listagem dela, mantendo o bairro;
@@ -137,15 +126,19 @@ O título do documento MUST ser "<nome> — já já". Um slug inexistente ou de 
 - **THEN** a resposta é a página não encontrada
 
 ### Requirement: Fechar pedido leva ao checkout
-O botão "Fechar pedido" da sacola SHALL fechar o painel da sacola e navegar para `/checkout` preservando os parâmetros `bairro` e `categoria` da vitrine. A navegação MUST NOT depender de sessão: quem não estiver autenticado é identificado na própria página de checkout. Nesta entrega a sacola continua sem itens e o painel só exibe "Fechar pedido" quando há itens; o comportamento SHALL valer assim que houver itens na sacola.
+O botão "Finalizar pedido" do carrinho SHALL fechar o painel do carrinho e navegar para `/checkout` preservando todos os parâmetros atuais da vitrine (bairro, categoria, busca, filtros, ordenação e página). A navegação MUST NOT depender de sessão: quem não estiver autenticado é identificado na própria página de checkout, e os itens do carrinho do visitante seguem para a conta ao entrar (`orders/storefront-cart`). O botão MUST ficar indisponível quando o carrinho está vazio, quando tem itens indisponíveis ou enquanto uma mudança no carrinho não foi confirmada.
 
 #### Scenario: Fechar pedido com bairro e categoria
-- **WHEN** um visitante em `/?bairro=Meireles&categoria=papelaria` clica em "Fechar pedido" na sacola
-- **THEN** o painel da sacola fecha e a página passa a `/checkout?bairro=Meireles&categoria=papelaria`
+- **WHEN** um visitante com itens no carrinho em `/?bairro=Meireles&categoria=escrita-corretivos` clica em "Finalizar pedido"
+- **THEN** o painel do carrinho fecha e a página passa a `/checkout?bairro=Meireles&categoria=escrita-corretivos`
 
 #### Scenario: Fechar pedido sem sessão
-- **WHEN** um visitante sem sessão clica em "Fechar pedido"
+- **WHEN** um visitante sem sessão, com itens no carrinho, clica em "Finalizar pedido"
 - **THEN** chega a `/checkout` e vê o formulário de entrar/criar conta, sem ser redirecionado para `/entrar`
+
+#### Scenario: Carrinho vazio
+- **WHEN** o visitante abre o carrinho sem itens
+- **THEN** o botão "Finalizar pedido" está indisponível
 
 ### Requirement: Busca de produtos pelo cabeçalho
 O campo de busca do cabeçalho da loja SHALL buscar produtos. Enviar um termo, com Enter ou pelo botão da lupa, MUST navegar para `/` com `q=<termo>`, mantendo o `bairro` e descartando categoria, filtros, ordenação e página. Enviar o campo vazio MUST remover `q`. O campo MUST exibir o termo presente na URL, inclusive após recarregar, e oferecer um botão para limpar o texto. A busca MUST funcionar também a partir do detalhe do produto.
@@ -236,14 +229,3 @@ O detalhe do produto SHALL exibir todas as imagens do produto numa galeria:
 #### Scenario: Teclado
 - **WHEN** o foco está numa miniatura e o visitante pressiona a seta para a direita
 - **THEN** a miniatura seguinte recebe o foco e sua imagem passa a ser a principal
-
-### Requirement: Botão Adicionar sem efeito no carrinho
-O detalhe do produto SHALL exibir o controle de quantidade e o botão "Adicionar · <total>", com o total calculado pela quantidade. Nesta entrega, clicar no botão MUST NOT alterar o carrinho: o contador do carrinho e seu conteúdo permanecem iguais, e o sistema exibe apenas o aviso "Carrinho chega já já.". O botão MUST ficar indisponível quando o bairro selecionado não é atendido. Os cards de produto da vitrine e do detalhe MUST NOT exibir o botão de adicionar ao carrinho.
-
-#### Scenario: Clicar em Adicionar
-- **WHEN** o visitante escolhe quantidade 3 num produto de R$ 12,90 e clica em "Adicionar · R$ 38,70"
-- **THEN** aparece o aviso "Carrinho chega já já." e o contador do carrinho no cabeçalho não muda
-
-#### Scenario: Cards sem ação de carrinho
-- **WHEN** a vitrine exibe uma grade de produtos
-- **THEN** nenhum card exibe o botão "+" de adicionar ao carrinho

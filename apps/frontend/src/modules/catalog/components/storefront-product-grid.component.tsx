@@ -1,5 +1,7 @@
 'use client';
 
+import { useCart } from '@/modules/orders/data/cart.context';
+import { CART_ITEM_MAX_QUANTITY } from '@/modules/orders/data/cart.util';
 import { ProductGrid } from '@/shared/components/store/product-grid.component';
 import type { StoreProduct } from '@/shared/components/store/store.types';
 import { cn } from '@/shared/lib/class-name.util';
@@ -10,6 +12,7 @@ import { useStorefront } from '../data/use-storefront.hook';
 /** Card da API → produto dos componentes de loja (tom e emoji de reserva pela raiz). */
 export function toStoreProduct(item: StorefrontProductListItem): StoreProduct {
   return {
+    id: item.id,
     slug: item.slug,
     name: item.name,
     category: item.rootCategorySlug,
@@ -35,11 +38,13 @@ type StorefrontProductGridProps = {
 };
 
 /**
- * Grade de produtos da loja, sem ação de carrinho (os cards não exibem o "+"):
- * o link de cada card leva ao detalhe preservando a query da vitrine.
+ * Grade de produtos da loja ligada ao carrinho: cada card mostra a quantidade
+ * no carrinho e, só quando o bairro é atendido, o "+" (que vira o stepper, até
+ * 99). O link de cada card leva ao detalhe preservando a query da vitrine.
  */
 export function StorefrontProductGrid({ products, minCardWidth, cardSize, className }: StorefrontProductGridProps) {
   const storefront = useStorefront();
+  const cart = useCart();
 
   return (
     <ProductGrid
@@ -49,6 +54,9 @@ export function StorefrontProductGrid({ products, minCardWidth, cardSize, classN
       cardSize={cardSize}
       className={className}
       getHref={(product) => productRoute(product.slug, storefront.query)}
+      getQuantity={(product) => cart.getQuantity(product.id)}
+      onChangeQuantity={storefront.served ? (product, quantity) => cart.setQuantity(product.id, quantity) : undefined}
+      max={CART_ITEM_MAX_QUANTITY}
     />
   );
 }

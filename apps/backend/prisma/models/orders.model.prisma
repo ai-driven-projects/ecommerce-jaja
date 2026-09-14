@@ -1,2 +1,36 @@
 // Prisma models for module: orders
-// Add concrete models for this module below.
+
+// A cart is 1:1 with a user (`userId`); `userId` stays unique even for
+// soft-deleted carts (`deletedAt` set), so the value remains reserved. The
+// items have no identity in the domain: the list is replaced as a whole on
+// every write, with `position` normalized to 0..n-1 (order of inclusion). No
+// price is stored: the lines always read the current catalog price. A
+// soft-deleted product keeps its foreign key and shows up as an unavailable
+// line; carts never block the (logical) deletion of products, and the
+// `Restrict` relations only guard against physical deletes.
+model Cart {
+  id        String     @id @db.Uuid
+  userId    String     @unique @map("user_id") @db.Uuid
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  deletedAt DateTime?  @map("deleted_at")
+  user      User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  cartId    String  @map("cart_id") @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  quantity  Int
+  position  Int
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([cartId, productId])
+  @@unique([cartId, position])
+  @@index([productId])
+  @@map("cart_items")
+}

@@ -8,6 +8,8 @@ type QuantityStepperProps = {
   onChange: (quantity: number) => void;
   /** Menor quantidade permitida (0 remove do carrinho; 1 na página de produto). */
   min?: number;
+  /** Maior quantidade permitida: o "+" fica indisponível ao atingi-la. Sem valor, não há limite. */
+  max?: number;
   size?: 'sm' | 'md' | 'lg';
   /** Nome do item, para os rótulos de acessibilidade. */
   itemName?: string;
@@ -21,9 +23,10 @@ const sizeClasses = {
 } as const;
 
 /** Controle − n + em pílula. O "−" é branco e o "+" é laranja. */
-export function QuantityStepper({ quantity, onChange, min = 0, size = 'md', itemName, className }: QuantityStepperProps) {
+export function QuantityStepper({ quantity, onChange, min = 0, max, size = 'md', itemName, className }: QuantityStepperProps) {
   const classes = sizeClasses[size];
   const label = itemName ? ` de ${itemName}` : '';
+  const atMax = max !== undefined && quantity >= max;
 
   return (
     <span className={cn('inline-flex items-center rounded-pill', classes.wrap, className)}>
@@ -45,9 +48,10 @@ export function QuantityStepper({ quantity, onChange, min = 0, size = 'md', item
       <button
         type="button"
         aria-label={`Aumentar quantidade${label}`}
-        onClick={() => onChange(quantity + 1)}
+        disabled={atMax}
+        onClick={() => onChange(max === undefined ? quantity + 1 : Math.min(max, quantity + 1))}
         className={cn(
-          'flex items-center justify-center rounded-full bg-brand text-white transition-colors duration-150 hover:bg-brand-strong',
+          'flex items-center justify-center rounded-full bg-brand text-white transition-colors duration-150 hover:bg-brand-strong disabled:opacity-40 disabled:hover:bg-brand',
           classes.button,
         )}
       >
@@ -60,14 +64,16 @@ export function QuantityStepper({ quantity, onChange, min = 0, size = 'md', item
 type AddToCartControlProps = {
   quantity: number;
   onChange: (quantity: number) => void;
+  /** Maior quantidade no carrinho: o "+" do stepper fica indisponível ao atingi-la. */
+  max?: number;
   itemName: string;
   className?: string;
 };
 
 /** Botão "+" redondo quando o item não está no carrinho; vira o stepper depois. */
-export function AddToCartControl({ quantity, onChange, itemName, className }: AddToCartControlProps) {
+export function AddToCartControl({ quantity, onChange, max, itemName, className }: AddToCartControlProps) {
   if (quantity > 0) {
-    return <QuantityStepper quantity={quantity} onChange={onChange} size="md" itemName={itemName} className={className} />;
+    return <QuantityStepper quantity={quantity} onChange={onChange} max={max} size="md" itemName={itemName} className={className} />;
   }
 
   return (
