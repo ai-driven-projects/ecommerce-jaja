@@ -49,7 +49,7 @@ const PriceInReais: ValueObjectClass<number> = {
  * categoria obrigatória, descrição opcional até 5000, preço e preço "De:" em
  * reais (o "De:" precisa ser maior que o preço), unidade até 40 e até 10
  * imagens com URLs http/https. As imagens não têm `order`: a posição na lista
- * define a ordem no envio.
+ * define a ordem no envio. `isActive` e `isFeatured` (destaque na vitrine) são booleanos.
  */
 export const productSchema = v
   .defineObject({
@@ -64,6 +64,7 @@ export const productSchema = v
     unit: { vo: Text, config: { maxLength: PRODUCT_UNIT_MAX_LENGTH } },
     images: v.defineArray({ thumbUrl: Url, largeUrl: Url }, { max: PRODUCT_MAX_IMAGES }),
     isActive: Flag,
+    isFeatured: Flag,
   })
   .refine((data) => data.listPrice === undefined || data.listPrice > data.price, {
     field: 'listPrice',

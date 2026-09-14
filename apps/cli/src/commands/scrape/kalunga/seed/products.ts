@@ -7,6 +7,18 @@ import type { ProductImageSeedItem, ProductSeedItem } from './types.js';
 /** Limite de `ProductDescription` no domínio. */
 const DESCRIPTION_MAX_LENGTH = 5000;
 
+/** Quantidade de produtos em destaque no seed. */
+export const FEATURED_LIMIT = 24;
+/** Candidatos a destaque: disponíveis, com pelo menos estas avaliações e estrelas. */
+const FEATURED_MIN_RATINGS = 10;
+const FEATURED_MIN_STARS = 4;
+
+interface FeaturedCandidate {
+  item: ProductSeedItem;
+  stars: number;
+  count: number;
+}
+
 /** Produto com o departamento do arquivo em que apareceu primeiro (o `category.department` do produto costuma ser outro). */
 interface SourceProduct {
   department: string;
@@ -17,7 +29,19 @@ export interface ProductBuild {
   products: ProductSeedItem[];
   /** Situações que não impedem a geração (categoria resolvida no departamento, produto ignorado). */
   warnings: string[];
-  stats: { entries: number; skipped: number; withoutBrand: number; suffixedSlugs: number; fallbacks: number; truncatedImages: number; completedImages: number; droppedImages: number };
+  stats: { entries: number; skipped: number; withoutBrand: number; suffixedSlugs: number; fallbacks: number; truncatedImages: number; completedImages: number; droppedImages: number; featured: number };
+}
+
+/**
+ * Marca `isFeatured` nos `FEATURED_LIMIT` candidatos mais avaliados: quantidade de avaliações decrescente,
+ * depois estrelas decrescentes, depois o sku. Os demais produtos continuam com `false`. Devolve quantos marcou.
+ */
+function markFeatured(candidates: FeaturedCandidate[]): number {
+  const chosen = [...candidates]
+    .sort((a, b) => b.count - a.count || b.stars - a.stars || (a.item.sku < b.item.sku ? -1 : a.item.sku > b.item.sku ? 1 : 0))
+    .slice(0, FEATURED_LIMIT);
+  for (const { item } of chosen) item.isFeatured = true;
+  return chosen.length;
 }
 
 /** Arquivos na ordem recebida (alfabética em `readCategories`), deduplicados pelo código: vale a primeira ocorrência. */
@@ -75,7 +99,8 @@ export function buildProducts(files: CategoryFile[], brandSlugs: Set<string>, lo
   const products: ProductSeedItem[] = [];
   const warnings: string[] = [];
   const slugOwners = new Set<string>();
-  const stats = { entries, skipped: 0, withoutBrand: 0, suffixedSlugs: 0, fallbacks: 0, truncatedImages: 0, completedImages: 0, droppedImages: 0 };
+  const candidates: FeaturedCandidate[] = [];
+  const stats = { entries, skipped: 0, withoutBrand: 0, suffixedSlugs: 0, fallbacks: 0, truncatedImages: 0, completedImages: 0, droppedImages: 0, featured: 0 };
 
   const skip = (sku: string, reason: string) => {
     stats.skipped += 1;
@@ -127,7 +152,7 @@ export function buildProducts(files: CategoryFile[], brandSlugs: Set<string>, lo
     const listCents = toCents(product.price.list);
     const description = product.description?.text.trim().slice(0, DESCRIPTION_MAX_LENGTH).trimEnd();
 
-    products.push({
+    const item: ProductSeedItem = {
       sku,
       name: product.name.trim(),
       slug,
@@ -139,8 +164,16 @@ export function buildProducts(files: CategoryFile[], brandSlugs: Set<string>, lo
       unit: unitFromName(product.name),
       images: images.slice(0, PRODUCT_MAX_IMAGES).map((image, order) => ({ ...image, order })),
       isActive: product.available === true,
-    });
+      isFeatured: false,
+    };
+    products.push(item);
+
+    const rating = product.rating;
+    if (product.available === true && rating && rating.count >= FEATURED_MIN_RATINGS && rating.stars >= FEATURED_MIN_STARS) {
+      candidates.push({ item, stars: rating.stars, count: rating.count });
+    }
   }
 
+  stats.featured = markFeatured(candidates);
   return { products, warnings, stats };
 }

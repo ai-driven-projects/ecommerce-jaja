@@ -32,6 +32,10 @@ type StorefrontHeaderProps = {
   /** Com sessão de administrador, o menu da conta ganha o link para a área administrativa. */
   isAdmin?: boolean;
   adminHref?: string;
+  /** Termo de busca atual (o da URL); o campo o exibe e acompanha as mudanças. */
+  searchValue?: string;
+  /** Envio da busca com o termo digitado. */
+  onSearch?: (term: string) => void;
   /** Conteúdo abaixo da linha principal (ex.: chips de categoria). */
   children?: ReactNode;
   className?: string;
@@ -113,6 +117,8 @@ export function StorefrontHeader({
   onSignOut,
   isAdmin,
   adminHref,
+  searchValue = '',
+  onSearch,
   children,
   className,
 }: StorefrontHeaderProps) {
@@ -131,7 +137,12 @@ export function StorefrontHeader({
           className="max-w-full"
         />
 
-        <StorefrontSearch className="order-last w-full flex-1 md:order-none md:min-w-[220px] md:basis-0" />
+        <StorefrontSearch
+          key={searchValue}
+          defaultValue={searchValue}
+          onSearch={onSearch}
+          className="order-last basis-full md:order-none md:min-w-[220px] md:flex-1 md:basis-0"
+        />
 
         <div className="ml-auto flex items-center gap-2.5">
           <AccountControl

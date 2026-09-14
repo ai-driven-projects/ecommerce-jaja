@@ -262,7 +262,7 @@ function generateSeed(ctx: CommandContext, categories: CategoryFile[]): string {
   ctx.report.success(`Seed gravado em ${where}: ${summary}`);
   ctx.report.detail(
     `produtos: ${productStats.entries} entradas raspadas, ${productStats.withoutBrand} sem marca, ${productStats.suffixedSlugs} slug(s) com sufixo, ` +
-      `${productStats.fallbacks} no departamento, ${productStats.truncatedImages} com imagens cortadas, ${productStats.skipped} ignorado(s)`,
+      `${productStats.fallbacks} no departamento, ${productStats.truncatedImages} com imagens cortadas, ${productStats.featured} em destaque, ${productStats.skipped} ignorado(s)`,
   );
   return summary;
 }

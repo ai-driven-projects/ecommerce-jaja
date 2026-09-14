@@ -1,3 +1,5 @@
 export * from './find-product-by-id.query'
 export * from './find-products.query'
+export * from './find-storefront-product-by-slug.query'
+export * from './find-storefront-products.query'
 export * from './product.repository'

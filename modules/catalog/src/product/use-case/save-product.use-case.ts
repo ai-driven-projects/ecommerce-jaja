@@ -18,6 +18,7 @@ export interface SaveProductInput {
   unit?: string | null
   images?: ProductImageProps[] | null
   isActive?: boolean | null
+  isFeatured?: boolean | null
 }
 
 /**
@@ -88,6 +89,7 @@ export class SaveProduct implements UseCase<SaveProductInput, Product> {
       unit: input.unit,
       images: input.images ?? [],
       isActive: input.isActive,
+      isFeatured: input.isFeatured,
     })
   }
 
@@ -106,6 +108,7 @@ export class SaveProduct implements UseCase<SaveProductInput, Product> {
       unit: input.unit,
       images: input.images ?? [],
       isActive: input.isActive ?? undefined,
+      isFeatured: input.isFeatured ?? undefined,
       updatedAt: new Date(),
     })
   }

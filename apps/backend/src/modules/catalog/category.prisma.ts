@@ -10,6 +10,8 @@ import {
   FindCategoryByIdQuery,
   FindCategoryChildrenQuery,
   FindCategoryTreeQuery,
+  FindStorefrontCategoriesQuery,
+  StorefrontCategoryDTO,
 } from '@jaja/catalog';
 import { Category as CategoryRow, Prisma } from '@prisma/client';
 import {
@@ -17,6 +19,7 @@ import {
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
 import { folded, toPrefixTsQuery } from '../../db/text-search.sql.js';
+import { visibleProducts } from './storefront.sql.js';
 
 // Maps the unique constraints of `categories` to the domain error they represent.
 // A primary key collision only happens when creating with the id of a deleted
@@ -84,6 +87,15 @@ type CategoryReadRow = {
   level: number;
   path: string;
   children_count: number;
+};
+
+type StorefrontCategoryRow = {
+  slug: string;
+  name: string;
+  level: number;
+  parent_slug: string | null;
+  is_highlighted: boolean;
+  product_count: number;
 };
 
 type Paging = { page: number; pageSize: number };
@@ -192,6 +204,45 @@ export class CategoryPrisma implements CategoryRepository {
 
         const row = await this.findReadRow(id);
         return row ? this.toDTO(row) : null;
+      }),
+  };
+
+  // Storefront (public) tree in one query. `tree` walks down from the roots only
+  // through active, non-deleted categories (the subtree of an inactive one is
+  // left out), with `level`, `parent_slug` and the ids from the root (`path`).
+  // `direct` counts the visible products per category; each node sums the
+  // counts of every node whose path contains it, and the inner joins drop the
+  // categories without products. Rows come parents first, siblings in order.
+  readonly findStorefrontCategories: FindStorefrontCategoriesQuery = {
+    execute: () =>
+      Result.tryAsync(async () => {
+        const rows = await this.prisma.client.$queryRaw<StorefrontCategoryRow[]>`
+          WITH RECURSIVE tree AS (
+            SELECT c.id, c.slug, c.name, c."order", c.is_highlighted,
+              1 AS level, NULL::text AS parent_slug, ARRAY[c.id] AS path
+            FROM categories c
+            WHERE c.parent_id IS NULL AND c.is_active AND c.deleted_at IS NULL
+            UNION ALL
+            SELECT c.id, c.slug, c.name, c."order", c.is_highlighted,
+              t.level + 1, t.slug, t.path || c.id
+            FROM categories c
+            JOIN tree t ON c.parent_id = t.id
+            WHERE c.is_active AND c.deleted_at IS NULL AND NOT c.id = ANY(t.path)
+          ),
+          direct AS (
+            SELECT p.category_id, count(*)::int AS products
+            ${visibleProducts()}
+            GROUP BY p.category_id
+          )
+          SELECT t.slug, t.name, t.level, t.parent_slug, t.is_highlighted,
+            sum(d.products)::int AS product_count
+          FROM tree t
+          JOIN tree x ON t.id = ANY(x.path)
+          JOIN direct d ON d.category_id = x.id
+          GROUP BY t.id, t.slug, t.name, t.level, t.parent_slug, t.is_highlighted, t."order"
+          ORDER BY t.level, t."order", t.name COLLATE "pt-BR-x-icu", t.id`;
+
+        return this.nestStorefrontCategories(rows);
       }),
   };
 
@@ -458,5 +509,27 @@ export class CategoryPrisma implements CategoryRepository {
 
   private toNode(row: CategoryReadRow): CategoryTreeNodeDTO {
     return { ...this.toDTO(row), children: [] };
+  }
+
+  // Only nests the rows (already parents first and in sibling order) by `parent_slug`.
+  private nestStorefrontCategories(rows: StorefrontCategoryRow[]): StorefrontCategoryDTO[] {
+    const bySlug = new Map<string, StorefrontCategoryDTO>();
+    const roots: StorefrontCategoryDTO[] = [];
+
+    for (const row of rows) {
+      const node: StorefrontCategoryDTO = {
+        slug: row.slug,
+        name: row.name,
+        level: row.level,
+        parentSlug: row.parent_slug,
+        isHighlighted: row.is_highlighted,
+        productCount: row.product_count,
+        children: [],
+      };
+      bySlug.set(node.slug, node);
+      if (node.parentSlug === null) roots.push(node);
+      else bySlug.get(node.parentSlug)?.children.push(node);
+    }
+    return roots;
   }
 }

@@ -36,7 +36,8 @@ export type ProductImageBody = {
 
 // On update an omitted field keeps the current value and `null` (or a blank
 // string) clears the optional ones; `images` always replaces the whole list,
-// so omitting it leaves the product without images.
+// so omitting it leaves the product without images. An omitted `isFeatured`
+// is `false` on create and keeps the current value on update.
 export type SaveProductBody = {
   name: string;
   slug?: string | null;
@@ -49,6 +50,7 @@ export type SaveProductBody = {
   unit?: string | null;
   images?: ProductImageBody[] | null;
   isActive?: boolean | null;
+  isFeatured?: boolean | null;
 };
 
 // Raised by the controller itself when the payload has a shape the domain
@@ -199,10 +201,11 @@ export class ProductController {
           }))
         : images,
       isActive: raw.isActive as boolean | null | undefined,
+      isFeatured: raw.isFeatured as boolean | null | undefined,
     };
   }
 
-  // Name, sku, description, prices and `isActive` of any type are validated by
+  // Name, sku, description, prices, `isActive` and `isFeatured` of any type are validated by
   // the entity; these fields would crash it, be silently ignored or yield an
   // unreadable message instead.
   private typeErrors(raw: Record<string, unknown>): string[] {

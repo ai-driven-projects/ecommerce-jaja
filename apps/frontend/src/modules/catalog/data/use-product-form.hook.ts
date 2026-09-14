@@ -43,6 +43,7 @@ const EMPTY_VALUES: DefaultValues<ProductFormData> = {
   unit: PRODUCT_DEFAULT_UNIT,
   images: [],
   isActive: true,
+  isFeatured: false,
 };
 
 /** Centavos da API → reais do formulário (`390` → `3.9`). */
@@ -70,6 +71,7 @@ function toFormValues(product: CatalogProduct): ProductFormData {
       .sort((a, b) => a.order - b.order)
       .map(({ thumbUrl, largeUrl }) => ({ thumbUrl, largeUrl })),
     isActive: product.isActive,
+    isFeatured: product.isFeatured,
   };
 }
 
@@ -191,6 +193,7 @@ export function useProductForm({ id, returnQuery = '' }: UseProductFormOptions =
       listPriceCents: data.listPrice === undefined ? null : reaisToCents(data.listPrice),
       unit: data.unit,
       images: data.images.map((image, order) => ({ thumbUrl: image.thumbUrl, largeUrl: image.largeUrl, order })),
+      isFeatured: data.isFeatured,
       ...(isEditing ? { isActive: data.isActive } : {}),
     };
 

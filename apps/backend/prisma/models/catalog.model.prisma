@@ -45,6 +45,17 @@ model Category {
 // the values remain reserved and the seed upserts by `sku`. The `Restrict`
 // relations only guard against physical deletes, since brands and categories
 // are soft-deleted after the domain checks for live products.
+//
+// `searchDocument` is a generated column (`GENERATED ALWAYS AS (...) STORED`,
+// written by hand in the `catalog_product_storefront` migration) with the
+// full-text document of the product's own columns: name and sku (weight A) and
+// description (weight C), folded with the same expression as `folded()` in
+// `src/db/text-search.sql.ts`. It avoids rebuilding the document of the
+// descriptions (~790 thousand characters in the seed) on every search. Brand
+// and category names are added in the storefront query, because they live in
+// other tables. The application never writes this column. Prisma reads the
+// generation expression as a default, so `@default(dbgenerated(...))` repeats
+// it exactly as PostgreSQL stores it: otherwise `migrate dev` reports drift.
 model Product {
   id             String         @id @db.Uuid
   name           String
@@ -57,6 +68,8 @@ model Product {
   listPriceCents Int?           @map("list_price_cents")
   unit           String         @default("unidade")
   isActive       Boolean        @default(true) @map("is_active")
+  isFeatured     Boolean        @default(false) @map("is_featured")
+  searchDocument Unsupported("tsvector")? @default(dbgenerated("((setweight(to_tsvector('simple'::regconfig, lower(translate(name, 'áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ'::text, 'aaaaaeeeeiiiiooooouuuucnAAAAAEEEEIIIIOOOOOUUUUCN'::text))), 'A'::\"char\") || setweight(to_tsvector('simple'::regconfig, lower(translate(COALESCE(sku, ''::text), 'áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ'::text, 'aaaaaeeeeiiiiooooouuuucnAAAAAEEEEIIIIOOOOOUUUUCN'::text))), 'A'::\"char\")) || setweight(to_tsvector('simple'::regconfig, lower(translate(COALESCE(description, ''::text), 'áàâãäéèêëíìîïóòôõöúùûüçñÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ'::text, 'aaaaaeeeeiiiiooooouuuucnAAAAAEEEEIIIIOOOOOUUUUCN'::text))), 'C'::\"char\"))")) @map("search_document")
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
   deletedAt      DateTime?      @map("deleted_at")
@@ -66,6 +79,8 @@ model Product {
 
   @@index([brandId])
   @@index([categoryId])
+  @@index([isFeatured])
+  @@index([searchDocument], type: Gin)
   @@map("products")
 }
 

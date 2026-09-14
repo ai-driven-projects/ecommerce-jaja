@@ -114,41 +114,83 @@ Os filtros de categoria reutilizáveis SHALL ser botões de texto sublinhado, di
 - **THEN** "papelaria" aparece com sublinhado vermelho de 2px e as outras categorias com sublinhado fino em tinta
 
 ### Requirement: Grade e card de produto
-A grade de produtos SHALL ser exibida sobre papel: o espaço não ocupado por cards MUST ser papel, nunca tinta. A partir de 900px os cards MUST ter largura fixa de 220px, centralizados na largura disponível, com espaçamento de 32px entre eles e margem de 32px da borda; abaixo de 900px a grade SHALL ter 2 colunas fluidas com espaçamento de 16px. A grade MUST ter borda inferior de 2px. Cada card SHALL ter borda de 2px em tinta e exibir: área de imagem em superfície com proporção 4:3 contendo o desenho monocromático da categoria, a categoria em caixa alta 11px, o nome em peso 600 e o preço em mono. Em hover o card MUST inverter papel e superfície, sem sombra ou escala.
+A grade de produtos SHALL ter 2 colunas fluidas em telas estreitas e, a partir de 640px, colunas automáticas com largura mínima de 180px (220px na seção de ofertas), com espaçamento de 14px.
+
+Cada card SHALL ser branco, com borda fina, e exibir:
+- **Área de imagem** (ver "Imagem do produto"), com um único selo no canto, nesta prioridade:
+  1. o desconto `−N%`, quando o produto tem preço "De:";
+  2. "Destaque", quando o produto está em destaque;
+  3. o tempo de entrega, quando conhecido.
+- **Nome:** peso 700, limitado a 3 linhas, com o nome completo disponível como título.
+- **Unidade:** em cinza.
+- **Preço:** com o preço "De:" riscado, quando houver.
+- **Botão de adicionar ao carrinho:** só quando a página fornecer essa ação.
+
+A área de imagem e o nome MUST levar ao detalhe do produto. Em hover, o card MUST subir levemente e ganhar sombra.
 
 #### Scenario: Grade no desktop
-- **WHEN** a grade é exibida em uma janela de 1280px de largura com 5 produtos
-- **THEN** há 5 cards de 220px em uma linha centralizada, separados por 32px, e o espaço restante nas laterais é papel
+- **WHEN** a grade é exibida em uma janela de 1280px de largura
+- **THEN** os cards ocupam colunas automáticas de no mínimo 180px, separadas por 14px, preenchendo a largura disponível
 
 #### Scenario: Grade no mobile
 - **WHEN** a grade é exibida em uma janela de 375px de largura
-- **THEN** há 2 colunas com espaçamento de 16px
+- **THEN** há 2 colunas de cards
 
 #### Scenario: Hover no card
 - **WHEN** o ponteiro está sobre um card
-- **THEN** o fundo do card passa a superfície e a área de imagem passa a papel, sem sombra
+- **THEN** o card sobe levemente e ganha sombra
 
-### Requirement: Campo de busca de produtos
-A barra de filtros da vitrine SHALL reservar, à direita dos filtros de categoria, um campo de busca de produtos com ícone de lupa e o texto de apoio "Buscar produtos", discreto: sem fundo e apenas com borda inferior de 2px em tinta (vermelha em foco). Nesta entrega a busca MUST NOT filtrar produtos: digitar e enviar o campo não altera a grade nem a URL.
+#### Scenario: Selo de desconto
+- **WHEN** um card exibe um produto em destaque com `priceCents: 1290` e `listPriceCents: 1590`
+- **THEN** o selo mostra `−19%`, e não "Destaque" nem o tempo de entrega, e o preço mostra `R$ 12,90` com `R$ 15,90` riscado
+
+#### Scenario: Nome longo
+- **WHEN** um card exibe um produto com nome de 214 caracteres
+- **THEN** o nome aparece em no máximo 3 linhas, e o nome completo fica disponível como título do link
+
+#### Scenario: Sem ação de carrinho
+- **WHEN** a página não fornece a ação de adicionar ao carrinho
+- **THEN** o card não exibe o botão "+"
+
+### Requirement: Imagem do produto
+A área de imagem de um produto nos componentes da loja (card, galeria e demais pontos que exibem o produto) SHALL mostrar a foto do produto por inteiro, sem cortes, sobre fundo claro, com texto alternativo igual ao nome do produto. A imagem MUST ser a miniatura nos cards e a imagem grande na galeria do detalhe.
+
+A ilustração da categoria (emoji sobre o tom pastel da categoria raiz) MUST ser usada quando:
+- o produto não tiver imagem; ou
+- a foto não carregar.
+
+Categoria raiz desconhecida MUST usar a ilustração padrão.
+
+#### Scenario: Produto com foto
+- **WHEN** um card exibe um produto com imagem principal
+- **THEN** a área de imagem mostra a miniatura do produto inteira, com texto alternativo igual ao nome
+
+#### Scenario: Foto indisponível
+- **WHEN** a foto de um produto da categoria raiz "Coffee Break" não carrega
+- **THEN** a área de imagem passa a mostrar o emoji ☕ sobre o tom pastel da categoria
+
+#### Scenario: Categoria sem ilustração própria
+- **WHEN** um produto sem imagem pertence a uma categoria raiz sem ilustração cadastrada
+- **THEN** a área de imagem mostra a ilustração padrão 🛒
+
+### Requirement: Busca no cabeçalho da loja
+O cabeçalho da loja SHALL exibir o campo de busca de produtos em formato de pílula, com ícone de lupa, rótulo acessível "Buscar produtos" e o texto de apoio "Buscar papel A4, toner, café…". O envio, com Enter ou pelo botão da lupa, MUST notificar o termo digitado para a página que contém o cabeçalho.
+
+O campo MUST:
+- iniciar com o termo informado pela página;
+- oferecer um botão para limpar o texto quando houver texto.
 
 #### Scenario: Campo visível
-- **WHEN** a vitrine é exibida para um bairro atendido
-- **THEN** o campo "Buscar produtos" aparece na barra de filtros, à direita das categorias
+- **WHEN** a vitrine é exibida
+- **THEN** o campo de busca aparece no cabeçalho da loja com o texto de apoio "Buscar papel A4, toner, café…"
 
-#### Scenario: Envio sem efeito
+#### Scenario: Envio do termo
 - **WHEN** o visitante digita "caderno" no campo e pressiona Enter
-- **THEN** a grade e a URL permanecem iguais
+- **THEN** o cabeçalho notifica o termo "caderno" para a página, que exibe a busca por "caderno"
 
-### Requirement: Imagem por categoria
-Cada categoria de produto SHALL ter um desenho SVG monocromático próprio (traço em tinta sobre superfície) para `papelaria`, `impressão`, `café e lanches`, `limpeza de escritório` e `tecnologia básica`. Categorias desconhecidas MUST usar o desenho de `tecnologia básica`. O SVG MUST ter rótulo acessível com o nome da categoria. Nenhuma foto ou marca MUST ser usada como imagem de produto.
-
-#### Scenario: Categoria conhecida
-- **WHEN** um produto da categoria "café e lanches" é exibido
-- **THEN** a área de imagem mostra o desenho da xícara com rótulo acessível "café e lanches"
-
-#### Scenario: Categoria desconhecida
-- **WHEN** um produto de categoria "outros" é exibido
-- **THEN** a área de imagem mostra o desenho padrão de tecnologia básica
+#### Scenario: Termo inicial
+- **WHEN** a página informa o termo "toner" ao cabeçalho
+- **THEN** o campo exibe "toner" e o botão de limpar
 
 ### Requirement: Painel da sacola
 O painel reutilizável da sacola SHALL abrir fixo à direita com largura de 420px ou a largura da tela se menor, borda esquerda de 2px, cabeçalho com o título "sacola" em caixa alta e um botão de fechar. Ao abrir, o foco MUST ir para o painel; ao fechar, o foco MUST voltar ao elemento que o abriu. O painel MUST fechar com a tecla Escape e com clique no fundo escurecido. Sem itens, o painel SHALL exibir "Sua sacola está vazia. Já já enche." e nenhum rodapé. Com itens, SHALL listar cada item com nome, controle de quantidade (−, número, +) com bordas de 2px e subtotal em mono, e um rodapé com total em mono, tempo de entrega e botão primário "Fechar pedido".

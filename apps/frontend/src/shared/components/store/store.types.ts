@@ -6,13 +6,20 @@
 export type StoreProduct = {
   slug: string;
   name: string;
+  /** Slug da categoria raiz: só define o tom e o emoji de reserva da área de imagem. */
   category: string;
   priceCents: number;
   /** Preço anterior, quando o produto está em oferta. */
   oldPriceCents?: number | null;
   unit: string;
-  /** Emoji que representa o produto na área de imagem. */
-  emoji: string;
+  /** Emoji de reserva da área de imagem; sem ele, vale o da categoria. */
+  emoji?: string;
+  /** Foto do produto (miniatura); sem ela, ou quando não carrega, o emoji. */
+  imageUrl?: string | null;
+  /** Desconto informado pela API; ausente, o card calcula pelo preço "De:". */
+  discountPercent?: number | null;
+  /** Selo "Destaque" quando não há desconto. */
+  badge?: 'featured' | null;
 };
 
 export type CartItem = {

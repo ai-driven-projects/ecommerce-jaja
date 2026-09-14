@@ -6,19 +6,29 @@ import {
   CategoryErrors,
   FindProductByIdQuery,
   FindProductsQuery,
+  FindStorefrontProductBySlugQuery,
+  FindStorefrontProductsQuery,
   Product,
   ProductDTO,
   ProductErrors,
   ProductFiltersDTO,
+  ProductImageDTO,
   ProductListItemDTO,
   ProductPageDTO,
   ProductRepository,
+  StorefrontBrandFacetDTO,
+  StorefrontCategoryRefDTO,
+  StorefrontProductDetailDTO,
+  StorefrontProductListItemDTO,
+  StorefrontProductSort,
 } from '@jaja/catalog';
 import { Prisma } from '@prisma/client';
 import {
   PrismaService,
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
+import { folded, toPrefixTsQuery } from '../../db/text-search.sql.js';
+import { visibleProducts } from './storefront.sql.js';
 
 type ConstraintViolation = {
   fields: readonly string[];
@@ -82,6 +92,67 @@ const DETAIL_INCLUDE = {
   brand: { select: { name: true } },
   images: { orderBy: { order: 'asc' } },
 } satisfies Prisma.ProductInclude;
+
+// Storefront search document: the generated `p.search_document` (name and sku
+// weigh A, description C) plus the brand name (A) and the names of the category
+// and its ancestors (B), which live in other tables. The same expression feeds
+// the filter and `ts_rank`.
+const STOREFRONT_SEARCH_DOCUMENT = Prisma.raw(
+  [
+    'p.search_document',
+    `setweight(to_tsvector('simple', ${folded("coalesce(b.name, '')")}), 'A')`,
+    `setweight(to_tsvector('simple', ${folded("concat_ws(' ', c1.name, c2.name, c3.name)")}), 'B')`,
+  ].join(' || '),
+);
+
+// Percentage off the "De:" price, used by the projection and by the `discount` order.
+const DISCOUNT_PERCENT = Prisma.sql`(CASE WHEN p.list_price_cents > p.price_cents
+  THEN round((1 - p.price_cents::numeric / p.list_price_cents) * 100)::int END)`;
+
+// The ICU collation orders names ignoring case and accents; `p.id` keeps pages stable.
+const STOREFRONT_NAME_ORDER = Prisma.sql`p.name COLLATE "pt-BR-x-icu", p.id`;
+
+// Main image (lowest `order`) of each product of the page, in the same query.
+const MAIN_IMAGE_JOIN = Prisma.sql`
+  LEFT JOIN LATERAL (
+    SELECT i.thumb_url FROM product_images i
+    WHERE i.product_id = p.id
+    ORDER BY i."order"
+    LIMIT 1
+  ) main_image ON true`;
+
+const STOREFRONT_BRAND_FACETS_LIMIT = 30;
+
+type StorefrontProductRow = {
+  id: string;
+  slug: string;
+  name: string;
+  brand_name: string | null;
+  category_name: string;
+  root_category_slug: string;
+  price_cents: number;
+  list_price_cents: number | null;
+  discount_percent: number | null;
+  unit: string;
+  thumb_url: string | null;
+  is_featured: boolean;
+};
+
+type StorefrontProductDetailRow = {
+  id: string;
+  slug: string;
+  name: string;
+  sku: string | null;
+  description: string | null;
+  price_cents: number;
+  list_price_cents: number | null;
+  discount_percent: number | null;
+  unit: string;
+  is_featured: boolean;
+  brand: StorefrontCategoryRefDTO | null;
+  categories: StorefrontCategoryRefDTO[];
+  images: ProductImageDTO[];
+};
 
 type ProductRow = Prisma.ProductGetPayload<{ include: typeof WITH_IMAGES }>;
 type ProductListRow = Prisma.ProductGetPayload<{ include: typeof LIST_INCLUDE }>;
@@ -147,6 +218,127 @@ export class ProductPrisma implements ProductRepository {
 
         const tree = await this.loadCategoryTree();
         return this.toDTO(row, this.categoryPath(tree, row.categoryId));
+      }),
+  };
+
+  // Storefront (public) read side: every rule lives in the SQL (visibility,
+  // category subtree, search, filters, order, facets and `discount_percent`);
+  // the adapter only maps rows. Count, page and brand facets run in parallel.
+  readonly findStorefrontProducts: FindStorefrontProductsQuery = {
+    execute: (filter) =>
+      Result.tryAsync(async () => {
+        const page = Math.max(1, Math.trunc(filter.page) || 1);
+        const pageSize = Math.max(1, Math.trunc(filter.pageSize) || 1);
+        const tsQuery = filter.search ? toPrefixTsQuery(filter.search) : null;
+        const isCents = (value: unknown): value is number =>
+          Number.isSafeInteger(value) && (value as number) >= 0;
+
+        // Every condition but the brand one: the facets are computed with these.
+        const conditions: Prisma.Sql[] = [];
+        if (tsQuery) {
+          conditions.push(
+            Prisma.sql`(${STOREFRONT_SEARCH_DOCUMENT}) @@ to_tsquery('simple', ${tsQuery})`,
+          );
+        }
+        if (filter.categorySlug) {
+          // The category and its active descendants; an unknown or inactive
+          // slug yields no ids, so the page is empty.
+          conditions.push(Prisma.sql`p.category_id IN (
+            WITH RECURSIVE subtree AS (
+              SELECT id FROM categories
+              WHERE slug = ${filter.categorySlug} AND is_active AND deleted_at IS NULL
+              UNION
+              SELECT c.id FROM categories c
+              JOIN subtree s ON c.parent_id = s.id
+              WHERE c.is_active AND c.deleted_at IS NULL
+            )
+            SELECT id FROM subtree)`);
+        }
+        // A closed range; `LEAST`/`GREATEST` swap the limits when min > max.
+        const { minPriceCents: min, maxPriceCents: max } = filter;
+        if (isCents(min) && isCents(max)) {
+          conditions.push(
+            Prisma.sql`p.price_cents BETWEEN LEAST(${min}::int, ${max}::int) AND GREATEST(${min}::int, ${max}::int)`,
+          );
+        } else if (isCents(min)) {
+          conditions.push(Prisma.sql`p.price_cents >= ${min}::int`);
+        } else if (isCents(max)) {
+          conditions.push(Prisma.sql`p.price_cents <= ${max}::int`);
+        }
+        if (filter.onSale) conditions.push(Prisma.sql`p.list_price_cents IS NOT NULL`);
+        if (filter.featured) conditions.push(Prisma.sql`p.is_featured`);
+
+        // Any of the brands; slugs that match no visible brand are ignored, so
+        // when none of them is known the brand filter does not apply.
+        const brandSlugs = (filter.brandSlugs ?? []).filter(Boolean);
+        const byBrand = brandSlugs.length
+          ? Prisma.sql`(b.slug = ANY(${brandSlugs}::text[]) OR NOT EXISTS (
+              SELECT 1 FROM brands kb
+              WHERE kb.slug = ANY(${brandSlugs}::text[]) AND kb.is_active AND kb.deleted_at IS NULL))`
+          : null;
+
+        const where = this.andAll(byBrand ? [...conditions, byBrand] : conditions);
+        const facetsWhere = this.andAll(conditions);
+        const orderBy = this.storefrontOrder(filter.sort, tsQuery);
+
+        const client = this.prisma.client;
+        const [counts, rows, brandFacets] = await Promise.all([
+          client.$queryRaw<{ total: number }[]>`
+            SELECT count(*)::int AS total ${visibleProducts()}${where}`,
+          client.$queryRaw<StorefrontProductRow[]>`
+            SELECT p.id, p.slug, p.name, b.name AS brand_name, c1.name AS category_name,
+              coalesce(c3.slug, c2.slug, c1.slug) AS root_category_slug,
+              p.price_cents, p.list_price_cents, ${DISCOUNT_PERCENT} AS discount_percent,
+              p.unit, main_image.thumb_url, p.is_featured
+            ${visibleProducts(MAIN_IMAGE_JOIN)}${where}
+            ORDER BY ${orderBy}
+            LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
+          client.$queryRaw<StorefrontBrandFacetDTO[]>`
+            SELECT b.slug, b.name, count(*)::int AS count
+            ${visibleProducts()} AND b.id IS NOT NULL${facetsWhere}
+            GROUP BY b.id, b.slug, b.name
+            ORDER BY count(*) DESC, b.name COLLATE "pt-BR-x-icu", b.id
+            LIMIT ${STOREFRONT_BRAND_FACETS_LIMIT}`,
+        ]);
+
+        const total = counts[0]?.total ?? 0;
+        return {
+          items: rows.map((row) => this.toStorefrontListItem(row)),
+          total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize),
+          brandFacets,
+        };
+      }),
+  };
+
+  // One query: the visible product with its brand, the category trail (root →
+  // product's category, built from c3/c2/c1 without nulls) and every image.
+  readonly findStorefrontProductBySlug: FindStorefrontProductBySlugQuery = {
+    execute: (slug) =>
+      Result.tryAsync(async () => {
+        // An empty slug never matches a product; skip the database.
+        if (typeof slug !== 'string' || !slug) return null;
+
+        const rows = await this.prisma.client.$queryRaw<StorefrontProductDetailRow[]>`
+          SELECT p.id, p.slug, p.name, p.sku, p.description,
+            p.price_cents, p.list_price_cents, ${DISCOUNT_PERCENT} AS discount_percent,
+            p.unit, p.is_featured,
+            CASE WHEN b.id IS NULL THEN NULL
+              ELSE json_build_object('slug', b.slug, 'name', b.name) END AS brand,
+            (SELECT json_agg(json_build_object('slug', trail.slug, 'name', trail.name) ORDER BY trail.depth)
+              FROM (VALUES (c3.slug, c3.name, 1), (c2.slug, c2.name, 2), (c1.slug, c1.name, 3))
+                AS trail(slug, name, depth)
+              WHERE trail.slug IS NOT NULL) AS categories,
+            coalesce((SELECT json_agg(json_build_object(
+                'thumbUrl', i.thumb_url, 'largeUrl', i.large_url, 'order', i."order")
+                ORDER BY i."order")
+              FROM product_images i WHERE i.product_id = p.id), '[]'::json) AS images
+          ${visibleProducts()} AND p.slug = ${slug}`;
+
+        const row = rows[0];
+        return row ? this.toStorefrontDetail(row) : null;
       }),
   };
 
@@ -316,6 +508,37 @@ export class ProductPrisma implements ProductRepository {
     return where;
   }
 
+  // ` AND c1 AND c2 ...` appended to the visibility `WHERE`, or nothing.
+  private andAll(conditions: Prisma.Sql[]): Prisma.Sql {
+    return conditions.length
+      ? Prisma.sql` AND ${Prisma.join(conditions, ' AND ')}`
+      : Prisma.empty;
+  }
+
+  // `relevance` needs a search: without valid terms it orders like `featured`,
+  // which is also the default without search. Every order ends with name and id.
+  private storefrontOrder(
+    sort: StorefrontProductSort | undefined,
+    tsQuery: string | null,
+  ): Prisma.Sql {
+    const effective = !sort || sort === 'relevance' ? (tsQuery ? 'relevance' : 'featured') : sort;
+
+    switch (effective) {
+      case 'relevance':
+        return Prisma.sql`ts_rank(${STOREFRONT_SEARCH_DOCUMENT}, to_tsquery('simple', ${tsQuery})) DESC, ${STOREFRONT_NAME_ORDER}`;
+      case 'price-asc':
+        return Prisma.sql`p.price_cents ASC, ${STOREFRONT_NAME_ORDER}`;
+      case 'price-desc':
+        return Prisma.sql`p.price_cents DESC, ${STOREFRONT_NAME_ORDER}`;
+      case 'name':
+        return STOREFRONT_NAME_ORDER;
+      case 'discount':
+        return Prisma.sql`${DISCOUNT_PERCENT} DESC NULLS LAST, ${STOREFRONT_NAME_ORDER}`;
+      default:
+        return Prisma.sql`p.is_featured DESC, ${STOREFRONT_NAME_ORDER}`;
+    }
+  }
+
   private toPage(
     items: ProductListItemDTO[],
     total: number,
@@ -464,6 +687,7 @@ export class ProductPrisma implements ProductRepository {
         order,
       })),
       isActive: row.isActive,
+      isFeatured: row.isFeatured,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
@@ -483,6 +707,8 @@ export class ProductPrisma implements ProductRepository {
       listPriceCents: product.listPriceCents,
       unit: product.unit,
       isActive: product.isActive,
+      isFeatured: product.isFeatured,
+      // `search_document` is a generated column: the database fills it.
       // Persisting the entity timestamps keeps the database equal to the returned DTO.
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
@@ -510,6 +736,42 @@ export class ProductPrisma implements ProductRepository {
       listPriceCents: row.listPriceCents,
       mainImageUrl: row.images[0]?.thumbUrl ?? null,
       isActive: row.isActive,
+      isFeatured: row.isFeatured,
+    };
+  }
+
+  private toStorefrontListItem(row: StorefrontProductRow): StorefrontProductListItemDTO {
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      brandName: row.brand_name,
+      categoryName: row.category_name,
+      rootCategorySlug: row.root_category_slug,
+      priceCents: row.price_cents,
+      listPriceCents: row.list_price_cents,
+      discountPercent: row.discount_percent,
+      unit: row.unit,
+      thumbUrl: row.thumb_url,
+      isFeatured: row.is_featured,
+    };
+  }
+
+  private toStorefrontDetail(row: StorefrontProductDetailRow): StorefrontProductDetailDTO {
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      sku: row.sku,
+      description: row.description,
+      priceCents: row.price_cents,
+      listPriceCents: row.list_price_cents,
+      discountPercent: row.discount_percent,
+      unit: row.unit,
+      isFeatured: row.is_featured,
+      brand: row.brand,
+      categories: row.categories ?? [],
+      images: row.images ?? [],
     };
   }
 
@@ -531,6 +793,7 @@ export class ProductPrisma implements ProductRepository {
         order,
       })),
       isActive: row.isActive,
+      isFeatured: row.isFeatured,
       brandName: row.brand?.name ?? null,
       categoryPath,
       createdAt: row.createdAt,

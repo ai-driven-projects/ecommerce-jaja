@@ -1,16 +1,16 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ETA_BY_NEIGHBORHOOD, PRODUCTS, UNSERVED_NEIGHBORHOODS, ZONES, storeOf } from './storefront.mock';
-import { CATEGORY_ALL, type Product } from './storefront.types';
-
-export const DEFAULT_NEIGHBORHOOD = 'Aldeota';
-export const DEFAULT_CATEGORY = CATEGORY_ALL;
-
-/** Query string da vitrine (`bairro` e `categoria`), reutilizada nos links dos cards. */
-export function buildStorefrontQuery(neighborhood: string, category: string): string {
-  return new URLSearchParams({ bairro: neighborhood, categoria: category }).toString();
-}
+import { withQuery } from '@/shared/navigation/with-query.util';
+import { ETA_BY_NEIGHBORHOOD, UNSERVED_NEIGHBORHOODS, ZONES, storeOf } from './storefront.mock';
+import {
+  DEFAULT_NEIGHBORHOOD,
+  buildStorefrontHref,
+  buildStorefrontQuery,
+  parseStorefrontParams,
+  storefrontBaseParams,
+  type StorefrontParamChanges,
+} from './storefront-query.util';
 
 /** Bairros atendidos agrupados por loja, na ordem de `ZONES`: `[loja, bairros[]][]`. */
 export function groupNeighborhoodsByStore(): [string, string[]][] {
@@ -24,34 +24,50 @@ export function groupNeighborhoodsByStore(): [string, string[]][] {
 const SERVED_NEIGHBORHOODS = ZONES.map((zone) => zone.neighborhood);
 const STORES = groupNeighborhoodsByStore();
 
+export type StorefrontNavigateOptions = {
+  /** Força o modo do histórico; o padrão é `push` para página e busca e `replace` para o resto. */
+  history?: 'push' | 'replace';
+};
+
 /**
- * Estado da vitrine com a URL como fonte de verdade: `bairro` e `categoria`
- * vêm de `useSearchParams` e são gravados com `router.replace` (sem entrada no
- * histórico e sem scroll). O carrinho vive em `useCart`. A memoização fica a
- * cargo do React Compiler.
+ * Estado da vitrine com a URL como fonte de verdade (`parseStorefrontParams`).
+ * O bairro continua simulado (ETA, loja e bairros atendidos vêm do mock).
+ * `navigate` leva à vitrine com as mudanças: filtros, categoria e ordem usam
+ * `router.replace` sem rolar; página e busca usam `router.push`. `query`
+ * preserva todos os parâmetros e vai nos links dos cards e do checkout. O
+ * carrinho vive em `useCart`. A memoização fica a cargo do React Compiler.
  */
 export function useStorefront() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const neighborhood = searchParams.get('bairro') ?? DEFAULT_NEIGHBORHOOD;
-  const category = searchParams.get('categoria') ?? DEFAULT_CATEGORY;
+  const params = parseStorefrontParams(searchParams);
+  const neighborhood = params.neighborhood ?? DEFAULT_NEIGHBORHOOD;
 
-  const replaceParam = (key: 'bairro' | 'categoria', value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(key, value);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  const navigate = (changes: StorefrontParamChanges, options: StorefrontNavigateOptions = {}) => {
+    const href = buildStorefrontHref(params, changes);
+    const history = options.history ?? ('page' in changes || 'search' in changes ? 'push' : 'replace');
+
+    if (history === 'push') router.push(href, { scroll: 'search' in changes });
+    else router.replace(href, { scroll: false });
   };
 
-  const setNeighborhood = (value: string) => replaceParam('bairro', value);
-  const setCategory = (value: string) => replaceParam('categoria', value);
+  // Troca só o bairro, na rota atual (vitrine, detalhe ou acesso), sem mexer nos outros parâmetros.
+  const setNeighborhood = (value: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('bairro', value);
+    router.replace(withQuery(pathname, next.toString()), { scroll: false });
+  };
+
+  const setCategory = (value: string) => navigate({ category: value });
+
+  /** Busca pelo cabeçalho: `q` com o bairro atual, descartando os demais filtros; vazio remove `q`. */
+  const searchProducts = (term: string) => navigate({ ...storefrontBaseParams(params), search: term });
 
   const served = SERVED_NEIGHBORHOODS.includes(neighborhood);
   const etaMinutes = served ? (ETA_BY_NEIGHBORHOOD[neighborhood] ?? null) : null;
   const store = storeOf(neighborhood);
-
-  const visibleProducts: Product[] = PRODUCTS.filter((product) => category === CATEGORY_ALL || product.category === category);
 
   // Seletor: atendidos, depois não atendidos. Um bairro desconhecido vindo da
   // URL entra no fim para o seletor não mostrar outro bairro no lugar.
@@ -59,17 +75,19 @@ export function useStorefront() {
   const neighborhoods = known.includes(neighborhood) ? known : [...known, neighborhood];
 
   return {
+    params,
     neighborhood,
-    category,
+    category: params.category,
+    navigate,
     setNeighborhood,
     setCategory,
+    searchProducts,
     served,
     etaMinutes,
     store,
-    visibleProducts,
     stores: STORES,
     neighborhoods,
     servedNeighborhoods: SERVED_NEIGHBORHOODS,
-    query: buildStorefrontQuery(neighborhood, category),
+    query: buildStorefrontQuery(params),
   };
 }

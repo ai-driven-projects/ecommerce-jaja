@@ -66,6 +66,18 @@ describe('Product', () => {
     expect(product.listPriceCents).toBeNull()
   })
 
+  test('isFeatured is false when it is omitted', () => {
+    const product = Product.create(valid)
+
+    expect(product.isFeatured).toBe(false)
+  })
+
+  test('keeps isFeatured true when it is given', () => {
+    const product = Product.create({ ...valid, isFeatured: true })
+
+    expect(product.isFeatured).toBe(true)
+  })
+
   test('uses the default unit for a blank unit and derives the slug of a blank slug', () => {
     const product = Product.create({ ...valid, unit: '  ', slug: '' })
 

@@ -119,6 +119,24 @@ describe('SaveProduct', () => {
       })
     })
 
+    test('creates with isFeatured false when it is omitted', async () => {
+      const { productRepository, useCase } = await setup()
+
+      const product = await save(useCase, caneta)
+
+      expect(product.isFeatured).toBe(false)
+      expect((await find(productRepository, product.id)).isFeatured).toBe(false)
+    })
+
+    test('creates with isFeatured true when it is given', async () => {
+      const { productRepository, useCase } = await setup()
+
+      const product = await save(useCase, { ...caneta, isFeatured: true })
+
+      expect(product.isFeatured).toBe(true)
+      expect((await find(productRepository, product.id)).isFeatured).toBe(true)
+    })
+
     test('creates without brand and in a root category', async () => {
       const { useCase } = await setup()
 
@@ -399,6 +417,27 @@ describe('SaveProduct', () => {
         unit: 'unidade',
         isActive: false,
       })
+    })
+
+    test('keeps isFeatured when it is omitted', async () => {
+      const { productRepository, useCase } = await setup()
+      const created = await save(useCase, { ...caneta, isFeatured: true })
+
+      await save(useCase, { ...caneta, id: created.id, priceCents: 450 })
+
+      expect(await find(productRepository, created.id)).toMatchObject({
+        priceCents: 450,
+        isFeatured: true,
+      })
+    })
+
+    test('changes isFeatured to false', async () => {
+      const { productRepository, useCase } = await setup()
+      const created = await save(useCase, { ...caneta, isFeatured: true })
+
+      await save(useCase, { ...caneta, id: created.id, isFeatured: false })
+
+      expect((await find(productRepository, created.id)).isFeatured).toBe(false)
     })
 
     test('refreshes updatedAt and keeps createdAt', async () => {

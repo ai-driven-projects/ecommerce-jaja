@@ -94,13 +94,20 @@ export function ProductList({
                     <ProductThumbnail url={product.mainImageUrl} name={product.name} />
                   </TableCell>
                   <TableCell>
-                    <Link
-                      href={editHref}
-                      title={product.name}
-                      className="line-clamp-2 min-w-[220px] max-w-[360px] font-bold transition-colors duration-150 hover:text-brand"
-                    >
-                      {product.name}
-                    </Link>
+                    <div className="flex min-w-[220px] max-w-[420px] items-start gap-2">
+                      <Link
+                        href={editHref}
+                        title={product.name}
+                        className="line-clamp-2 max-w-[360px] font-bold transition-colors duration-150 hover:text-brand"
+                      >
+                        {product.name}
+                      </Link>
+                      {product.isFeatured ? (
+                        <Badge variant="brand" className="shrink-0 px-2 py-0.5">
+                          Destaque
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="whitespace-nowrap tabular-nums text-muted-ink">{product.sku ?? '—'}</TableCell>
                   <TableCell className="whitespace-nowrap text-ink-soft">{product.brandName ?? '—'}</TableCell>

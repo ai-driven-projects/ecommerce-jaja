@@ -113,7 +113,7 @@ quem se adapta é o CLI: `scrape:seed` converte o que está em `data/kalunga` ne
 | ----------------- | ------------------------------------------------------------------------------------------------ |
 | `brands.json`     | marcas com o slug normalizado pela regra do domínio, uma por slug                                  |
 | `categories.json` | árvore departamento → grupo → subgrupo com slugs únicos; as pais vêm antes das filhas (`parentSlug`) |
-| `products.json`   | produtos únicos por código (`sku`), preços em centavos, unidade, até 10 imagens, `brandSlug` e `categorySlug` |
+| `products.json`   | produtos únicos por código (`sku`), preços em centavos, unidade, até 10 imagens, `brandSlug`, `categorySlug` e `isFeatured` (os 24 disponíveis com mais avaliações, 4 estrelas ou mais e 10 avaliações ou mais; desempate por estrelas e sku) |
 
 Com os arquivos gerados, o seed roda do jeito que preferir, com o mesmo resultado:
 

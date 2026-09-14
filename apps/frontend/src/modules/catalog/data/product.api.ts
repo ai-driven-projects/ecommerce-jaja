@@ -27,6 +27,8 @@ export type CatalogProduct = {
   unit: string;
   images: CatalogProductImage[];
   isActive: boolean;
+  /** Destaque editorial: aparece em "Em destaque" na página inicial da loja. */
+  isFeatured: boolean;
   brandName: string | null;
   /** Nomes dos ancestrais e da própria categoria, ex.: `"Escolar / Cadernos"`. */
   categoryPath: string;
@@ -46,6 +48,7 @@ export type CatalogProductListItem = {
   listPriceCents: number | null;
   mainImageUrl: string | null;
   isActive: boolean;
+  isFeatured: boolean;
 };
 
 /** Página da listagem (`ProductPageDTO`). */
@@ -61,6 +64,7 @@ export type CatalogProductPage = {
  * Corpo de `POST /products` e `PUT /products/:id`, com preços em centavos. Na
  * alteração, `null` limpa os campos opcionais e `images` substitui a lista
  * inteira (envie sempre a lista completa). `slug` ausente é derivado do nome.
+ * `isFeatured` ausente vale `false` na criação e mantém o valor atual na alteração.
  */
 export type ProductInput = {
   name: string;
@@ -74,6 +78,7 @@ export type ProductInput = {
   unit?: string | null;
   images?: CatalogProductImage[];
   isActive?: boolean;
+  isFeatured?: boolean;
 };
 
 /** Filtros de `GET /products`; `categoryId` inclui as subcategorias. */

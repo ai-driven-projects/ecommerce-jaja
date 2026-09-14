@@ -20,6 +20,8 @@ type ProductSeedItem = {
   unit: string;
   images: { thumbUrl: string; largeUrl: string; order: number }[];
   isActive: boolean;
+  // Chosen by the CLI (the most rated available products); absent means `false`.
+  isFeatured?: boolean;
 };
 
 // Products already stored, deleted ones included: slug and sku stay unique
@@ -131,6 +133,7 @@ function planProducts(
       unit: item.unit,
       images: item.images,
       isActive: item.isActive,
+      isFeatured: item.isFeatured ?? false,
     });
 
     if (result.isFailure) {
@@ -174,6 +177,7 @@ export async function seedCatalogProducts(prisma: PrismaClient): Promise<void> {
       listPriceCents: product.listPriceCents,
       unit: product.unit,
       isActive: product.isActive,
+      isFeatured: product.isFeatured,
     };
     const images = product.images;
     const nestedImages = images.length ? { images: { createMany: { data: images } } } : {};

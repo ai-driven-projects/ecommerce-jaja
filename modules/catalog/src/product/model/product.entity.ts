@@ -29,6 +29,7 @@ export interface ProductProps extends EntityProps {
   unit?: string | null
   images?: ProductImageProps[] | null
   isActive?: boolean | null
+  isFeatured?: boolean | null
 }
 
 // `brandName` and `categoryPath` depend on other aggregates, so they are not
@@ -63,6 +64,7 @@ export class Product extends Entity<Product, ProductProps> {
       maxLength: 40,
     })
     const isActive = Flag.tryCreate(props.isActive ?? true)
+    const isFeatured = Flag.tryCreate(props.isFeatured ?? false)
 
     const images = (props.images ?? []).map((image) =>
       ProductImage.tryCreate(image),
@@ -93,6 +95,7 @@ export class Product extends Entity<Product, ProductProps> {
       listPriceCents,
       unit,
       isActive,
+      isFeatured,
       imagesLimit,
       listPriceGreaterThanPrice,
       ...images,
@@ -114,6 +117,7 @@ export class Product extends Entity<Product, ProductProps> {
         unit: unit.instance.value,
         images: Product.normalizeImages(images.map((image) => image.instance)),
         isActive: isActive.instance.value,
+        isFeatured: isFeatured.instance.value,
       }),
     )
   }
@@ -187,5 +191,10 @@ export class Product extends Entity<Product, ProductProps> {
 
   get isActive(): boolean {
     return this.props.isActive === true
+  }
+
+  // Editorial highlight on the storefront ("Em destaque"); `false` by default.
+  get isFeatured(): boolean {
+    return this.props.isFeatured === true
   }
 }

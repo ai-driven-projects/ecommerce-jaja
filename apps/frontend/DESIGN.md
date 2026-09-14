@@ -21,7 +21,8 @@ para "entrega / ok". A referência visual está em `openspec/extras/design/*.dc.
   secundário sobre escuro em `--dark-muted #B8AFA4`.
 - Tons pastéis das áreas de imagem: `--tint-blue`, `--tint-purple`,
   `--tint-mint`, `--tint-yellow`, `--tint-peach`, `--tint-green`. Cada
-  categoria tem o seu (ver `product-art.component.tsx`).
+  categoria raiz tem o seu, com um emoji (ver `category-art.ts`), usados na
+  ilustração de reserva da área de imagem.
 - Raios: **pílula (999px)** em botões, chips, campos de busca, badges e
   steppers · **12px** em inputs e itens de menu · **18–24px** em cartões, hero e
   gaveta · 10–14px em quadradinhos de ícone.
@@ -54,9 +55,13 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   Escuro (`variant="dark"`): só em cima de fundos claros muito vazios.
 - Bordas sempre 1px em `--line` (1.5px em inputs e no "+" de contorno). Nunca
   bordas escuras.
-- Ícones: Lucide, traço 2–2.5px, tamanho 16–18px. **Emoji** para a "imagem"
-  do produto, quadradinhos de KPI e ilustrações de estado vazio — sem fotos,
-  sem marcas.
+- Ícones: Lucide, traço 2–2.5px, tamanho 16–18px. **Emoji** nos quadradinhos
+  de KPI e nas ilustrações de estado vazio.
+- Imagem do produto: a **foto real**, inteira (`next/image` com
+  `object-contain`), sobre branco com respiro interno e texto alternativo igual
+  ao nome; miniatura nos cards e imagem grande na galeria. O emoji grande sobre
+  o tom pastel da categoria raiz é só **reserva**: produto sem foto ou foto que
+  não carrega (categoria sem ilustração própria usa 🛒 sobre `--tint-green`).
 - Transições só em hover/estado, ≤150ms. Cartão clicável: `-translate-y-0.5`
   + `shadow-card`. A única animação contínua é o ponto verde pulsando
   (`animate-pulse-soft`) em "entregadores online" / "a caminho".
@@ -71,26 +76,56 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
 ## Vitrine (`/`)
 - Cabeçalho fixo branco com borda inferior: logo (bloco laranja com a bike +
   "já já" em Bricolage 800), **pílula de entrega** creme com relógio verde
-  ("Entrega em ~18 min · Aldeota", abre menu de bairros), busca em pílula
+  ("Entrega em ~18 min · Aldeota", abre menu de bairros), **busca** em pílula
   creme, "Entrar" em contorno (ou pílula com o primeiro nome + menu "Sair") e
   o botão laranja **Carrinho** com o contador em branco.
-- Chips de categoria em pílulas brancas com emoji; a ativa fica laranja sobre
-  pêssego. Vivem na URL (`categoria`), junto com `bairro`.
-- Hero escuro (raio 24): badge translúcido, título em Bricolage com "em
-  minutos." em `--brand-light`, CTA "Pedir agora", ponto verde pulsando com
-  entregadores online e dois cartões brancos de "pedidos ao vivo".
-- Seções "Mais pedidos nos escritórios", "Repor agora" e "Ofertas da semana"
-  (cards de 220px, selo `−N%` laranja no lugar do ETA). Título em Bricolage
-  24px e "Ver tudo →" laranja à direita. Com categoria selecionada, uma única
-  seção com o nome da categoria.
-- Card de produto: branco, raio 18, padding 12; área de imagem pastel
-  (120px) com selo de ETA branco no canto; nome 700, unidade cinza, preço 800
-  e o "+" redondo laranja em contorno, que vira o stepper `− n +` (pêssego)
-  quando o item está no carrinho.
+- Busca do cabeçalho: "Buscar papel A4, toner, café…"; a lupa (ou Enter)
+  envia e o "×" limpa o texto. Leva a `/?q=<termo>` mantendo só o bairro
+  (também a partir do detalhe); vazio remove a busca. O campo mostra o `q` da
+  URL, inclusive depois de recarregar.
+- Chips de categoria em pílulas brancas roláveis: "Tudo" + as raízes do
+  catálogo, com o emoji da raiz; a ativa fica laranja sobre pêssego. Categoria
+  com filhas abre uma segunda linha de chips menores ("Tudo em <Categoria>" +
+  subcategorias com a contagem em cinza); numa neta, as linhas da raiz e do pai
+  continuam visíveis. Estado na URL (`categoria` por slug), junto com `bairro`.
+- Página inicial (sem busca, filtros nem categoria), nesta ordem:
+  - hero escuro (raio 24): badge translúcido, título em Bricolage com "em
+    minutos." em `--brand-light`, CTA "Pedir agora", ponto verde pulsando com
+    entregadores online e dois cartões brancos de "pedidos ao vivo";
+  - "Em destaque" (12 produtos) e "Ofertas da semana" (8, do maior desconto,
+    cards de 220px): título em Bricolage 24px e "Ver tudo →" laranja à
+    direita, levando à listagem filtrada;
+  - "Categorias em destaque": até 12 cartões brancos (raio 18) com o emoji no
+    quadradinho pastel da raiz, o nome e "N produtos".
+  Seção sem itens não aparece.
+- Listagem (com busca, filtros ou categoria):
+  - título em Bricolage 30 ("Resultados para “termo”", o nome da categoria
+    com as ancestrais clicáveis acima, "Em destaque" ou "Ofertas") e
+    "N produtos" em cinza; à direita, a ordenação num seletor em pílula
+    ("Mais relevantes" só com busca, "Destaques", "Menor preço", "Maior
+    preço", "Nome (A–Z)", "Maior desconto");
+  - filtros (Marca com contagem e "Ver todas" depois de 8, Preço em reais com
+    "Aplicar", Só ofertas, Só destaques) com rótulos de grupo em caixa alta
+    pequena, numa coluna branca de 260px em `lg` e, abaixo disso, no botão
+    "Filtros (n)" que abre um painel lateral com os mesmos controles;
+  - filtros ativos em pílulas pêssego com "×" e o link "Limpar filtros";
+  - grade de cards seguida da paginação; trocar de página leva ao topo da
+    listagem;
+  - carregando: blocos creme na primeira carga e opacidade reduzida nas
+    seguintes; vazio: "Nada por aqui. Já já." com a sugestão de limpar os
+    filtros ou buscar outro termo; erro: mensagem com "Tentar de novo".
+- Card de produto: branco, raio 18, padding 12; área de imagem (120px) com a
+  foto sobre branco (ou o emoji pastel de reserva) e um único selo no canto,
+  nesta prioridade: `−N%` laranja, "Destaque" e o ETA branco; nome 700 em até
+  3 linhas (o nome inteiro no `title`), unidade cinza e preço 800. O "+"
+  redondo laranja em contorno, que vira o stepper `− n +` (pêssego) quando o
+  item está no carrinho, só aparece onde a página oferece carrinho: a vitrine
+  e o detalhe ainda não o exibem.
 - Rodapé branco: wordmark + horário, "Áreas atendidas" em pílulas creme e o
   link discreto "Área administrativa".
 - Bairro não atendido: cartão branco com "Ainda não chegamos aí. Já já." em
-  display e os bairros atendidos em pílulas clicáveis, agrupados por loja.
+  display e os bairros atendidos em pílulas clicáveis, agrupados por loja, em
+  qualquer modo (página inicial ou listagem).
 
 ## Carrinho (gaveta)
 - Painel branco de 400px à direita, canto interno de 22px, `shadow-drawer`;
@@ -102,17 +137,30 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   `useSyncExternalStore`: servidor e hidratação veem o carrinho vazio.
 
 ## Detalhe do produto (`/p/:slug`)
-- Caminho "Início / Categoria / Nome" em cinza, o nome em negrito.
-- Duas colunas (imagem 1.05fr / info 1fr). Imagem: bloco pastel de 380px
-  (raio 24) com o emoji grande e o selo "Chega em ~X min"; três miniaturas de
-  72px, a ativa com borda laranja 2px.
-- Coluna de informação: badges (Mais pedido · Oferta · Em estoque na loja X /
-  Últimas N / Acabou), `h1` em Bricolage 32, unidade em cinza, preço 34px em
-  Bricolage, stepper grande (creme) + botão "Adicionar · R$ total" (que abre a
-  gaveta), cartão de entrega (bike verde + caminhão laranja: ETA e a regra do
-  frete grátis), "Sobre o produto" e a ficha em pares `rótulo · valor` sobre
-  blocos creme de raio 10.
-- "Quem pediu, também levou": até 4 da mesma categoria, nos mesmos cards.
+- Caminho "Início / <categorias da raiz à folha> / Nome" em cinza, o nome em
+  negrito; cada categoria leva à listagem dela. À direita, "← Voltar aos
+  resultados" em laranja quando a URL tem busca ou filtros. Produto
+  inexistente ou inativo é 404; o título da aba é "<nome> — já já".
+- Duas colunas (galeria 1.05fr / info 1fr). Galeria: imagem principal
+  quadrada (raio 24, borda `--line`) com a foto grande sobre branco e o selo
+  "Chega em ~X min"; com mais de uma imagem, setas redondas brancas nas
+  laterais, contador "n/total" no canto e miniaturas de 72px de todas as
+  imagens, roláveis na horizontal, a ativa com borda laranja 2px (setas do
+  teclado navegam entre elas). Com uma imagem, sem setas, contador nem
+  miniaturas; sem imagens, o emoji da categoria sobre o tom pastel.
+- Coluna de informação: badges "Em destaque" e `−N%`, a marca como link
+  laranja para a listagem da marca, `h1` em Bricolage 32, unidade e
+  "Cód. <sku>" em cinza, preço 34px em Bricolage com o "De:" riscado, stepper
+  grande (creme) + botão "Adicionar · R$ total", cartão de entrega (bike verde
+  + caminhão laranja: ETA e a regra do frete grátis), "Sobre o produto"
+  (quebras de linha preservadas; acima de 600 caracteres, recolhido com "Ler
+  mais"/"Ler menos") e a ficha (Marca, Categoria, Código, Unidade) em pares
+  `rótulo · valor` sobre blocos creme de raio 10. Nada de estoque ou ficha
+  técnica inventados.
+- "Adicionar" **ainda sem carrinho**: o clique não muda o carrinho e só mostra
+  o aviso "Carrinho chega já já."; fica indisponível em bairro não atendido.
+- "Mais de <categoria>": até 4 outros produtos da mesma categoria, nos mesmos
+  cards (sem "+"); a seção some sem itens.
 
 ## Checkout (`/checkout`)
 - Cabeçalho compacto: logo à esquerda, "🔒 Checkout seguro" em verde à direita.

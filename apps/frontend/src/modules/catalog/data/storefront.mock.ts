@@ -147,8 +147,3 @@ export const PRODUCTS: readonly Product[] = [
 export function findProduct(slug: string): Product | undefined {
   return PRODUCTS.find((product) => product.slug === slug);
 }
-
-/** Até `limit` produtos da mesma categoria, sem o próprio. */
-export function relatedProducts(product: Product, limit = 4): Product[] {
-  return PRODUCTS.filter((other) => other.category === product.category && other.slug !== product.slug).slice(0, limit);
-}

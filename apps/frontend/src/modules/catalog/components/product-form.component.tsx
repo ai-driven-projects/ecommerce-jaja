@@ -118,7 +118,8 @@ const EMPTY_IMAGE: ProductImageFormData = { thumbUrl: '', largeUrl: '' };
  * editado), Classificação (marca com "Sem marca" e categoria pelo caminho),
  * Descrição, Preço (reais com duas casas e unidade), Imagens (lista ordenável
  * com pré-visualização, a primeira é a principal, no máximo 10) e Publicação
- * (só na edição). Erro geral da API aparece acima dos botões.
+ * ("Destaque na vitrine" sempre; ativo/inativo só na edição). Erro geral da API
+ * aparece acima dos botões.
  */
 export function ProductForm({
   form,
@@ -362,7 +363,6 @@ export function ProductForm({
         <FormSectionLayout
           title="Imagens"
           description={`Até ${PRODUCT_MAX_IMAGES} imagens. A primeira da lista é a principal; use as setas para reordenar.`}
-          showDivider={isEditing}
           className="pt-10"
         >
           <Controller
@@ -475,13 +475,44 @@ export function ProductForm({
           />
         </FormSectionLayout>
 
-        {isEditing ? (
-          <FormSectionLayout
-            title="Publicação"
-            description="Produtos inativos continuam cadastrados, mas ficam fora da vitrine."
-            showDivider={false}
-            className="pt-10"
-          >
+        <FormSectionLayout
+          title="Publicação"
+          description={
+            isEditing
+              ? 'Destaque na página inicial da loja. Produtos inativos continuam cadastrados, mas ficam fora da vitrine.'
+              : 'Destaque na página inicial da loja.'
+          }
+          showDivider={false}
+          className="pt-10"
+        >
+          <Controller
+            control={control}
+            name="isFeatured"
+            render={({ field }) => (
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="product-is-featured"
+                  ref={field.ref}
+                  checked={field.value === true}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                  onBlur={field.onBlur}
+                  disabled={isSubmitting}
+                  aria-describedby="product-is-featured-hint"
+                  className="mt-px"
+                />
+                <div>
+                  <Label htmlFor="product-is-featured" className="leading-[18px]">
+                    Destaque na vitrine
+                  </Label>
+                  <p id="product-is-featured-hint" className="mt-1 text-xs text-muted-ink">
+                    Aparece em “Em destaque” na página inicial da loja
+                  </p>
+                </div>
+              </div>
+            )}
+          />
+
+          {isEditing ? (
             <Controller
               control={control}
               name="isActive"
@@ -502,8 +533,8 @@ export function ProductForm({
                 </div>
               )}
             />
-          </FormSectionLayout>
-        ) : null}
+          ) : null}
+        </FormSectionLayout>
       </Card>
 
       {rootError ? (

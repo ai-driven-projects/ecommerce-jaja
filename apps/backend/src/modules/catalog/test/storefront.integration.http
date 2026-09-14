@@ -1,0 +1,212 @@
+# Testes de integração da API pública da vitrine (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations e seed aplicados
+# (npm run prisma:migrate:deploy && npm run prisma:seed, incluindo os 1.076 produtos
+# da Kalunga com os 24 destaques) e backend rodando em http://localhost:4000
+# (npm run dev --workspace=@jaja/backend).
+#
+# As chamadas da vitrine são feitas SEM token: a API é pública e só lê dados. Só o bloco
+# final (passos 42 a 47) usa o token de administrador, para marcar um produto como destaque
+# pelo cadastro, e devolve o produto ao estado do seed no último passo.
+#
+# Os totais indicados valem para o catálogo do seed (1.076 produtos, 19 inativos, 96 com
+# preço "De:"). Produtos ativos criados por outros testes (ex.: product.integration.http)
+# somam aos totais da listagem.
+#
+# Ordem: executar de cima para baixo; algumas requisições reaproveitam valores das anteriores.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@seedPassword = #Senha123
+# JWT expirado (exp em 2023) com assinatura qualquer: a vitrine não valida o cabeçalho.
+@expiredToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDAiLCJleHAiOjE3MDAwMDAwMDB9.AmvO5JbPCAsdnv-G4evFa2k6lNWEmSQvQvlfELL-KZo
+# Produto do seed sem destaque usado no bloco do administrador.
+@featuredCandidateSlug = abaco-pequeno-cores-sortidas-7863-gala-pt-1-un
+
+### 1. Categorias -> 200 com as 12 raízes (level 1, parentSlug null) ordenadas por order e nome,
+### cada uma com productCount (produtos visíveis na raiz e em toda a subárvore, sempre > 0) e
+### children (level 2, parentSlug da raiz). "Cartuchos & Toners" tem productCount 96.
+# @name categories
+GET {{baseUrl}}/storefront/categories
+
+### 2. Mesma chamada com token expirado -> 200 com o mesmo conteúdo do passo 1 (sem 401)
+GET {{baseUrl}}/storefront/categories
+Authorization: Bearer {{expiredToken}}
+
+### 3. Listagem sem filtros -> 200 com 24 itens, page 1, pageSize 24, total 1057, totalPages 45
+### e brandFacets; os 24 destaques do seed (isFeatured true) ocupam a página inteira
+# @name defaultList
+GET {{baseUrl}}/storefront/products
+
+### 4. Segunda página -> 200 com 24 itens, nenhum em destaque (ordem: destaques, depois nome)
+# @name secondPage
+GET {{baseUrl}}/storefront/products?page=2
+
+### 5. Página além da última -> 200 com items [], total 1057 e totalPages 45
+GET {{baseUrl}}/storefront/products?page=999
+
+### 6. search=caneta -> 200 só com produtos em que alguma palavra começa com "caneta"
+GET {{baseUrl}}/storefront/products?search=caneta
+
+### 7. search=caneta bic -> 200 com as canetas da marca BIC (termos casando nome + marca) e
+### nenhuma caneta de outra marca que não mencione "bic" (ex.: descrição com "Carga Bic")
+GET {{baseUrl}}/storefront/products?search=caneta%20bic
+
+### 8. search=CAFÉ -> 200 com os mesmos itens do passo 9 (sem acento e maiúsculas, por prefixo)
+GET {{baseUrl}}/storefront/products?search=CAF%C3%89
+
+### 9. search=cafe -> 200 com 46 itens, incluindo cafeteiras
+GET {{baseUrl}}/storefront/products?search=cafe
+
+### 10. Busca por sku -> 200 com 1 item: cabeca-de-impressao-magenta-ciano-c9383a-hp-cx-1-un
+GET {{baseUrl}}/storefront/products?search=798254
+
+### 11. Busca pelo nome da subcategoria "Acendedores" -> 200 incluindo
+### acendedor-handy-bic-multiuso-azul-recarregavel-bt-1-un (o nome do produto não tem "acendedores")
+GET {{baseUrl}}/storefront/products?search=Acendedores
+
+### 12. Palavra que só aparece na descrição -> 200 com 1 item:
+### limpador-perfumado-orquideas-silvestres-500ml-109186-audax-pt-1-un
+GET {{baseUrl}}/storefront/products?search=abordagem
+
+### 13. search sem termos válidos (" !") -> 200 com a mesma listagem do passo 3
+GET {{baseUrl}}/storefront/products?search=%20%21
+
+### 14. Categoria raiz -> 200 com os 96 produtos de "Cartuchos & Toners" e de todas as suas
+### subcategorias (rootCategorySlug cartuchos-toners, categoryName de várias subcategorias)
+GET {{baseUrl}}/storefront/products?category=cartuchos-toners
+
+### 15. Categoria inexistente -> 200 com items [], total 0 e totalPages 0
+GET {{baseUrl}}/storefront/products?category=papelaria
+
+### 16. search=toner -> 200 com brandFacets por count decrescente (HP 29, Brother 28, Canon 19, ...)
+# @name toner
+GET {{baseUrl}}/storefront/products?search=toner
+
+### 17. search=toner&brand=hp -> 200 só com itens da HP (29) e as MESMAS brandFacets do passo 16
+GET {{baseUrl}}/storefront/products?search=toner&brand=hp
+
+### 18. Duas marcas (OU) -> 200 com itens da HP ou da Brother (57) e as mesmas brandFacets do passo 16
+GET {{baseUrl}}/storefront/products?search=toner&brand=hp,brother
+
+### 19. Marca desconhecida e slugs vazios são ignorados -> 200 com os mesmos itens do passo 16
+GET {{baseUrl}}/storefront/products?search=toner&brand=nao-existe,%20,
+
+### 20. Faixa de preço invertida -> 200 só com priceCents entre 1000 e 5000 (os limites são
+### trocados), igual ao passo 21 (522 no seed)
+GET {{baseUrl}}/storefront/products?minPriceCents=5000&maxPriceCents=1000
+
+### 21. Faixa de preço na ordem -> mesma resposta do passo 20
+GET {{baseUrl}}/storefront/products?minPriceCents=1000&maxPriceCents=5000
+
+### 22. Preços que não são inteiros >= 0 são ignorados -> mesma listagem do passo 3
+GET {{baseUrl}}/storefront/products?minPriceCents=abc&maxPriceCents=-5
+
+### 23. Ofertas -> 200 com 48 itens, total 96, todos com listPriceCents e discountPercent
+### (round((1 - priceCents / listPriceCents) * 100))
+GET {{baseUrl}}/storefront/products?onSale=true&pageSize=48
+
+### 24. Ofertas por maior desconto -> 200 com discountPercent em ordem decrescente
+GET {{baseUrl}}/storefront/products?onSale=true&sort=discount
+
+### 25. Destaques -> 200 com total 24, todos com isFeatured true
+GET {{baseUrl}}/storefront/products?featured=true
+
+### 26. onSale e featured só valem com "true" -> mesma listagem do passo 3
+GET {{baseUrl}}/storefront/products?onSale=1&featured=yes
+
+### 27. sort=relevance com busca -> 200 com os melhores casamentos de "papel" primeiro
+### (nome, sku e marca > categorias > descrição); medir o tempo desta chamada (~20 ms no seed)
+GET {{baseUrl}}/storefront/products?search=papel&sort=relevance
+
+### 28. sort=featured -> destaques primeiro, depois nome (igual ao passo 3)
+GET {{baseUrl}}/storefront/products?sort=featured
+
+### 29. sort=price-asc -> priceCents crescente; preços iguais em ordem de nome
+GET {{baseUrl}}/storefront/products?sort=price-asc
+
+### 30. sort=price-desc -> priceCents decrescente; preços iguais em ordem de nome
+GET {{baseUrl}}/storefront/products?sort=price-desc
+
+### 31. sort=name -> nome sem distinção de maiúsculas e acentos ("Ábaco..." entre os primeiros)
+GET {{baseUrl}}/storefront/products?sort=name
+
+### 32. sort=discount -> maior discountPercent primeiro; produtos sem desconto no fim
+GET {{baseUrl}}/storefront/products?sort=discount
+
+### 33. sort=relevance sem busca -> ordena como featured (igual ao passo 3)
+GET {{baseUrl}}/storefront/products?sort=relevance
+
+### 34. sort inválido é ignorado -> mesma ordem do passo 3
+GET {{baseUrl}}/storefront/products?sort=aleatorio
+
+### 35. pageSize acima do máximo -> 200 com 48 itens e pageSize 48
+GET {{baseUrl}}/storefront/products?pageSize=500
+
+### 36. page e pageSize inválidos -> 200 com page 1 e pageSize 24
+GET {{baseUrl}}/storefront/products?page=-1&pageSize=0
+
+### 37. Detalhe com 10 imagens -> 200 com images em ordem de order (0 a 9), brand
+### { slug: "hp", name: "HP" }, sku "798254" e categories da raiz à folha:
+### "Cartuchos & Toners" -> "Cabeça de Impressão HP"
+GET {{baseUrl}}/storefront/products/cabeca-de-impressao-magenta-ciano-c9383a-hp-cx-1-un
+
+### 38. Detalhe de produto ativo cuja marca (dover) não existe no cadastro -> 200 com brand null
+GET {{baseUrl}}/storefront/products/saco-para-lixo-banheiro-34x40cm-branco-dover-rl-100-un
+
+### 39. Slug inexistente -> 404 PRODUCT_NOT_FOUND
+GET {{baseUrl}}/storefront/products/nao-existe
+
+### 40. Slug de produto inativo do seed -> 404 PRODUCT_NOT_FOUND
+GET {{baseUrl}}/storefront/products/cartucho-lexmark-dual-pack-1un-17-1un-27-10n0595-lexmark-cx-1-un
+
+### 41. O produto inativo também não aparece na busca pelo seu código -> 200 com total 0
+GET {{baseUrl}}/storefront/products?search=10n0595
+
+### 42. Login do admin do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 43. Fixture: produto do seed sem destaque, pela vitrine -> 200 com isFeatured false
+# @name candidate
+GET {{baseUrl}}/storefront/products/{{featuredCandidateSlug}}
+
+### 44. Fixture: o mesmo produto pelo cadastro (categoryId e imagens) -> 200
+# @name adminProduct
+GET {{baseUrl}}/products/{{candidate.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 45. Marcar como destaque -> 200 com isFeatured true. Campos omitidos mantêm o valor atual;
+### as imagens são reenviadas porque a lista enviada substitui a anterior.
+PUT {{baseUrl}}/products/{{adminProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProduct.response.body.name}}",
+  "categoryId": "{{adminProduct.response.body.categoryId}}",
+  "priceCents": {{adminProduct.response.body.priceCents}},
+  "images": {{adminProduct.response.body.$.images}},
+  "isFeatured": true
+}
+
+### 46. Destaques na vitrine -> 200 com total 25, incluindo {{featuredCandidateSlug}}
+GET {{baseUrl}}/storefront/products?featured=true&pageSize=48
+
+### 47. Restaurar o seed -> 200 com isFeatured false (a vitrine volta a ter 24 destaques)
+PUT {{baseUrl}}/products/{{adminProduct.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProduct.response.body.name}}",
+  "categoryId": "{{adminProduct.response.body.categoryId}}",
+  "priceCents": {{adminProduct.response.body.priceCents}},
+  "images": {{adminProduct.response.body.$.images}},
+  "isFeatured": false
+}

@@ -1,4 +1,5 @@
 export * from './cart-drawer.component';
+export * from './category-art';
 export * from './category-chips.component';
 export * from './delivery-pill.component';
 export * from './eta-badge.component';

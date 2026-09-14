@@ -1,49 +1,10 @@
 'use client';
 
-import { CategoryChips } from '@/shared/components/store/category-chips.component';
-import { ProductGrid } from '@/shared/components/store/product-grid.component';
-import { SectionHeading } from '@/shared/components/store/section-heading.component';
-import type { StoreProduct } from '@/shared/components/store/store.types';
-import { productRoute } from '@/shared/navigation/storefront-routes';
-import { useCart } from '../data/cart.context';
-import { CATEGORY_OPTIONS, COURIERS_ONLINE, PRODUCTS, categoryLabel } from '../data/storefront.mock';
-import { CATEGORY_ALL, type Product } from '../data/storefront.types';
+import { isStorefrontHome } from '../data/storefront-query.util';
 import { useStorefront } from '../data/use-storefront.hook';
-import { StorefrontHero } from './storefront-hero.component';
-
-const TOP_ANCHOR = 'mais-pedidos';
-
-type SectionProps = {
-  id?: string;
-  title: string;
-  products: Product[];
-  etaMinutes: number | null;
-  query: string;
-  minCardWidth?: 180 | 220;
-  cardSize?: 'md' | 'lg';
-  onSeeAll?: { label: string; href: string };
-};
-
-function ProductSection({ id, title, products, etaMinutes, query, minCardWidth, cardSize, onSeeAll }: SectionProps) {
-  const cart = useCart();
-
-  if (products.length === 0) return null;
-
-  return (
-    <section id={id} className="scroll-mt-28">
-      <SectionHeading title={title} action={onSeeAll} />
-      <ProductGrid
-        products={products}
-        etaMinutes={etaMinutes}
-        minCardWidth={minCardWidth}
-        cardSize={cardSize}
-        getHref={(product: StoreProduct) => productRoute(product.slug, query)}
-        getQuantity={(product) => cart.getQuantity(product.slug)}
-        onChangeQuantity={(product, quantity) => cart.setQuantity(product.slug, quantity)}
-      />
-    </section>
-  );
-}
+import { StorefrontCategoryNav } from './storefront-category-nav.component';
+import { StorefrontHome } from './storefront-home.component';
+import { StorefrontListing } from './storefront-listing.component';
 
 // Estado vazio: bairro fora da área de cobertura, com os bairros atendidos
 // clicáveis, agrupados por loja.
@@ -83,48 +44,22 @@ function NotServed({ stores, onPick }: { stores: [string, string[]][]; onPick: (
 }
 
 // Conteúdo da vitrine. O cabeçalho, o carrinho e o rodapé vêm do `StorefrontShell`
-// aplicado pelo layout do grupo público.
+// aplicado pelo layout do grupo público. Sem busca, filtros e categoria, a
+// página inicial; com qualquer um deles, a listagem. Bairro não atendido mostra
+// o estado vazio em qualquer modo.
 export function Storefront() {
   const storefront = useStorefront();
-  const { category, etaMinutes, query } = storefront;
-  const isAll = category === CATEGORY_ALL;
-
-  const top = PRODUCTS.filter((product) => product.highlight === 'top');
-  const restock = PRODUCTS.filter((product) => product.highlight === 'restock');
-  const offers = PRODUCTS.filter((product) => product.oldPriceCents);
 
   return (
     <main className="mx-auto flex w-full max-w-[1240px] flex-col gap-[34px] px-4 pb-10 pt-3 sm:px-6">
-      <CategoryChips
-        categories={CATEGORY_OPTIONS.map((option) => ({ id: option.id, label: option.label, emoji: option.emoji }))}
-        active={category}
-        onChange={storefront.setCategory}
-        className="-mx-4 px-4 sm:-mx-6 sm:px-6"
-      />
+      <StorefrontCategoryNav />
 
       {!storefront.served ? (
         <NotServed stores={storefront.stores} onPick={storefront.setNeighborhood} />
-      ) : isAll ? (
-        <>
-          <StorefrontHero neighborhood={storefront.neighborhood} couriersOnline={COURIERS_ONLINE} ctaHref={`#${TOP_ANCHOR}`} />
-          <ProductSection id={TOP_ANCHOR} title="Mais pedidos nos escritórios" products={top} etaMinutes={etaMinutes} query={query} />
-          <ProductSection title="Repor agora" products={restock} etaMinutes={etaMinutes} query={query} />
-          <ProductSection
-            title="Ofertas da semana"
-            products={offers}
-            etaMinutes={etaMinutes}
-            query={query}
-            minCardWidth={220}
-            cardSize="lg"
-          />
-        </>
+      ) : isStorefrontHome(storefront.params) ? (
+        <StorefrontHome />
       ) : (
-        <ProductSection
-          title={categoryLabel(category as Product['category'])}
-          products={storefront.visibleProducts}
-          etaMinutes={etaMinutes}
-          query={query}
-        />
+        <StorefrontListing />
       )}
     </main>
   );

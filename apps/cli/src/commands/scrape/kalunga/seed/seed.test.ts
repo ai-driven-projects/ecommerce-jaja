@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import type { CategoryFile, KalungaGroup, ProductBrand, ScrapedProduct } from '../types.js';
 import { buildBrands } from './brands.js';
 import { buildSeedData, SEED_FILES, writeSeedData } from './index.js';
-import { unitFromName } from './products.js';
+import { FEATURED_LIMIT, unitFromName } from './products.js';
 
 function group(id: number, departmentId: number, name: string, slug: string): KalungaGroup {
   return { id, departmentId, departmentSlug: '', slug, name, url: '', highlighted: false };
@@ -100,6 +100,7 @@ describe('buildSeedData', () => {
       unit: 'unidade',
       images: [{ thumbUrl: 'https://img/001d.jpg', largeUrl: 'https://img/001z.jpg', order: 0 }],
       isActive: true,
+      isFeatured: false,
     });
     assert.equal(productBySku.get('002')?.slug, 'produto-001-002');
     assert.equal(productBySku.get('002')?.categorySlug, 'escolar');
@@ -116,6 +117,45 @@ describe('buildSeedData', () => {
     assert.equal(item?.images.length, 10);
     assert.deepEqual(item?.images[0], { thumbUrl: 'https://img/0d.jpg', largeUrl: 'https://img/0d.jpg', order: 0 });
     assert.equal(item?.images[9]?.order, 9);
+  });
+
+  describe('destaques', () => {
+    const rated = (id: string, stars: number, count: number, overrides: Partial<ScrapedProduct> = {}) =>
+      product(id, ['Escolar', null, null], { rating: { stars, count }, ...overrides });
+    // 23 candidatos à frente de todos, deixando uma vaga para o desempate.
+    const leaders = Array.from({ length: FEATURED_LIMIT - 1 }, (_, index) => rated(`5${String(index).padStart(2, '0')}`, 4.5, 100 + index));
+    const { data, productStats } = buildSeedData([
+      file(1, 'escolar', 'Escolar', [], [
+        rated('100', 5, 5000, { available: false }),
+        rated('200', 4.5, 50),
+        rated('202', 4.8, 50),
+        rated('201', 4.8, 50),
+        rated('300', 3.9, 900),
+        rated('301', 5, 9),
+        product('400', ['Escolar', null, null]),
+        ...leaders,
+      ]),
+    ]);
+    const featured = new Map(data.products.map((item) => [item.sku, item.isFeatured]));
+
+    it(`marca no máximo ${FEATURED_LIMIT} produtos e conta em stats.featured`, () => {
+      assert.equal(data.products.filter((item) => item.isFeatured).length, FEATURED_LIMIT);
+      assert.equal(productStats.featured, FEATURED_LIMIT);
+      assert.ok(leaders.every((leader) => featured.get(leader.id) === true));
+    });
+
+    it('ignora o indisponível mesmo com mais avaliações', () => {
+      assert.equal(featured.get('100'), false);
+    });
+
+    it('desempata a quantidade de avaliações pelas estrelas e depois pelo sku', () => {
+      // 200 tem o menor sku, mas menos estrelas; entre 201 e 202 (mesmas estrelas) vence o menor sku.
+      assert.deepEqual([featured.get('201'), featured.get('202'), featured.get('200')], [true, false, false]);
+    });
+
+    it('deixa fora quem não atinge 4 estrelas e 10 avaliações, e o produto sem avaliação', () => {
+      assert.deepEqual([featured.get('300'), featured.get('301'), featured.get('400')], [false, false, false]);
+    });
   });
 
   it('grava os três arquivos do seed', () => {

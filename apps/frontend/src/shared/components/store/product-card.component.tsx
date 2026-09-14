@@ -15,19 +15,23 @@ type ProductCardProps = {
   /** ETA do bairro atual; sem valor o selo não aparece. */
   etaMinutes?: number | null;
   quantity?: number;
+  /** Sem esta ação o card não exibe o "+". */
   onChangeQuantity?: (quantity: number) => void;
   /** Área de imagem maior (usado nas ofertas). */
   size?: 'md' | 'lg';
   className?: string;
 };
 
-function discountPercent(product: StoreProduct): number | null {
+/** Desconto do produto: o da API; sem ele (catálogo local), calculado pelo preço "De:". */
+function discountOf(product: StoreProduct): number | null {
+  if (product.discountPercent !== undefined) return product.discountPercent;
   if (!product.oldPriceCents || product.oldPriceCents <= product.priceCents) return null;
   return Math.round((1 - product.priceCents / product.oldPriceCents) * 100);
 }
 
 // Cartão branco com raio 18: em hover sobe 2px e ganha sombra. A área de
-// imagem e o nome levam ao produto; o "+" adiciona direto ao carrinho.
+// imagem e o nome levam ao produto; o "+" (quando há ação) adiciona ao
+// carrinho. Um único selo na imagem: desconto > Destaque > ETA.
 export function ProductCard({
   product,
   href,
@@ -37,7 +41,7 @@ export function ProductCard({
   size = 'md',
   className,
 }: ProductCardProps) {
-  const off = discountPercent(product);
+  const off = discountOf(product);
 
   return (
     <article
@@ -47,10 +51,20 @@ export function ProductCard({
       )}
     >
       <Link href={href} className="block" tabIndex={-1} aria-hidden="true">
-        <ProductArt emoji={product.emoji} category={product.category} size={size}>
-          {off !== null ? (
+        <ProductArt
+          emoji={product.emoji}
+          category={product.category}
+          imageUrl={product.imageUrl}
+          alt={product.name}
+          size={size}
+        >
+          {off ? (
             <Badge variant="solid" className="absolute left-2 top-2 px-2.5 py-[3px] text-[11.5px]">
               −{off}%
+            </Badge>
+          ) : product.badge === 'featured' ? (
+            <Badge variant="brand" className="absolute left-2 top-2 bg-card px-2.5 py-[3px] text-[11.5px] shadow-badge">
+              Destaque
             </Badge>
           ) : typeof etaMinutes === 'number' ? (
             <EtaBadge minutes={etaMinutes} className="absolute left-2 top-2" />
@@ -59,7 +73,11 @@ export function ProductCard({
       </Link>
 
       <div className="flex-1">
-        <Link href={href} className="block text-sm font-bold leading-[1.35] text-ink transition-colors duration-150 hover:text-brand">
+        <Link
+          href={href}
+          title={product.name}
+          className="line-clamp-3 text-sm font-bold leading-[1.35] text-ink transition-colors duration-150 hover:text-brand"
+        >
           {product.name}
         </Link>
         <p className="mt-0.5 text-[12.5px] text-muted-ink">{product.unit}</p>

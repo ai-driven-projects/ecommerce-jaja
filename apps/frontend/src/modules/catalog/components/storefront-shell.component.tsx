@@ -15,14 +15,17 @@ import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
 import { ADMIN_ROUTE } from '@/shared/navigation/admin-routes';
 import { CHECKOUT_ROUTE, STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
 import { CartProvider, useCart } from '../data/cart.context';
+import { StorefrontCatalogProvider } from '../data/storefront-catalog.context';
 import { ZONES } from '../data/storefront.mock';
-import { DEFAULT_NEIGHBORHOOD, useStorefront } from '../data/use-storefront.hook';
+import { DEFAULT_NEIGHBORHOOD } from '../data/storefront-query.util';
+import { useStorefront } from '../data/use-storefront.hook';
 
 const TRACKING_PATH_PATTERN = /^\/pedidos\/[^/]+\/acompanhar$/;
 
-// Cabeçalho + carrinho ligados ao estado da vitrine (bairro/categoria na URL)
+// Cabeçalho + carrinho ligados ao estado da vitrine (bairro e busca na URL)
 // e à sessão do cliente. Fica em um componente próprio porque `useSearchParams`
-// exige Suspense.
+// exige Suspense. A busca leva à vitrine com `q` e o bairro atual, descartando
+// os demais filtros, também a partir do detalhe do produto.
 function ConnectedHeader() {
   const storefront = useStorefront();
   const cart = useCart();
@@ -65,6 +68,8 @@ function ConnectedHeader() {
         adminHref={ADMIN_ROUTE}
         signInHref={signInHref}
         onSignOut={handleSignOut}
+        searchValue={storefront.params.search ?? ''}
+        onSearch={storefront.searchProducts}
       />
       <CartDrawer
         open={cart.isOpen}
@@ -144,13 +149,16 @@ function ShellBody({ children }: { children: ReactNode }) {
 }
 
 /**
- * Shell público da loja: carrinho, cabeçalho e rodapé compartilhados em todas
- * as páginas públicas. Checkout e acompanhamento usam o cabeçalho compacto.
+ * Shell público da loja: carrinho, árvore de categorias, cabeçalho e rodapé
+ * compartilhados em todas as páginas públicas. Checkout e acompanhamento usam
+ * o cabeçalho compacto.
  */
 export function StorefrontShell({ children }: { children: ReactNode }) {
   return (
     <CartProvider>
-      <ShellBody>{children}</ShellBody>
+      <StorefrontCatalogProvider>
+        <ShellBody>{children}</ShellBody>
+      </StorefrontCatalogProvider>
     </CartProvider>
   );
 }

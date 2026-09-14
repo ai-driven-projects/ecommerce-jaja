@@ -22,6 +22,8 @@ export interface ProductDTO {
   // Ordered by `order`.
   images: ProductImageDTO[]
   isActive: boolean
+  // Editorial highlight on the storefront ("Em destaque").
+  isFeatured: boolean
   brandName: string | null
   categoryPath: string
   createdAt: Date
@@ -41,6 +43,7 @@ export interface ProductListItemDTO {
   // Thumbnail of the main image (lowest order), or `null` without images.
   mainImageUrl: string | null
   isActive: boolean
+  isFeatured: boolean
 }
 
 // One page of products; `totalPages` is `ceil(total / pageSize)`.

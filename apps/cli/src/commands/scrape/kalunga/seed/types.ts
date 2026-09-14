@@ -43,6 +43,8 @@ export interface ProductSeedItem {
   unit: string;
   images: ProductImageSeedItem[];
   isActive: boolean;
+  /** Destaque na vitrine: os produtos mais avaliados entre os candidatos (`buildProducts`). */
+  isFeatured: boolean;
 }
 
 export interface SeedData {
