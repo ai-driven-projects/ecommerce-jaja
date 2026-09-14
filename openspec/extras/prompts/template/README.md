@@ -1,6 +1,8 @@
 # Template de prompt de cadastro
 
-`cadastro.md` é o molde dos prompts de cadastro administrativo (CRUD) na arquitetura do projeto: domínio em `modules/<module>`, adapter Prisma e controller no backend Nest e telas de lista e formulário no frontend Next. Ele consolida o padrão dos prompts `archive/07-cadastro-marca.md`, `archive/08-cadastro-categoria.md` e `archive/09-cadastro-produto.md` **e o que o código evoluiu depois deles** (listas paginadas com estado na URL, busca full-text, `errors.ts` por agregado, retorno do formulário para a mesma página, seeds lendo só `prisma/seed/data`).
+`template-cadastro.md` é o molde dos prompts de cadastro administrativo (CRUD) na arquitetura do projeto: domínio em `modules/<module>`, adapter Prisma e controller no backend Nest e telas de lista e formulário no frontend Next. Ele consolida o padrão dos prompts `archive/07-cadastro-marca.md`, `archive/08-cadastro-categoria.md` e `archive/09-cadastro-produto.md` **e o que o código evoluiu depois deles** (listas paginadas com estado na URL, busca full-text, `errors.ts` por agregado, retorno do formulário para a mesma página, seeds lendo só `prisma/seed/data`).
+
+Leituras seguem a skill `module-query-cqrs`: a query é uma interface no módulo, implementada no adapter Prisma e chamada direto pelo controller, com a complexidade no SQL e coberta pelo `.http`. O template não gera caso de uso de leitura (`find-*.use-case.ts`), serviço de domínio para campos de projeção nem teste unitário de query; ao adaptar um prompt, só incluir um caso de uso de leitura quando houver regras que não cabem em SQL ou for preciso agregar várias queries distintas.
 
 Sincronizado com o código em 13/09/2026 (commit `43be7f4`).
 
@@ -9,7 +11,7 @@ Sincronizado com o código em 13/09/2026 (commit `43be7f4`).
 1. Copiar o template com o próximo número da sequência:
 
    ```bash
-   cp openspec/extras/prompts/template/cadastro.md openspec/extras/prompts/NN-cadastro-<rotulo>.md
+   cp openspec/extras/prompts/template/template-cadastro.md openspec/extras/prompts/NN-cadastro-<rotulo>.md
    ```
 
 2. Responder o [questionário de blocos](#questionário-de-blocos): cada bloco `<!-- SE: x --> … <!-- FIM SE: x -->` é mantido (removendo só os marcadores) ou apagado inteiro. Blocos podem estar aninhados (`seed-cli` fica dentro de `seed`).
@@ -117,7 +119,7 @@ Placeholders que completam uma frase já existente começam com `, ` ou espaço,
 | `{{MAPA_UNIQUE}}` | constraint → código | `` `products_slug_key` → `PRODUCT_SLUG_ALREADY_EXISTS`, `products_sku_key` → `PRODUCT_SKU_ALREADY_EXISTS` `` |
 | `{{CAMPOS_PESO_A}}` / `{{CAMPOS_PESO_B}}` | colunas da busca por peso | `name`, `slug` e `sku` / `description` |
 | `{{COLUNA_ORDEM}}` | coluna da ordenação padrão | `name` |
-| `{{DETALHES_QUERY}}` | regras extras da listagem, começando com espaço (ou vazio) | `` Para `categoryId`, resolver os ids descendentes a partir das categorias carregadas. `` |
+| `{{DETALHES_QUERY}}` | regras extras da listagem, resolvidas no SQL da query, começando com espaço (ou vazio) | `` Para `categoryId`, incluir as subcategorias descendentes resolvendo a hierarquia no SQL (`WITH RECURSIVE`), sem carregar as categorias em memória. `` |
 | `{{QUERY_EXTRAS}}` | query params extras, começando com `&` | `&brandId=&categoryId=` |
 | `{{CODIGOS_404}}` / `{{CODIGOS_409}}` | códigos por status | `PRODUCT_NOT_FOUND`, `BRAND_NOT_FOUND`, `CATEGORY_NOT_FOUND` / `PRODUCT_SLUG_ALREADY_EXISTS`, `PRODUCT_SKU_ALREADY_EXISTS` |
 | `{{CHAVE_NATURAL}}` | chave do `upsert` do seed | `sku` |
@@ -158,4 +160,4 @@ Cada cadastro novo pode mudar os já existentes. Antes de fechar o prompt, confe
 
 ## Manutenção do template
 
-O código é a referência do padrão; os prompts antigos não são atualizados. Quando um cadastro introduzir um padrão novo ou o código refinar um existente (novo utilitário, outro formato de seed, outra forma de paginação), atualizar `cadastro.md` e este README na mesma mudança e a data de sincronização acima.
+O código é a referência do padrão; os prompts antigos não são atualizados. Quando um cadastro introduzir um padrão novo ou o código refinar um existente (novo utilitário, outro formato de seed, outra forma de paginação), atualizar `template-cadastro.md` e este README na mesma mudança e a data de sincronização acima.
