@@ -254,7 +254,21 @@
   - o raio `250` não pode ser digitado no modo simulado, porque o campo é somente leitura; a rejeição foi verificada pelo schema na tarefa 5.3.
 - [x] 7.2 Se houver chaves do Google disponíveis no ambiente, configurar as duas e verificar os cenários de "Localização no Google Maps": clicar no mapa, arrastar o marcador, redimensionar o círculo (múltiplos de 50 m), editar os campos movendo o mapa e "Localizar endereço no mapa" com `source: "google"`. Com uma chave pública inválida, verificar a mensagem de falha e o mapa simulado. Sem chaves disponíveis, registrar no encerramento que esses cenários não foram verificados.
 
-  Sem chaves do Google no ambiente (`apps/frontend/.env` e `apps/backend/.env`): os cenários do Google Maps e o da chave pública inválida **não foram verificados**.
+  Verificado em 13/09/2026 com `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` e `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID` configuradas no frontend e **sem** `GOOGLE_MAPS_API_KEY` no backend:
+  - o Google Maps carrega no lugar do mapa simulado;
+  - clicar no mapa define o ponto;
+  - arrastar a alça do círculo muda o raio em múltiplos de 50 m (1000 → 1450);
+  - arrastar o marcador move o ponto e o círculo;
+  - editar latitude, longitude e raio move o marcador e o círculo, e o raio `250` não altera o círculo;
+  - "Localizar endereço no mapa" aplica o ponto simulado com o aviso de busca simulada;
+  - a edição abre centrada no ponto salvo.
+
+  Depois, com uma chave própria no backend, restrita à Geocoding API, `GET /geocoding` respondeu:
+  - `200` com `source: "google"` para "Avenida Paulista, 1578, São Paulo" e "Rua Silva Paulet, 1100 - Aldeota, Fortaleza/CE";
+  - `404` para um endereço inexistente;
+  - `400` para `ab`.
+
+  **Não verificados:** o botão "Localizar endereço no mapa" com `source: "google"` na tela e a troca para o mapa simulado com uma chave pública inválida.
 - [x] 7.3 Verificar que não houve regressão:
   - `/admin/catalog/brands`, `/admin/catalog/categories` e `/admin/catalog/products` continuam listando e buscando;
   - `/admin/stores` continua exibindo os hubs de exemplo;

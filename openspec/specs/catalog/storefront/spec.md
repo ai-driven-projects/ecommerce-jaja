@@ -80,11 +80,11 @@ O bairro e a categoria selecionados SHALL ser lidos dos parâmetros de query `ba
 - **THEN** a listagem exibe o estado sem resultados, sem erro
 
 ### Requirement: Bairro não atendido
-Quando o bairro selecionado não pertencer a nenhum hub, a vitrine SHALL ocultar filtros e grade e exibir o estado vazio: o título em display "Ainda não chegamos aí. Já já." com o ponto final em vermelho, o texto "Por enquanto atendemos:" e a lista dos bairros atendidos agrupados por hub (nome do hub em caixa alta com régua de 2px), cada bairro clicável. O cabeçalho MUST omitir o ETA. Os bairros não atendidos `Papicu`, `Montese` e `Messejana` MUST constar no seletor para permitir esse fluxo.
+Quando o bairro selecionado não pertencer a nenhuma loja, a vitrine SHALL ocultar filtros e grade e exibir o estado vazio: o título em display "Ainda não chegamos aí. Já já." com o ponto final em vermelho, o texto "Por enquanto atendemos:" e a lista dos bairros atendidos agrupados por loja (nome da loja em caixa alta com régua de 2px), cada bairro clicável. O cabeçalho MUST omitir o ETA. Os bairros não atendidos `Papicu`, `Montese` e `Messejana` MUST constar no seletor para permitir esse fluxo.
 
 #### Scenario: Bairro fora da área
 - **WHEN** o visitante acessa `/?bairro=Papicu`
-- **THEN** nenhum produto é exibido, o título "Ainda não chegamos aí. Já já." aparece com o ponto em vermelho e os bairros atendidos aparecem agrupados por hub
+- **THEN** nenhum produto é exibido, o título "Ainda não chegamos aí. Já já." aparece com o ponto em vermelho e os bairros atendidos aparecem agrupados por loja
 
 #### Scenario: Escolher bairro atendido pelo estado vazio
 - **WHEN** no estado vazio o visitante clica em "Aldeota"
