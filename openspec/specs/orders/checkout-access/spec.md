@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define como a rota pública `/checkout` da loja identifica o cliente e prepara o fechamento do pedido: o que exibe sem sessão e com sessão, a permanência na rota após entrar ou criar conta, o retorno à vitrine com bairro e categoria preservados, o passo de dados de entrega, que usa e salva o cadastro de cliente do usuário, e o resumo do pedido montado a partir do carrinho da conta. O pagamento e a criação do pedido em si não fazem parte desta capacidade.
+Define como a rota pública `/checkout` da loja identifica o cliente e fecha o pedido: o que exibe sem sessão e com sessão, a permanência na rota após entrar ou criar conta, o retorno à vitrine com bairro e categoria preservados, o passo de dados de entrega, que usa e salva o cadastro de cliente do usuário, o passo de pagamento simulado, sem dados de pagamento do cliente, e o resumo do pedido montado a partir do carrinho da conta, cuja confirmação cria o pedido pela API (`orders/order-placement`) e leva ao acompanhamento do pedido (`orders/order-tracking`).
 
 ## Requirements
 
@@ -33,14 +33,20 @@ Com sessão, `/checkout` SHALL exibir:
 - o título "Finalizar pedido";
 - o link "← Voltar para a loja", que leva a `/` preservando os parâmetros `bairro` e `categoria` da URL atual;
 - o passo 1 "Endereço de entrega", com os dados de entrega do cliente;
-- o passo 2 "Pagamento";
+- o passo 2 "Pagamento", simulado: o badge "Simulado" e o texto "Não pedimos nenhum dado de pagamento: nesta versão ele é simulado e aprovado automaticamente depois que você confirma o pedido.";
 - o "Resumo do pedido", com o botão "Confirmar pedido".
+
+O passo "Pagamento" MUST NOT oferecer seletor de forma de pagamento nem campos de cartão. Nenhum dado de pagamento é pedido ao cliente.
 
 Um cliente que já tem sessão ao abrir `/checkout` MUST ver esse estado diretamente, sem o formulário de entrar ou criar conta e sem redirecionamento. Um reload MUST manter o estado autenticado.
 
 #### Scenario: Cliente com sessão abre o checkout
 - **WHEN** a cliente "Ana Souza" (ana@exemplo.com) com sessão acessa `/checkout?bairro=Meireles&categoria=papelaria`
 - **THEN** vê "Finalizar pedido", os passos "Endereço de entrega" e "Pagamento", o "Resumo do pedido" e o link "← Voltar para a loja" apontando para `/?bairro=Meireles&categoria=papelaria`
+
+#### Scenario: Pagamento simulado
+- **WHEN** a cliente autenticada olha o passo "Pagamento" em `/checkout`
+- **THEN** vê o badge "Simulado" e o texto sobre pagamento simulado e aprovado automaticamente, sem opções de Pix, cartão ou faturamento e sem campos de cartão
 
 #### Scenario: Reload mantém a sessão
 - **WHEN** a cliente autenticada recarrega `/checkout`
@@ -67,7 +73,21 @@ Enquanto o carrinho é carregado, inclusive durante a mescla do carrinho do visi
 
 "Confirmar pedido" MUST ficar desabilitado enquanto o carrinho carrega ou tem uma mudança não confirmada, quando o carrinho está vazio e quando tem itens indisponíveis, sem afastar as demais condições para confirmar. Com itens indisponíveis, o texto "Remova os itens indisponíveis para confirmar o pedido." MUST aparecer abaixo do botão.
 
-A confirmação continua simulada, mas MUST esvaziar o carrinho da conta antes de levar ao acompanhamento do pedido. Se esvaziar o carrinho falhar, a página MUST exibir a mensagem de erro e continuar em `/checkout`.
+"Confirmar pedido" MUST criar o pedido na API conforme `orders/order-placement`:
+- a requisição envia "Quem recebe" (até 100 caracteres) e "Instruções para o entregador" (até 200 caracteres);
+- enquanto aguarda, o botão MUST exibir "Confirmando…" e MUST NOT permitir um segundo envio.
+
+Em caso de sucesso, a página MUST:
+- recarregar o carrinho da conta, já esvaziado pelo servidor;
+- exibir o toaster "Pedido #<número> recebido", com a descrição "Pagamento simulado em andamento.", em que o número são os 8 primeiros caracteres do id em maiúsculas;
+- levar ao acompanhamento do pedido criado.
+
+Em caso de erro, a página MUST:
+- exibir a mensagem do código em um toaster;
+- recarregar o resumo do carrinho e, quando o erro for do cadastro de cliente, os dados de entrega;
+- continuar em `/checkout`.
+
+A página MUST NOT esvaziar o carrinho por conta própria.
 
 #### Scenario: Carrinho do visitante após criar conta
 - **WHEN** um visitante com dois produtos no carrinho cria conta em `/checkout`
@@ -82,8 +102,12 @@ A confirmação continua simulada, mas MUST esvaziar o carrinho da conta antes d
 - **THEN** a linha some, os totais são atualizados e o texto sobre itens indisponíveis deixa de aparecer
 
 #### Scenario: Confirmar esvazia o carrinho
-- **WHEN** o cliente confirma o pedido com todas as condições atendidas
-- **THEN** o carrinho da conta fica vazio, o cliente é levado ao acompanhamento do pedido e, ao voltar para a loja, o contador do carrinho mostra 0
+- **WHEN** o cliente preenche "Instruções para o entregador" e confirma o pedido com todas as condições atendidas
+- **THEN** o botão mostra "Confirmando…", o pedido é criado na API (que esvazia o carrinho da conta), o toaster "Pedido #<número> recebido" aparece com "Pagamento simulado em andamento.", o cliente é levado a `/pedidos/<id do pedido criado>/acompanhar` e, ao voltar para a loja, o contador do carrinho mostra 0
+
+#### Scenario: Produto desativado antes de confirmar
+- **WHEN** com o `/checkout` aberto e o resumo carregado, um administrador desativa um produto do carrinho e o cliente clica em "Confirmar pedido"
+- **THEN** o toaster exibe "Remova os itens indisponíveis para confirmar o pedido.", o resumo recarrega com a linha "Indisponível", a página continua em `/checkout` e nenhum pedido é criado
 
 ### Requirement: Dados de entrega do cliente no checkout
 No passo "Endereço de entrega", com sessão, o checkout SHALL usar o cadastro de cliente do usuário autenticado. Enquanto o cadastro é consultado, o passo MUST exibir uma estrutura de carregamento, sem mostrar o formulário nem o resumo.
@@ -133,6 +157,10 @@ O aviso de cobertura continua baseado no bairro da vitrine. Abaixo dos dados de 
 ### Requirement: Confirmar pedido exige cadastro de cliente
 O botão "Confirmar pedido" SHALL ficar desabilitado enquanto o usuário autenticado não tiver cadastro de cliente salvo ou enquanto o formulário de dados de entrega estiver aberto. Nesses casos, o texto "Preencha os dados de entrega para confirmar o pedido." MUST aparecer abaixo do botão. As demais condições para confirmar (sacola com itens e bairro da vitrine atendido) MUST continuar valendo.
 
+A API também exige cadastro de cliente **ativo** (`orders/order-placement`). Ao confirmar, a página MUST tratar a resposta assim:
+- cadastro inativo: exibir "Seu cadastro está inativo. Fale com o atendimento." e continuar em `/checkout`;
+- cadastro inexistente: exibir "Preencha os dados de entrega para confirmar o pedido." e recarregar os dados de entrega.
+
 #### Scenario: Sem cadastro de cliente
 - **WHEN** um usuário sem cadastro de cliente, com itens na sacola e bairro atendido, está em `/checkout`
 - **THEN** "Confirmar pedido" está desabilitado e o texto "Preencha os dados de entrega para confirmar o pedido." é exibido
@@ -144,3 +172,7 @@ O botão "Confirmar pedido" SHALL ficar desabilitado enquanto o usuário autenti
 #### Scenario: Alteração em andamento
 - **WHEN** o cliente com cadastro clica em "Alterar" nos dados de entrega
 - **THEN** "Confirmar pedido" fica desabilitado até ele salvar ou cancelar a alteração
+
+#### Scenario: Cadastro inativo
+- **WHEN** o cadastro de cliente foi desativado pelo administrador e o cliente confirma o pedido em `/checkout`
+- **THEN** o toaster exibe "Seu cadastro está inativo. Fale com o atendimento.", a página continua em `/checkout` e nenhum pedido é criado

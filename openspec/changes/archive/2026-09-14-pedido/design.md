@@ -20,7 +20,7 @@ O roteiro de implementação detalhado é o prompt `openspec/extras/prompts/15-p
 
 **Backend**
 - `CartPrisma` implementa o repositório e as queries do carrinho, mapeia `P2002`/`P2003` por constraint (`UNIQUE_VIOLATIONS`/`FOREIGN_KEY_VIOLATIONS`), grava itens com `position` e usa o client da transação recebida.
-- `MessagingModule` (change `infra-mensageria`, backend implementado) exporta `DomainEventPrisma`:
+- `MessagingModule` (change `infra-mensageria`, arquivada) exporta `DomainEventPrisma`:
   - `append` só grava dentro de uma transação e grava na tabela `outbox_events`;
   - o `OutboxRelay` publica no exchange `jaja.events` com routing key igual ao `type`;
   - a fila `jaja.events.all` recebe cópia em desenvolvimento.
@@ -38,7 +38,7 @@ O roteiro de implementação detalhado é o prompt `openspec/extras/prompts/15-p
 - `/entrar` aceita `?voltar=`.
 
 **Specs e changes em andamento**
-- `infra-mensageria` está aberta; faltam conferências manuais e o CLI. As specs `messaging/*` só existem no delta dela.
+- `infra-mensageria` está concluída, com o CLI e as conferências manuais, e arquivada em `archive/2026-09-14-infra-mensageria`. As specs `messaging/event-outbox` e `messaging/message-broker` já estão em `openspec/specs/`.
 - O `## Purpose` de `orders/checkout-access` diz que a criação do pedido não faz parte da capacidade.
 
 ## Goals / Non-Goals
@@ -203,7 +203,7 @@ Alternativas descartadas:
 ### 12. Specs coordenadas
 - **`orders/checkout-access`:** três requisitos modificados, copiados inteiros da spec principal atual.
 - **`admin/admin-api-authorization`:** "Endpoints não administrativos não mudam" parte da spec principal atual e só acrescenta `/me/orders`.
-- **`messaging/*`:** não são alteradas. `orders/order-placement` só as referencia, então `infra-mensageria` e esta change podem ser arquivadas em qualquer ordem.
+- **`messaging/*`:** não são alteradas. `orders/order-placement` só referencia as specs principais `messaging/event-outbox` e `messaging/message-broker`, já sincronizadas no archive de `infra-mensageria`.
 - **Purpose de `orders/checkout-access`:** ao arquivar, ajustar à mão, porque ainda exclui a criação do pedido; deltas não alteram o Purpose.
 
 ## Risks / Trade-offs

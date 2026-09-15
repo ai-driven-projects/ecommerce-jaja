@@ -201,7 +201,7 @@
 
 ## 8. Verificação no navegador (conversa principal, com o usuário)
 
-- [ ] 8.1 Com banco semeado, RabbitMQ, backend e frontend no ar e o painel do navegador visível, entrar com `ana.pereira.carvalho@jaja.dev`, montar o carrinho com dois produtos e abrir `/checkout`. Verificar:
+- [x] 8.1 Com banco semeado, RabbitMQ, backend e frontend no ar e o painel do navegador visível, entrar com `ana.pereira.carvalho@jaja.dev`, montar o carrinho com dois produtos e abrir `/checkout`. Verificar:
   - o passo "Pagamento" simulado, sem campos;
   - "Quem recebe" preenchido com o nome;
   - confirmar com instruções mostra "Confirmando…" e o toaster "Pedido #<número> recebido";
@@ -209,18 +209,18 @@
   - ao voltar para a loja, o contador do carrinho está em 0.
 
   Registrar com captura de tela.
-- [ ] 8.2 Verificar a sessão no acompanhamento:
+- [x] 8.2 Verificar a sessão no acompanhamento:
   - recarregar mantém o pedido;
   - depois de sair, a mesma URL mostra "Entre para acompanhar seu pedido.", e "Entrar" volta ao pedido;
   - entrar com outra conta mostra "Pedido não encontrado.";
   - `/pedidos/4211/acompanhar` mostra "Pedido não encontrado.";
   - a aba tem o título "Pedido #<número> — já já".
-- [ ] 8.3 Criar uma conta no próprio `/checkout` com itens de visitante, salvar os dados de entrega e confirmar o primeiro pedido. Verificar que o acompanhamento abre com o pedido dessa conta.
-- [ ] 8.4 Verificar os erros da API no checkout:
+- [x] 8.3 Criar uma conta no próprio `/checkout` com itens de visitante, salvar os dados de entrega e confirmar o primeiro pedido. Verificar que o acompanhamento abre com o pedido dessa conta.
+- [x] 8.4 Verificar os erros da API no checkout:
   - com o resumo carregado, desativar no admin um produto do carrinho (em outra aba) e confirmar: o toaster "Remova os itens indisponíveis para confirmar o pedido." aparece, o resumo recarrega com "Indisponível" e a página continua em `/checkout`;
   - reativar o produto no fim e conferir que ele voltou à vitrine.
-- [ ] 8.5 No painel do RabbitMQ (`http://localhost:15672`, `jaja`/`jaja`), verificar que a fila `jaja.events.all` recebeu uma mensagem `order.placed` por pedido confirmado nas tarefas 8.1 e 8.3, com o payload do pedido. Registrar com captura de tela.
-- [ ] 8.6 Em 375px, verificar que `/checkout` e o acompanhamento não têm rolagem horizontal (`document.documentElement.scrollWidth <= window.innerWidth`). Voltar o painel ao tamanho padrão.
+- [x] 8.5 No painel do RabbitMQ (`http://localhost:15672`, `jaja`/`jaja`), verificar que a fila `jaja.events.all` recebeu uma mensagem `order.placed` por pedido confirmado nas tarefas 8.1 e 8.3, com o payload do pedido. Registrar com captura de tela.
+- [x] 8.6 Em 375px, verificar que `/checkout` e o acompanhamento não têm rolagem horizontal (`document.documentElement.scrollWidth <= window.innerWidth`). Voltar o painel ao tamanho padrão.
 
 > **Ao arquivar esta change:**
 > - ajustar à mão o `## Purpose` de `openspec/specs/orders/checkout-access/spec.md`, que ainda exclui "o pagamento e a criação do pedido" da capacidade (Decisão 12 do `design.md`);
