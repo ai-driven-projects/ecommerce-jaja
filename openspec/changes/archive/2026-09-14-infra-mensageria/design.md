@@ -20,6 +20,8 @@ A motivação e o escopo estão em `proposal.md`. O comportamento está nas spec
 - `db/lib.ts` já tem `compose(ctx, args)` (roda na pasta do backend, detecta `docker compose` ou `docker-compose`), `requireBackend` e a leitura do `.env` com `parseEnv`. `core/net.ts` tem `isPortOpen` e `waitForPort`.
 - Testes com `node:test` (`*.test.ts`); `commands/index.test.ts` valida a árvore de comandos.
 - O `doctor` compara `.env` com `.env.example` (`envCheck`): novas chaves no exemplo viram aviso "faltando" até o `.env` local ser atualizado.
+- O `setup` (`setup/setup.wizard.ts`) só sobe o Postgres, na etapa `db` com `ensureDatabaseUp`. O wizard interrompe as etapas seguintes só em `error`; `warn` segue.
+- A descrição do `doctor` e a etapa de volume da limpeza (`clean/clean.wizard.ts`, ainda placeholder) citam só o banco.
 
 ## Goals / Non-Goals
 
@@ -129,8 +131,24 @@ O módulo importa `DbModule` e registra `DomainEventPrisma`, `OutboxPrisma`, `Ou
 - **Menu:** grupo "Ambiente local", ícone 🐇, registrado em `commands/index.ts` logo após `dbMenu`.
 - **Doctor:** `brokerCheck` com `isPortOpen('localhost', RABBITMQ_PORT)`, `warn` com a dica `jaja broker:start`. O texto do `dockerCheck` passa a citar Postgres e RabbitMQ.
 
-Alternativa descartada:
-- **Mudar `db:stop` para parar só o Postgres:** o prompt pede para não mexer nos scripts `db:*`. O efeito colateral é documentado (ver Riscos).
+### 12. CLI: `setup`, `db:stop` e textos acompanham o broker
+- **`ensureBrokerUp(ctx)` em `broker/lib.ts`**, no molde de `ensureDatabaseUp`:
+  - porta de `RABBITMQ_PORT` aberta → broker no ar, sem chamar o compose;
+  - porta fechada → o mesmo caminho do `broker:start` (`up -d --wait rabbitmq`, ou `up -d` + `waitForPort` no `docker-compose` legado);
+  - em dry-run só registra o comando.
+
+  O `broker:start` e a etapa do setup usam a mesma função.
+- **Etapa `broker` do `setup`:** logo depois de `db`, marcada por padrão, com `requires: ['env', 'docker']`. Falha vira `warn` com a dica `jaja broker:start`, nunca `error`: o backend sobe sem o broker, e um `error` interromperia migrations, build e seed.
+- **`db:stop`:** `compose stop postgres` no lugar de `down`. Cada menu cuida só do seu serviço, como o `broker:stop` (`stop rabbitmq`). A restrição do prompt ("sem mudar os scripts `db:*`") vale para o `apps/backend/package.json`, cujo `db:stop` continua com `docker compose down`.
+- **Textos:**
+  - a descrição do `doctor` cita o RabbitMQ;
+  - a etapa `db` da limpeza (placeholder) e a descrição do wizard falam em volumes locais do banco e do RabbitMQ;
+  - o id `db` da etapa é mantido, para não mudar `--steps db`.
+
+Alternativas descartadas:
+- **Manter o `db:stop` do CLI com `docker compose down` e só documentar:** parar o broker ao pedir para parar o banco é um efeito colateral inesperado, e o prompt não restringe os comandos do CLI.
+- **Deixar o `setup` sem o broker:** quem prepara o ambiente do zero ficaria sem RabbitMQ e com avisos de broker indisponível no log do backend.
+- **Etapa `broker` com `error` quando falha:** travaria o setup por uma dependência que o backend não exige para subir.
 
 ## Risks / Trade-offs
 
@@ -139,7 +157,7 @@ Alternativa descartada:
 - **[Transação e bloqueio de linhas abertos durante a publicação]** → lote limitado (padrão 50, máximo 500), timeout explícito de 30 s e timeout de conexão de 5 s. Se a transação expirar, o ciclo é registrado como erro e os eventos continuam pendentes.
 - **[Relógio: `available_at <= now()` usa o relógio do Postgres, e `nextAttemptAt` usa o do backend; colunas `timestamp` sem fuso comparadas com `now()` dependem do fuso da sessão]** → no ambiente local o container roda em UTC e o Prisma grava em UTC. O e2e confere "disponibilidade no futuro" e a publicação. Uma diferença de poucos segundos só antecipa ou atrasa uma nova tentativa.
 - **[Broker fora do ar gera um aviso por ciclo]** → esperado e pedido pela validação. A espera crescente limita novas tentativas por evento, não os avisos.
-- **[`db:stop` (`docker compose down`) e a limpeza de volume do CLI também derrubam ou apagam o RabbitMQ]** → documentar no README do CLI. Os eventos pendentes ficam no Postgres, não no broker, então nada se perde além de mensagens ainda não consumidas nas filas.
+- **[O script `db:stop` do backend (`docker compose down`) e a limpeza de volume do CLI (`down -v`) também derrubam ou apagam o RabbitMQ]** → o script do backend fica como está, porque o prompt pede para não mudar os `db:*`, e a limpeza cita o RabbitMQ na própria etapa e no README do CLI. O `db:stop` do CLI não tem esse efeito (Decisão 12). Os eventos pendentes ficam no Postgres, não no broker, então nada se perde além de mensagens ainda não consumidas nas filas.
 - **[`.env` local sem as novas chaves]** → o código usa os padrões, e o `doctor` aponta as chaves faltando. A etapa do backend acrescenta as chaves ao `.env` local (não versionado).
 - **[Encerramento: relay e adapter fecham em paralelo nos hooks do Nest]** → uma publicação interrompida vira falha comum, e o evento continua pendente para o próximo processo.
 - **[`amqplib` é CommonJS num backend ESM]** → importar pelo default (`import amqp from 'amqplib'`) ou pelos nomes suportados pelo interop, conferindo com `npm run build` e com `vi.mock('amqplib')` nos testes.
@@ -147,7 +165,7 @@ Alternativa descartada:
 ## Migration Plan
 
 1. Aplicar a migration `messaging_outbox`. Ela é aditiva: cria só `outbox_events` e os dois índices.
-2. Subir o RabbitMQ (`broker:start`) antes ou depois do backend: a ordem não importa.
+2. Subir o RabbitMQ (`broker:start`, ou a etapa `broker` do `setup`) antes ou depois do backend: a ordem não importa.
 3. Em ambientes sem broker, o backend funciona normalmente. Se não houver eventos gravados (nenhum caso de uso grava ainda), o relay só consulta a tabela vazia. `OUTBOX_RELAY_ENABLED=false` desliga até as consultas.
 
 **Rollback:** reverter o código e remover a tabela com `DROP TABLE outbox_events;` e a pasta da migration (o Prisma não gera migration de descida). O container e o volume do RabbitMQ podem ser removidos com `docker compose rm -sf rabbitmq` e `docker volume rm` do `rabbitmq_data`.

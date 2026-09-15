@@ -21,8 +21,11 @@ O próximo passo do Jaja é o checkout orientado a eventos: o pedido vai avisar 
   - scripts `broker:start`, `broker:stop` e `broker:logs` no backend e as variáveis `RABBITMQ_*` e `OUTBOX_*` no `.env.example`.
 - **CLI (`@jaja/cli`):**
   - menu `broker` ("Mensageria local") com `broker:status`, `broker:start`, `broker:stop` e `broker:logs`;
+  - `setup` ganha a etapa `broker`, que sobe o RabbitMQ local quando a porta não responde e só avisa se falhar;
+  - `db:stop` passa a parar só o PostgreSQL (`docker compose stop postgres`), sem derrubar o RabbitMQ;
   - `doctor` ganha a verificação do RabbitMQ local (só aviso) e o texto do Docker passa a citar Postgres e RabbitMQ;
-  - README com o novo menu.
+  - as descrições do `doctor` e da limpeza de volume passam a citar o RabbitMQ;
+  - README com o novo menu, a etapa do setup e o novo comportamento do `db:stop`.
 - **Testes:** unitários (mapper, espera entre tentativas, publicação em ordem, relay e adapter RabbitMQ com `amqplib` simulado) e um e2e opcional (`MESSAGING_E2E=true`) contra Postgres e RabbitMQ reais.
 - Fora do escopo: consumidores e filas de negócio, idempotência de consumo, eventos de domínio reais, agregado de pedido, adapter em memória ou de outro broker, tela de eventos no admin e qualquer alteração em `packages/shared` ou `modules/*`.
 
@@ -44,7 +47,9 @@ Nenhuma. Nenhuma spec existente muda de comportamento: nenhum caso de uso grava 
   - código novo em `src/messaging/` (`messaging-errors.ts`, `outbox/*`, `rabbitmq/*`, `messaging.module.ts`, `index.ts`) com testes `*.spec.ts` ao lado e `test/messaging-outbox.e2e-spec.ts`;
   - alterados: `src/app.module.ts` (importa `MessagingModule`), `src/main.ts` (`enableShutdownHooks`), `package.json` (scripts `broker:*`, `amqplib`, `@types/amqplib`), `docker-compose.yml` e `.env.example`;
   - o `.env` local de cada desenvolvedor pode receber as novas variáveis; sem elas, os padrões do código valem, mas o `doctor` do CLI aponta as chaves faltando.
-- `apps/cli`: `src/commands/broker/*` (novo menu), `src/commands/index.ts`, `src/commands/doctor/checks.ts` e `README.md`.
+- `apps/cli`:
+  - novos: `src/commands/broker/*` (menu `broker` e `ensureBrokerUp`, com `lib.test.ts`);
+  - alterados: `src/commands/index.ts` e `index.test.ts` (novo menu), `src/commands/doctor/checks.ts` e `doctor.command.ts`, `src/commands/setup/setup.wizard.ts` (etapa `broker`), `src/commands/db/db.commands.ts` (`db:stop`), `src/commands/clean/clean.wizard.ts` (textos) e `README.md`.
 - `package-lock.json`: novas dependências do backend.
-- Infraestrutura local: novo container `jaja-rabbitmq` (portas 5672 e 15672, configuráveis) e volume `rabbitmq_data`. Os comandos que já fazem `docker compose down` (`db:stop` do backend e do CLI, limpeza do volume) passam a afetar também o RabbitMQ.
+- Infraestrutura local: novo container `jaja-rabbitmq` (portas 5672 e 15672, configuráveis) e volume `rabbitmq_data`. O script `db:stop` do backend (`docker compose down`) e a limpeza de volume do CLI (`down -v`) passam a afetar também o RabbitMQ. O `db:stop` do CLI não, porque passa a parar só o PostgreSQL.
 - Sem mudanças em APIs HTTP, no frontend, em `packages/shared` ou em `modules/*`.
