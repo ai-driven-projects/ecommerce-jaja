@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Clock, Trash2 } from 'lucide-react';
@@ -22,17 +22,11 @@ import { STOREFRONT_ROUTE, orderTrackingRoute } from '@/shared/navigation/storef
 import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
 import { cn } from '@/shared/lib/class-name.util';
+import { ApiError, toErrorMessage } from '@/shared/util/api-client.util';
 import { formatPrice } from '@/shared/util/price.util';
 import { useCart } from '../data/cart.context';
-import { nextOrderId } from '../data/tracking.mock';
-
-type PaymentMethod = 'pix' | 'card' | 'corp';
-
-const PAYMENT_METHODS: ReadonlyArray<{ id: PaymentMethod; icon: string; label: string }> = [
-  { id: 'pix', icon: '⚡', label: 'Pix' },
-  { id: 'card', icon: '💳', label: 'Cartão' },
-  { id: 'corp', icon: '🏢', label: 'Faturado (empresa)' },
-];
+import { placeMyOrder } from '../data/order.api';
+import { ORDER_DELIVERY_INSTRUCTIONS_MAX_LENGTH, ORDER_RECIPIENT_NAME_MAX_LENGTH, formatOrderNumber } from '../data/order.util';
 
 // Cidade e UF iniciais dos dados de entrega sem cadastro: a loja só atende Fortaleza/CE.
 const DELIVERY_CITY = 'Fortaleza';
@@ -40,13 +34,19 @@ const DELIVERY_STATE = 'CE';
 
 const CARD_CLASS = 'rounded-3xl border border-line bg-card px-5 py-[22px] sm:px-6';
 
-function StepTitle({ number, children }: { number: number; children: string }) {
+function StepTitle({ number, children, badge }: { number: number; children: string; badge?: ReactNode }) {
   return (
     <div className="mb-4 flex items-center gap-3">
       <span className="flex size-[30px] items-center justify-center rounded-full bg-brand text-sm font-extrabold text-white">{number}</span>
       <h2 className="font-display text-lg font-extrabold">{children}</h2>
+      {badge}
     </div>
   );
+}
+
+// Recusa do pedido por causa do cadastro de cliente (ausente, inativo ou não encontrado).
+function isCustomerFailure(error: unknown): boolean {
+  return error instanceof ApiError && error.codes.some((code) => code.startsWith('ORDER_CUSTOMER_'));
 }
 
 function Field({ id, label, ...props }: { id: string; label: string } & React.ComponentProps<typeof Input>) {
@@ -99,12 +99,14 @@ function useEtaWindow(etaMinutes: number | null): string | null {
 
 function CheckoutForm() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const storefront = useStorefront();
   const cart = useCart();
   const myCustomer = useMyCustomer();
   const [editingDelivery, setEditingDelivery] = useState(false);
-  const [payment, setPayment] = useState<PaymentMethod>('pix');
+  // Dados deste pedido: não são salvos no cadastro de cliente.
+  const [recipientName, setRecipientName] = useState(user?.name ?? '');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
   const etaWindow = useEtaWindow(storefront.etaMinutes);
   const backHref = `${STOREFRONT_ROUTE}?${storefront.query}`;
@@ -120,19 +122,25 @@ function CheckoutForm() {
     refreshCart();
   }, [refreshCart]);
 
-  // Confirmação simulada: esvazia o carrinho da conta antes de ir ao acompanhamento.
-  // Se esvaziar falhar, o carrinho já exibiu o erro e a página continua aqui.
+  // Cria o pedido na API, que esvazia o carrinho da conta na mesma transação.
+  // Sucesso: recarrega o carrinho e vai ao acompanhamento (o botão continua
+  // bloqueado até a navegação). Erro: mensagem, resumo recarregado (e o
+  // cadastro, quando a recusa é dele) e a página continua aqui.
   const handleConfirm = async () => {
+    if (!session) return;
     setIsConfirming(true);
-    const cleared = await cart.clear();
-    if (!cleared) {
-      setIsConfirming(false);
-      return;
-    }
 
-    const orderId = nextOrderId();
-    toast.success(`Pedido #${orderId} confirmado`, { description: 'A bike já sai da loja.' });
-    router.push(orderTrackingRoute(orderId));
+    try {
+      const order = await placeMyOrder(session.token, { recipientName, deliveryInstructions });
+      cart.refresh();
+      toast.success(`Pedido #${formatOrderNumber(order.id)} recebido`, { description: 'Pagamento simulado em andamento.' });
+      router.push(orderTrackingRoute(order.id));
+    } catch (error) {
+      toast.error(toErrorMessage(error));
+      cart.refresh();
+      if (isCustomerFailure(error)) myCustomer.refresh();
+      setIsConfirming(false);
+    }
   };
 
   return (
@@ -186,53 +194,35 @@ function CheckoutForm() {
 
             {/* Dados deste pedido: não são salvos no cadastro de cliente. */}
             <div className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-              <Field id="receiver" label="Quem recebe" defaultValue={user?.name ?? ''} autoComplete="name" />
-              <Field id="instructions" label="Instruções para o entregador" placeholder="Ex.: deixar na recepção do andar, falar com a Ana" />
+              <Field
+                id="receiver"
+                label="Quem recebe"
+                value={recipientName}
+                onChange={(event) => setRecipientName(event.target.value)}
+                maxLength={ORDER_RECIPIENT_NAME_MAX_LENGTH}
+                autoComplete="name"
+              />
+              <Field
+                id="instructions"
+                label="Instruções para o entregador"
+                placeholder="Ex.: deixar na recepção do andar, falar com a Ana"
+                value={deliveryInstructions}
+                onChange={(event) => setDeliveryInstructions(event.target.value)}
+                maxLength={ORDER_DELIVERY_INSTRUCTIONS_MAX_LENGTH}
+              />
             </div>
           </section>
 
           {/* Pagamento */}
           <section className={CARD_CLASS}>
-            <StepTitle number={2}>Pagamento</StepTitle>
-            <div className="mb-4 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Forma de pagamento">
-              {PAYMENT_METHODS.map((method) => {
-                const isActive = method.id === payment;
-                return (
-                  <button
-                    key={method.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isActive}
-                    onClick={() => setPayment(method.id)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-pill border-[1.5px] px-[18px] py-2.5 text-[13.5px] font-extrabold transition-colors duration-150',
-                      isActive ? 'border-brand bg-brand-soft text-brand' : 'border-line bg-card text-ink hover:bg-surface',
-                    )}
-                  >
-                    <span aria-hidden="true">{method.icon}</span> {method.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {payment === 'pix' ? (
-              <p className="rounded-xl bg-surface px-[18px] py-4 text-[13.5px] leading-[1.55] text-ink-soft">
-                O QR Code Pix é gerado após confirmar o pedido. Pagamento aprovado na hora — a bike já sai da loja. 🚲
-              </p>
-            ) : null}
-            {payment === 'card' ? (
-              <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
-                <Field id="card-number" label="Número do cartão" placeholder="0000 0000 0000 0000" inputMode="numeric" autoComplete="cc-number" />
-                <Field id="card-expiry" label="Validade" placeholder="MM/AA" autoComplete="cc-exp" />
-                <Field id="card-cvv" label="CVV" placeholder="123" inputMode="numeric" autoComplete="cc-csc" />
-              </div>
-            ) : null}
-            {payment === 'corp' ? (
-              <p className="rounded-xl bg-surface px-[18px] py-4 text-[13.5px] leading-[1.55] text-ink-soft">
-                Faturamento mensal para empresas cadastradas, com nota fiscal consolidada. Este pedido entra na fatura do mês
-                da conta de <strong>{user?.name}</strong>.
-              </p>
-            ) : null}
+            <StepTitle number={2} badge={<Badge>Simulado</Badge>}>
+              Pagamento
+            </StepTitle>
+            {/* Nenhum dado de pagamento é pedido: o pagamento é simulado depois da confirmação. */}
+            <p className="rounded-xl bg-surface px-[18px] py-4 text-[13.5px] leading-[1.55] text-ink-soft">
+              Não pedimos nenhum dado de pagamento: nesta versão ele é simulado e aprovado automaticamente depois que você
+              confirma o pedido.
+            </p>
           </section>
         </div>
 
@@ -390,8 +380,11 @@ function CheckoutSkeleton() {
 
 /**
  * Rota pública `/checkout`: sem sessão pede para entrar ou criar conta e, com
- * sessão, mostra os dados de entrega do cliente, pagamento e o resumo do
- * carrinho. Nunca redireciona.
+ * sessão, mostra os dados de entrega do cliente, quem recebe e as instruções
+ * para o entregador, o pagamento simulado (sem nenhum dado de pagamento) e o
+ * resumo do carrinho da conta. "Confirmar pedido" cria o pedido na API, que
+ * esvazia o carrinho, e leva ao acompanhamento; em erro, a página continua
+ * aqui. Nunca redireciona.
  */
 export function CheckoutPage() {
   return (

@@ -34,3 +34,64 @@ model CartItem {
   @@index([productId])
   @@map("cart_items")
 }
+
+// An order belongs to a customer (`customerId`), never to the user: only a
+// user with a customer record (delivery data) places orders. Items, prices,
+// the delivery address (`delivery_*` columns) and the recipient are **copies**
+// made when the order is placed and never change when the catalog or the
+// customer record change later. The totals are stored only for reading: the
+// rule belongs to the `Order` entity, which recomputes them from the items.
+// `status` is text (not a PostgreSQL enum), so a new status only needs
+// `ORDER_STATUSES`. The `order.placed` event is stored in the outbox
+// (`outbox_events`) in the same transaction as the order and the emptied cart.
+// The `Restrict` relations only guard against physical deletes, since
+// customers and products are soft-deleted.
+model Order {
+  id                   String      @id @db.Uuid
+  customerId           String      @map("customer_id") @db.Uuid
+  status               String
+  recipientName        String      @map("recipient_name")
+  deliveryInstructions String?     @map("delivery_instructions")
+  deliveryZipCode      String      @map("delivery_zip_code") @db.Char(8)
+  deliveryStreet       String      @map("delivery_street")
+  deliveryNumber       String      @map("delivery_number")
+  deliveryComplement   String?     @map("delivery_complement")
+  deliveryNeighborhood String      @map("delivery_neighborhood")
+  deliveryCity         String      @map("delivery_city")
+  deliveryState        String      @map("delivery_state") @db.Char(2)
+  subtotalCents        Int         @map("subtotal_cents")
+  deliveryFeeCents     Int         @map("delivery_fee_cents")
+  totalCents           Int         @map("total_cents")
+  placedAt             DateTime    @map("placed_at")
+  createdAt            DateTime    @default(now()) @map("created_at")
+  updatedAt            DateTime    @updatedAt @map("updated_at")
+  deletedAt            DateTime?   @map("deleted_at")
+  customer             Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items                OrderItem[]
+
+  @@index([customerId, placedAt])
+  @@map("orders")
+}
+
+// A frozen line of the order. The items have no identity in the domain: the
+// list is created as a whole with the order, with `position` = 0..n-1 (the
+// order of the cart). `productId` keeps the link with the catalog; name, unit,
+// thumbnail and prices are copies.
+model OrderItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  orderId        String  @map("order_id") @db.Uuid
+  productId      String  @map("product_id") @db.Uuid
+  position       Int
+  name           String
+  unit           String
+  thumbUrl       String? @map("thumb_url")
+  unitPriceCents Int     @map("unit_price_cents")
+  quantity       Int
+  lineTotalCents Int     @map("line_total_cents")
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, position])
+  @@index([productId])
+  @@map("order_items")
+}

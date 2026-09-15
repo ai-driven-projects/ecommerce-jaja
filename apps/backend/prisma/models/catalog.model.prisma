@@ -77,6 +77,7 @@ model Product {
   category       Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   images         ProductImage[]
   cartItems      CartItem[]
+  orderItems     OrderItem[]
 
   @@index([brandId])
   @@index([categoryId])

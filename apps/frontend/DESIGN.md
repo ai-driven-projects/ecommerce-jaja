@@ -194,9 +194,12 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   mesma URL (nunca redireciona).
 - Duas colunas (1.5fr / 1fr). Passos numerados com um círculo laranja:
   **1 Endereço** (faixa verde "Dentro da área de cobertura · entrega em ~X
-  min", campos com rótulo 13px/700 em `--ink-soft`) e **2 Pagamento** (pílulas
-  Pix / Cartão / Faturado; a ativa laranja sobre pêssego; explicação em bloco
-  creme). Resumo fixo à direita, com o carrinho da conta recarregado ao abrir:
+  min", campos com rótulo 13px/700 em `--ink-soft`; abaixo dos dados de entrega,
+  "Quem recebe", iniciado com o nome do usuário, até 100 caracteres, e
+  "Instruções para o entregador", até 200, que não vão para o cadastro) e **2
+  Pagamento** simulado, sem seletor nem campos: badge creme "Simulado" ao lado
+  do título e a explicação em bloco creme ("Não pedimos nenhum dado de
+  pagamento…"). Resumo fixo à direita, com o carrinho da conta recarregado ao abrir:
   itens com a foto (`ProductArt`), o nome em até 2 linhas, "× quantidade" e o
   total da linha (indisponível: atenuado, badge "Indisponível" e "Remover");
   blocos creme estáticos na primeira carga (inclusive a mescla logo depois de
@@ -204,18 +207,36 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   enquanto sincroniza), faixa verde com a janela de chegada e o botão
   "Confirmar pedido", desabilitado enquanto o carrinho carrega ou sincroniza,
   vazio ou com itens indisponíveis ("Remova os itens indisponíveis para
-  confirmar o pedido."). Confirmar esvazia o carrinho da conta.
+  confirmar o pedido."). "Confirmar pedido" cria o pedido na API ("Confirmando…"
+  desabilitado enquanto espera): no sucesso, o servidor já esvaziou o carrinho,
+  toast "Pedido #<número> recebido" com "Pagamento simulado em andamento." e ida
+  ao acompanhamento; no erro, toast com a mensagem, resumo (e dados de entrega,
+  quando a recusa é do cadastro) recarregados e a página continua no checkout.
+  O número do pedido são os 8 primeiros caracteres do id em maiúsculas.
 
 ## Acompanhamento (`/pedidos/:id/acompanhar`)
-- Cabeçalho compacto com "Voltar para a loja →". `h1` "Pedido #4211" + badge
-  verde "A caminho" com ponto pulsando; linha de contexto em cinza.
-- Esquerda: bloco escuro com a bike verde e a janela "14:52 – 14:58 · faltam
-  ~9 min"; cartão "Status do pedido" com linha do tempo (concluído = círculo
-  verde com ✓ e linha verde; atual = anel verde com ponto pulsando; futuro =
-  cinza-claro); cartão do entregador com botões de chat (contorno) e ligar
-  (verde); cartão "Itens do pedido" com total tracejado.
-- Direita (fixa): mapa ilustrativo (quarteirões brancos sobre `--map`, rota
-  laranja pontilhada, loja escura, cliente laranja pulsando) com selos brancos.
+- O pedido real do cliente autenticado, lido da API. Cabeçalho compacto com
+  "Voltar para a loja →"; título da aba "Pedido #<número> — já já".
+- Estados: até hidratar e na primeira carga, blocos creme estáticos (sem dados
+  de pedido); sem sessão, cartão branco centrado com 🔒 "Entre para acompanhar
+  seu pedido." e o botão laranja "Entrar" (volta a esta rota por `voltar`);
+  pedido inexistente ou de outra conta, 🔎 "Pedido não encontrado." com "Voltar
+  para a loja" em contorno.
+- `h1` "Pedido #3F1C9A52" (8 primeiros caracteres do id em maiúsculas) + badge
+  verde "Pedido recebido"; "Feito hoje às HH:MM" (ou "Feito em DD/MM/AAAA às
+  HH:MM") em cinza, só depois da hidratação; endereço copiado no pedido
+  (ícone de pino) e "Quem recebe".
+- Esquerda: cartão "Status do pedido" com os passos "Pedido recebido",
+  "Pagamento aprovado", "Separando na loja", "A caminho" e "Entregue". Só o
+  primeiro está concluído (círculo verde com ✓, linha verde e a hora do
+  pedido); os demais em cinza-claro com "Aguardando".
+- Direita (fixa no desktop): cartão "Itens do pedido" com a foto (`ProductArt`
+  `xs`; sem foto, a reserva padrão 🛒), nome em até 2 linhas, "× quantidade" e
+  total da linha; régua tracejada, subtotal, entrega (**Grátis** em verde) e o
+  total com "Pagamento simulado". Abaixo, "Instruções para o entregador" só
+  quando existem.
+- Sem mapa, entregador, previsão de chegada nem loja: voltam com o fluxo de
+  entrega.
 
 ## Área administrativa (`/admin`)
 - Sidebar escura fixa de 236px: logo com o rótulo "OPERAÇÃO", itens com ícone

@@ -20,7 +20,9 @@ type MyCustomerState = {
  * vale `true` enquanto o cadastro da sessão atual não foi consultado; erro de
  * carregamento vira toaster (e o passo segue sem cadastro). `save` cria ou
  * altera o cadastro (`PUT /me/customer`) e atualiza `customer`, com nome e
- * email da sessão; em falha, lança o erro para o formulário tratar.
+ * email da sessão; em falha, lança o erro para o formulário tratar. `refresh`
+ * consulta de novo o cadastro da sessão atual (ex.: depois de a API recusar o
+ * pedido por causa do cadastro), mantendo o valor exibido até a resposta.
  */
 export function useMyCustomer() {
   const { session } = useAuth();
@@ -28,6 +30,8 @@ export function useMyCustomer() {
   const user = session?.user;
 
   const [state, setState] = useState<MyCustomerState | null>(null);
+  // Cada incremento pede uma nova consulta do cadastro da sessão atual.
+  const [reloadCount, setReloadCount] = useState(0);
   const current = token && state?.token === token ? state : null;
   const customer = current?.customer ?? null;
   const loading = Boolean(token) && current === null;
@@ -50,7 +54,9 @@ export function useMyCustomer() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, reloadCount]);
+
+  const refresh = useCallback(() => setReloadCount((count) => count + 1), []);
 
   const save = useCallback(
     async (input: CustomerInput): Promise<CustomerDetail> => {
@@ -69,5 +75,6 @@ export function useMyCustomer() {
     loading,
     hasCustomer: customer !== null,
     save,
+    refresh,
   };
 }

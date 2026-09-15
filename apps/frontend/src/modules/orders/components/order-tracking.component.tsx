@@ -1,190 +1,269 @@
 'use client';
 
-import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
-import { MessageCircle, Phone } from 'lucide-react';
-import { BikeIcon } from '@/shared/components/branding/app-logo.component';
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { MapPin, UserRound } from 'lucide-react';
+import { useAuth } from '@/modules/auth/data/auth.context';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { Badge } from '@/shared/components/ui/badge';
+import { Button } from '@/shared/components/ui/button';
+import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
+import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
+import { STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
 import { cn } from '@/shared/lib/class-name.util';
 import { formatPrice } from '@/shared/util/price.util';
-import { buildTrackingOrder, type TrackingOrder, type TrackingStep } from '../data/tracking.mock';
+import type { OrderDetail } from '../data/order.api';
+import { formatOrderAddress, formatOrderNumber, formatOrderPlacedAt, formatOrderTime } from '../data/order.util';
+import { useMyOrder } from '../data/use-my-order.hook';
 
-// Mapa ilustrativo: quarteirões claros sobre verde-acinzentado, rota laranja
-// pontilhada da loja (ponto escuro) até o cliente (ponto laranja pulsando).
-function RouteMap({ order }: { order: TrackingOrder }) {
+const MAIN_CLASS = 'mx-auto w-full max-w-[1080px] px-4 pb-12 pt-[26px] sm:px-6';
+const CARD_CLASS = 'rounded-3xl border border-line bg-card px-5 py-5 sm:px-6';
+
+/**
+ * Categoria passada ao `ProductArt` dos itens: o item do pedido não tem
+ * categoria, e a chave vazia não tem ilustração própria em `category-art`, então
+ * a reserva é a padrão (🛒 sobre `--tint-green`).
+ */
+const ORDER_ITEM_ART_CATEGORY = '';
+
+/** Passos do pedido, na ordem. Com o status `PLACED`, só o primeiro está concluído. */
+const ORDER_STEPS = ['Pedido recebido', 'Pagamento aprovado', 'Separando na loja', 'A caminho', 'Entregue'] as const;
+
+function TimelineStep({ title, detail, done, isLast }: { title: string; detail: string; done: boolean; isLast: boolean }) {
   return (
-    <div className="relative h-[420px] overflow-hidden rounded-xl bg-map lg:h-[520px]">
-      <svg width="100%" height="100%" viewBox="0 0 480 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="480" height="520" fill="#E9EFE9" />
-        <g stroke="#FFFFFF" strokeWidth="14" strokeLinecap="round">
-          <line x1="0" y1="110" x2="480" y2="110" />
-          <line x1="0" y1="250" x2="480" y2="250" />
-          <line x1="0" y1="400" x2="480" y2="400" />
-          <line x1="90" y1="0" x2="90" y2="520" />
-          <line x1="240" y1="0" x2="240" y2="520" />
-          <line x1="390" y1="0" x2="390" y2="520" />
-        </g>
-        <g stroke="#FFFFFF" strokeWidth="7" strokeLinecap="round" opacity=".8">
-          <line x1="0" y1="180" x2="480" y2="180" />
-          <line x1="0" y1="330" x2="480" y2="330" />
-          <line x1="165" y1="0" x2="165" y2="520" />
-          <line x1="315" y1="0" x2="315" y2="520" />
-        </g>
-        <path d="M90 400 L240 400 L240 250 L390 250 L390 110" fill="none" stroke="#FF6B00" strokeWidth="6" strokeLinecap="round" strokeDasharray="2 12" />
-        <circle cx="90" cy="400" r="10" fill="#1E1812" />
-        <circle cx="390" cy="110" r="14" fill="#FF6B00" />
-        <circle cx="390" cy="110" r="24" fill="#FF6B00" opacity=".2">
-          <animate attributeName="r" values="16;30;16" dur="2s" repeatCount="indefinite" />
-        </circle>
-      </svg>
-      <div className="absolute bottom-[88px] left-3.5 rounded-xl bg-card px-[13px] py-2 text-[12.5px] font-extrabold shadow-float">🏬 {order.store}</div>
-      <div className="absolute right-3.5 top-16 max-w-[60%] truncate rounded-xl bg-card px-[13px] py-2 text-[12.5px] font-extrabold shadow-float">📍 Você · {order.address.split(' · ')[0]}</div>
-      <div className="absolute left-1/2 top-[46%] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-pill bg-card px-4 py-[9px] text-[13px] font-extrabold shadow-float">
-        🚴 {order.courier.name.split(' ')[0]} <span className="text-success">{order.courier.distanceLabel}</span>
-      </div>
-      <div className="absolute inset-x-3.5 bottom-3.5 flex items-center gap-[11px] rounded-xl bg-card px-4 py-[13px] shadow-float">
-        <BikeIcon className="size-5 shrink-0 text-success" strokeWidth={2} />
-        <span className="flex-1 truncate text-[13.5px] font-bold">
-          {order.courier.name.split(' ')[0]} {order.courier.streetLabel}
-        </span>
-        <Badge variant="success">~{order.remainingMinutes} min</Badge>
-      </div>
-    </div>
-  );
-}
-
-function TimelineStep({ step, isLast }: { step: TrackingStep; isLast: boolean }) {
-  const done = step.status === 'done';
-  const todo = step.status === 'todo';
-
-  return (
-    <div className="flex gap-3.5">
+    <li className="flex gap-3.5">
       <div className="flex flex-col items-center">
         <span
           className={cn(
             'flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 text-xs font-extrabold text-white',
-            done ? 'border-success bg-success' : todo ? 'border-line bg-card' : 'border-success bg-card',
+            done ? 'border-success bg-success' : 'border-line bg-card',
           )}
           aria-hidden="true"
         >
-          {done ? '✓' : step.status === 'now' ? <span className="size-2.5 rounded-full bg-success animate-pulse-soft" /> : null}
+          {done ? '✓' : null}
         </span>
-        {!isLast ? <span className={cn('w-0.5 min-h-[26px] flex-1', done ? 'bg-success' : 'bg-line')} aria-hidden="true" /> : null}
+        {!isLast ? <span className={cn('min-h-[26px] w-0.5 flex-1', done ? 'bg-success' : 'bg-line')} aria-hidden="true" /> : null}
       </div>
       <div className="pb-[18px]">
-        <div className={cn('text-[14.5px] font-extrabold', todo ? 'text-placeholder' : 'text-ink')}>{step.title}</div>
-        <div className="mt-0.5 text-[12.5px] text-muted-ink">{step.detail}</div>
+        <div className={cn('text-[14.5px] font-extrabold', done ? 'text-ink' : 'text-placeholder')}>{title}</div>
+        <div className="mt-0.5 text-[12.5px] text-muted-ink">{detail}</div>
       </div>
-    </div>
+    </li>
   );
 }
 
-const CARD_CLASS = 'rounded-3xl border border-line bg-card px-6 py-5';
-
-/** Acompanhamento do pedido: status, ETA, linha do tempo, entregador, itens e mapa. */
-export function OrderTracking({ orderId }: { orderId: string }) {
-  // Horários relativos a "agora" só existem no cliente: o servidor renderiza
-  // a estrutura e os textos entram depois da hidratação, sem divergência.
-  const minute = useClientMinute();
-  const order: TrackingOrder | null = minute === null ? null : buildTrackingOrder(orderId, new Date(minute));
-
+// Estrutura estática (sem shimmer) até a sessão ser conhecida e durante a primeira carga, sem dados de pedido.
+function TrackingSkeleton() {
   return (
-    <main className="mx-auto w-full max-w-[1080px] px-4 pb-12 pt-[26px] sm:px-6">
-      <div className="mb-1.5 flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-[30px] font-extrabold tracking-[-0.8px]">Pedido #{orderId}</h1>
-        <Badge variant="success" className="px-3.5 py-1.5 text-[13px]">
-          <span className="size-2 rounded-full bg-success animate-pulse-soft" aria-hidden="true" />
-          {order?.statusLabel ?? 'A caminho'}
-        </Badge>
-      </div>
-      <p className="mb-[22px] text-sm text-muted-ink">
-        {order ? `${order.confirmedAtLabel} · ${order.address}` : 'Carregando o pedido…'}
-      </p>
-
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <div className="flex flex-col gap-4">
-          <section className="flex items-center gap-4 rounded-3xl bg-dark px-6 py-[22px] text-white">
-            <span className="flex size-[52px] shrink-0 items-center justify-center rounded-2xl bg-dark-surface">
-              <BikeIcon className="size-7 text-success-light" strokeWidth={1.8} />
-            </span>
-            <div>
-              <div className="text-[13px] font-bold text-dark-muted">Previsão de chegada</div>
-              <div className="font-display text-[24px] font-extrabold tracking-[-0.5px] sm:text-[28px]">
-                {order?.etaWindow ?? '--:-- – --:--'}{' '}
-                <span className="text-base text-success-light">· faltam ~{order?.remainingMinutes ?? '--'} min</span>
-              </div>
-            </div>
-          </section>
-
-          <section className={CARD_CLASS}>
-            <h2 className="mb-4 font-display text-[17px] font-extrabold">Status do pedido</h2>
-            <div className="flex flex-col">
-              {(order?.steps ?? []).map((step, index, steps) => (
-                <TimelineStep key={step.title} step={step} isLast={index === steps.length - 1} />
-              ))}
-            </div>
-          </section>
-
-          {order ? (
-            <section className={cn(CARD_CLASS, 'flex items-center gap-3.5')}>
-              <span className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-brand-soft text-[26px]" aria-hidden="true">
-                🚴
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-extrabold">{order.courier.name}</div>
-                <div className="truncate text-[12.5px] text-muted-ink">
-                  {order.courier.mode} · {order.courier.deliveries.toLocaleString('pt-BR')} entregas · ★ {order.courier.rating}
-                </div>
-              </div>
-              <button
-                type="button"
-                aria-label="Enviar mensagem ao entregador"
-                className="flex size-[42px] items-center justify-center rounded-full border border-line bg-card transition-colors duration-150 hover:bg-surface"
-              >
-                <MessageCircle className="size-[18px]" strokeWidth={2} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                aria-label="Ligar para o entregador"
-                className="flex size-[42px] items-center justify-center rounded-full bg-success text-white transition-colors duration-150 hover:bg-success-strong"
-              >
-                <Phone className="size-[18px]" strokeWidth={2} aria-hidden="true" />
-              </button>
-            </section>
-          ) : null}
-
-          {order ? (
-            <section className={CARD_CLASS}>
-              <h2 className="mb-3 font-display text-[17px] font-extrabold">Itens do pedido</h2>
-              <div className="flex flex-col gap-2.5 text-[13.5px]">
-                {order.items.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2.5">
-                    <ProductArt emoji={item.emoji} category={item.category} size="xs" />
-                    <span className="flex-1 font-bold">
-                      {item.name} × {item.quantity}
-                    </span>
-                    <span className="font-extrabold">{formatPrice(item.totalCents)}</span>
+    <main className={MAIN_CLASS}>
+      <div role="status">
+        <span className="sr-only">Carregando o pedido…</span>
+        <div aria-hidden="true">
+          <div className="mb-2.5 h-9 w-72 max-w-full rounded-md bg-surface" />
+          <div className="mb-2 h-4 w-44 max-w-full rounded-md bg-surface" />
+          <div className="mb-[22px] h-4 w-96 max-w-full rounded-md bg-surface" />
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <div className={CARD_CLASS}>
+              <div className="mb-5 h-5 w-40 rounded-md bg-surface" />
+              <div className="flex flex-col gap-5">
+                {ORDER_STEPS.map((step) => (
+                  <div key={step} className="flex items-center gap-3.5">
+                    <div className="size-[26px] shrink-0 rounded-full bg-surface" />
+                    <div className="h-4 w-36 rounded-md bg-surface" />
                   </div>
                 ))}
-                <div className="flex justify-between border-t border-dashed border-line pt-2.5 text-[15px] font-extrabold">
-                  <span>{order.paymentLabel}</span>
-                  <span>{formatPrice(order.totalCents)}</span>
-                </div>
               </div>
-            </section>
-          ) : null}
-        </div>
-
-        {order ? (
-          <section className="rounded-3xl border border-line bg-card p-4 lg:sticky lg:top-5">
-            <RouteMap order={order} />
-          </section>
-        ) : (
-          <div className="h-[420px] rounded-3xl border border-line bg-card p-4 lg:h-[552px]">
-            <div className="h-full rounded-xl bg-map" />
+            </div>
+            <div className={CARD_CLASS}>
+              <div className="mb-4 h-5 w-36 rounded-md bg-surface" />
+              <div className="flex flex-col gap-3">
+                {[0, 1].map((index) => (
+                  <div key={index} className="flex items-center gap-2.5">
+                    <div className="size-[38px] shrink-0 rounded-[10px] bg-surface" />
+                    <div className="h-4 flex-1 rounded-md bg-surface" />
+                    <div className="h-4 w-14 rounded-md bg-surface" />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 h-20 rounded-xl bg-surface" />
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </main>
   );
+}
+
+// Aviso centralizado da página (sem sessão, não encontrado ou erro de carga).
+function TrackingNotice({ emoji, title, children }: { emoji: string; title: string; children: ReactNode }) {
+  return (
+    <main className={MAIN_CLASS}>
+      <div className="mx-auto flex max-w-md flex-col items-center gap-2 rounded-2xl border border-line bg-card px-6 py-12 text-center">
+        <span className="text-[40px] leading-none" aria-hidden="true">
+          {emoji}
+        </span>
+        <h1 className="mt-2 font-display text-xl font-extrabold tracking-[-0.3px]">{title}</h1>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+function BackToStoreButton() {
+  return (
+    <Button asChild variant="outline" size="sm" className="mt-2">
+      <Link href={STOREFRONT_ROUTE}>Voltar para a loja</Link>
+    </Button>
+  );
+}
+
+function OrderView({ order }: { order: OrderDetail }) {
+  // Só é exibido depois da hidratação: horários no fuso do navegador, sem divergir do HTML do servidor.
+  const minute = useClientMinute();
+  const placedAtLabel = minute === null ? '…' : formatOrderPlacedAt(order.placedAt, new Date(minute));
+  const placedTime = minute === null ? '…' : formatOrderTime(order.placedAt);
+
+  return (
+    <main className={MAIN_CLASS}>
+      <div className="mb-1.5 flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-[30px] font-extrabold tracking-[-0.8px]">Pedido #{formatOrderNumber(order.id)}</h1>
+        <Badge variant="success" className="px-3.5 py-1.5 text-[13px]">
+          Pedido recebido
+        </Badge>
+      </div>
+      <p className="text-sm text-muted-ink">{placedAtLabel}</p>
+      <div className="mb-[22px] mt-2.5 flex flex-col gap-1.5 text-[13.5px] leading-[1.5]">
+        <p className="flex items-start gap-2 font-bold text-ink">
+          <MapPin className="mt-[2px] size-4 shrink-0 text-muted-ink" strokeWidth={2.2} aria-hidden="true" />
+          <span className="min-w-0 break-words">{formatOrderAddress(order.deliveryAddress)}</span>
+        </p>
+        <p className="flex items-start gap-2 text-ink-soft">
+          <UserRound className="mt-[2px] size-4 shrink-0 text-muted-ink" strokeWidth={2.2} aria-hidden="true" />
+          <span className="min-w-0 break-words">
+            Quem recebe: <strong className="text-ink">{order.recipientName}</strong>
+          </span>
+        </p>
+      </div>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        <section className={CARD_CLASS}>
+          <h2 className="mb-4 font-display text-[17px] font-extrabold">Status do pedido</h2>
+          <ol className="flex flex-col">
+            {ORDER_STEPS.map((step, index) => {
+              // Nesta versão todo pedido está em `PLACED`: só "Pedido recebido" está concluído.
+              const done = index === 0;
+              return (
+                <TimelineStep
+                  key={step}
+                  title={step}
+                  detail={done ? placedTime : 'Aguardando'}
+                  done={done}
+                  isLast={index === ORDER_STEPS.length - 1}
+                />
+              );
+            })}
+          </ol>
+        </section>
+
+        <div className="flex flex-col gap-4 lg:sticky lg:top-5">
+          <section className={CARD_CLASS}>
+            <h2 className="mb-3 font-display text-[17px] font-extrabold">Itens do pedido</h2>
+            <ul className="mb-4 flex flex-col gap-3">
+              {order.items.map((item) => (
+                <li key={item.productId} className="flex items-center gap-2.5">
+                  <ProductArt category={ORDER_ITEM_ART_CATEGORY} imageUrl={item.thumbUrl} alt={item.name} size="xs" />
+                  <div className="min-w-0 flex-1 text-[13.5px] font-bold leading-[1.3]">
+                    <span className="line-clamp-2" title={item.name}>
+                      {item.name}
+                    </span>
+                    <span className="font-semibold text-muted-ink">× {item.quantity}</span>
+                  </div>
+                  <span className="shrink-0 text-[13.5px] font-extrabold tabular-nums">{formatPrice(item.lineTotalCents)}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-col gap-[7px] border-t border-dashed border-line pt-3 text-[13.5px]">
+              <div className="flex justify-between text-muted-ink">
+                <span>Subtotal</span>
+                <span className="font-bold tabular-nums text-ink">{formatPrice(order.subtotalCents)}</span>
+              </div>
+              <div className="flex justify-between text-muted-ink">
+                <span>Entrega de bike</span>
+                {order.deliveryFeeCents === 0 ? (
+                  <span className="font-extrabold text-success">Grátis</span>
+                ) : (
+                  <span className="font-bold tabular-nums text-ink">{formatPrice(order.deliveryFeeCents)}</span>
+                )}
+              </div>
+              <div className="mt-1 flex items-end justify-between gap-3">
+                <span className="flex flex-col text-[17px] font-extrabold">
+                  Total
+                  <span className="text-xs font-bold text-muted-ink">Pagamento simulado</span>
+                </span>
+                <span className="text-[17px] font-extrabold tabular-nums">{formatPrice(order.totalCents)}</span>
+              </div>
+            </div>
+          </section>
+
+          {order.deliveryInstructions ? (
+            <section className={CARD_CLASS}>
+              <h2 className="mb-2 font-display text-[17px] font-extrabold">Instruções para o entregador</h2>
+              <p className="whitespace-pre-line break-words text-[13.5px] leading-[1.55] text-ink-soft">{order.deliveryInstructions}</p>
+            </section>
+          ) : null}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * Acompanhamento do pedido real do cliente autenticado: cabeçalho com número,
+ * badge, horário, endereço copiado e quem recebe; passos do pedido (só "Pedido
+ * recebido" concluído); itens, totais gravados e instruções. Sem sessão, pede
+ * para entrar e volta a esta rota; pedido inexistente ou de outra conta mostra
+ * "Pedido não encontrado.". Mapa, entregador e previsão de chegada voltam com
+ * o fluxo de entrega.
+ */
+export function OrderTracking({ orderId }: { orderId: string }) {
+  // A sessão só é conhecida no cliente: até hidratar, o servidor e o cliente
+  // renderizam a mesma estrutura de carregamento.
+  const hydrated = useHydrated();
+  const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
+  const { order, loading, notFound } = useMyOrder(orderId);
+
+  if (!hydrated || loading) return <TrackingSkeleton />;
+
+  if (!isAuthenticated) {
+    const signInHref = `${STOREFRONT_LOGIN_ROUTE}?voltar=${encodeURIComponent(pathname)}`;
+    return (
+      <TrackingNotice emoji="🔒" title="Entre para acompanhar seu pedido.">
+        <Button asChild size="sm" className="mt-2">
+          <Link href={signInHref}>Entrar</Link>
+        </Button>
+      </TrackingNotice>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <TrackingNotice emoji="🔎" title="Pedido não encontrado.">
+        <BackToStoreButton />
+      </TrackingNotice>
+    );
+  }
+
+  // Erro diferente de "não encontrado": a mensagem já apareceu no toaster.
+  if (!order) {
+    return (
+      <TrackingNotice emoji="🔌" title="Não foi possível carregar o pedido.">
+        <BackToStoreButton />
+      </TrackingNotice>
+    );
+  }
+
+  return <OrderView order={order} />;
 }

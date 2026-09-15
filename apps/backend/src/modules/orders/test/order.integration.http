@@ -1,0 +1,449 @@
+# Testes de integração do pedido (VS Code Rest Client)
+# Pré-requisitos: Postgres e RabbitMQ do docker-compose.yml no ar (npm run db:start e
+# npm run broker:start), migrations aplicadas (npm run prisma:migrate:deploy), seeds
+# `auth`, `customers` e `catalog` aplicados (npm run prisma:seed -- --only=auth,customers,catalog)
+# e backend rodando em http://localhost:4000 (npm run dev --workspace=@jaja/backend), com o
+# relay do outbox ligado (OUTBOX_RELAY_ENABLED="true").
+#
+# Ordem: executar de cima para baixo. O passo 1 registra um usuário novo (sem cadastro de
+# cliente) com email de sufixo de timestamp, para o arquivo poder ser executado de novo; os
+# passos seguintes reutilizam tokens, ids e cadastros por requisições nomeadas:
+# - A e B: os dois produtos disponíveis mais baratos da vitrine (passo 5);
+# - D: o produto disponível mais barato com preço >= R$ 79,00 (passo 6);
+# - o cliente do seed de @customerEmail (passo 7) e o cadastro dele pelo administrador (passo 8).
+#
+# O arquivo altera o seed e o restaura no próprio arquivo:
+# - o produto A é desativado no passo 19 e REATIVADO no passo 22;
+# - o cliente do seed é desativado no passo 23 e REATIVADO no passo 25;
+# - o preço de A é alterado no passo 40 e RESTAURADO no passo 42.
+# Se a execução parar no meio de um desses blocos, rode o passo que restaura. Os passos 46 e
+# 47 conferem o estado final. Pedidos e eventos criados por este arquivo continuam no banco
+# (não há seed de pedidos).
+#
+# Conferência do evento (depois do passo 30): em apps/backend,
+#   docker compose exec postgres psql -U jaja -d jaja -c "SELECT id, type, aggregate_id, status, published_at FROM outbox_events WHERE aggregate_id = '<id do passo 30>';"
+# deve ter uma linha `order.placed` que fica com status PUBLISHED em alguns segundos, e o painel
+# do RabbitMQ (http://localhost:15672, jaja/jaja) mostra a mensagem na fila `jaja.events.all`
+# com `type` `order.placed` e o payload com `customerId`, os itens e os totais.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@customerEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+# uuid v4 válido que não corresponde a nenhum pedido nem cliente.
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+@newUserToken = {{loginNewUser.response.body.token}}
+@customerToken = {{loginCustomer.response.body.token}}
+@adminToken = {{loginAdmin.response.body.token}}
+@productA = {{cheapProducts.response.body.$.items[0].id}}
+@productB = {{cheapProducts.response.body.$.items[1].id}}
+@productD = {{freeDeliveryProduct.response.body.$.items[0].id}}
+@customerId = {{myCustomer.response.body.id}}
+@orderId = {{placeOrder.response.body.id}}
+
+# ---------------------------------------------------------------------------
+# Preparação: usuários, produtos e cadastros atuais
+# ---------------------------------------------------------------------------
+
+### 1. Registro de usuário novo, sem cadastro de cliente -> 201 sem corpo
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Cliente Sem Cadastro",
+  "email": "cliente.pedido+{{$timestamp}}@jaja.dev",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login do usuário do passo 1 -> 200 com token
+# @name loginNewUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{registerUser.request.body.$.email}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Login da cliente do seed (com cadastro de cliente ativo) -> 200 com token
+# @name loginCustomer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{customerEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 4. Login do administrador do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 5. Fixture: os dois produtos disponíveis mais baratos (A e B) -> 200 com 2 itens
+# @name cheapProducts
+GET {{baseUrl}}/storefront/products?sort=price-asc&pageSize=2
+
+### 6. Fixture: produto disponível mais barato com preço >= R$ 79,00 (D) -> 200 com 1 item
+# @name freeDeliveryProduct
+GET {{baseUrl}}/storefront/products?minPriceCents=7900&sort=price-asc&pageSize=1
+
+### 7. Fixture: cadastro de cliente da cliente do seed (id, nome e endereço) -> 200 com isActive true
+# @name myCustomer
+GET {{baseUrl}}/me/customer
+Authorization: Bearer {{customerToken}}
+
+### 8. Fixture: o mesmo cadastro pelo administrador (cpf, phone e address para o PUT) -> 200
+# @name adminCustomer
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{adminToken}}
+
+### 9. Fixture: cadastro do produto A (categoryId, preço e imagens para o PUT) -> 200
+# @name adminProductA
+GET {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Acesso
+# ---------------------------------------------------------------------------
+
+### 10. POST /me/orders sem token -> 401
+POST {{baseUrl}}/me/orders
+Content-Type: application/json
+
+{}
+
+### 11. GET /me/orders/:id sem token -> 401
+GET {{baseUrl}}/me/orders/{{missingId}}
+
+# ---------------------------------------------------------------------------
+# Cliente: usuário sem cadastro de cliente
+# ---------------------------------------------------------------------------
+
+### 12. Usuário novo inclui A no carrinho -> 200 com uma linha de A
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{newUserToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}"
+}
+
+### 13. POST /me/orders sem cadastro de cliente -> 400 ORDER_CUSTOMER_REQUIRED
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{newUserToken}}
+Content-Type: application/json
+
+{}
+
+### 14. O carrinho continua com A -> 200 com a linha de A
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{newUserToken}}
+
+# ---------------------------------------------------------------------------
+# Carrinho vazio (cliente do seed)
+# ---------------------------------------------------------------------------
+
+### 15. DELETE /me/cart -> 200 com o carrinho vazio
+DELETE {{baseUrl}}/me/cart
+Authorization: Bearer {{customerToken}}
+
+### 16. POST /me/orders com o carrinho vazio -> 400 ORDER_CART_EMPTY
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{}
+
+# ---------------------------------------------------------------------------
+# Item indisponível
+# ---------------------------------------------------------------------------
+
+### 17. Incluir A -> 200 com A (1)
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}"
+}
+
+### 18. Conferência antes de desativar: A está ativo -> 200 com isActive true
+GET {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+
+### 19. Desativar A pelo administrador -> 200 com isActive false
+PUT {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProductA.response.body.name}}",
+  "categoryId": "{{adminProductA.response.body.categoryId}}",
+  "priceCents": {{adminProductA.response.body.priceCents}},
+  "images": {{adminProductA.response.body.$.images}},
+  "isActive": false
+}
+
+### 20. POST /me/orders com item indisponível -> 400 ORDER_CART_HAS_UNAVAILABLE_ITEMS
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{}
+
+### 21. O carrinho continua com A, marcado como indisponível -> 200 com isAvailable false e
+### hasUnavailableItems true
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{customerToken}}
+
+### 22. Reativar A (restaura o seed) -> 200 com isActive true
+PUT {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProductA.response.body.name}}",
+  "categoryId": "{{adminProductA.response.body.categoryId}}",
+  "priceCents": {{adminProductA.response.body.priceCents}},
+  "images": {{adminProductA.response.body.$.images}},
+  "isActive": true
+}
+
+# ---------------------------------------------------------------------------
+# Cliente inativo (o carrinho continua com A)
+# ---------------------------------------------------------------------------
+
+### 23. Desativar o cliente pelo administrador, com os dados atuais -> 200 com isActive false
+PUT {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "cpf": "{{adminCustomer.response.body.cpf}}",
+  "phone": "{{adminCustomer.response.body.phone}}",
+  "address": {{adminCustomer.response.body.$.address}},
+  "isActive": false
+}
+
+### 24. POST /me/orders com o cliente inativo -> 400 apenas com ORDER_CUSTOMER_INACTIVE
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{}
+
+### 25. Reativar o cliente (restaura o seed) -> 200 com isActive true
+PUT {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "cpf": "{{adminCustomer.response.body.cpf}}",
+  "phone": "{{adminCustomer.response.body.phone}}",
+  "address": {{adminCustomer.response.body.$.address}},
+  "isActive": true
+}
+
+# ---------------------------------------------------------------------------
+# Sucesso: A (2) e B (1), subtotal abaixo de R$ 79,00
+# ---------------------------------------------------------------------------
+
+### 26. A com quantity 2 -> 200 com A (2)
+PUT {{baseUrl}}/me/cart/items/{{productA}}
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 27. Incluir B -> 200 com as linhas A (2) e B (1), nessa ordem, e subtotal < 7900
+# @name cartBeforeOrder
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productB}}"
+}
+
+### 28. Quem recebe com 1 caractere -> 400 TEXT_TOO_SHORT e nada é gravado
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "A"
+}
+
+### 29. O carrinho continua com A (2) e B (1) -> 200
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{customerToken}}
+
+### 30. Confirmar com recipientName, deliveryInstructions e campos extras -> 201 com id novo,
+### customerId = o do passo 7 (não o do corpo), status "PLACED", itens A (2) e B (1) nessa ordem
+### com nome, unit, thumbUrl e unitPriceCents = priceCents do passo 27, lineTotalCents = preço *
+### quantidade, itemCount 3, subtotalCents = soma das linhas, deliveryFeeCents 490, totalCents =
+### subtotal + 490 (não 1), deliveryAddress = endereço do passo 7, recipientName
+### "Ana na portaria", as instruções enviadas, placedAt e nenhum campo de pagamento
+# @name placeOrder
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "  Ana na portaria  ",
+  "deliveryInstructions": "Deixar com o porteiro",
+  "customerId": "{{missingId}}",
+  "items": [],
+  "totalCents": 1,
+  "status": "DELIVERED",
+  "paymentMethod": "pix"
+}
+
+### 31. O servidor esvaziou o carrinho -> 200 com lines [] e totais 0
+GET {{baseUrl}}/me/cart
+Authorization: Bearer {{customerToken}}
+
+### 32. GET /me/orders/:id do pedido do passo 30 -> 200 com o mesmo detalhe
+GET {{baseUrl}}/me/orders/{{orderId}}
+Authorization: Bearer {{customerToken}}
+
+### 33. Segundo envio da mesma confirmação -> 400 ORDER_CART_EMPTY e nenhum pedido novo
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "Ana na portaria"
+}
+
+# ---------------------------------------------------------------------------
+# Frete grátis: D (1), subtotal >= R$ 79,00
+# ---------------------------------------------------------------------------
+
+### 34. Incluir D -> 200 com D (1) e deliveryFeeCents 0
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productD}}"
+}
+
+### 35. Confirmar sem instruções -> 201 com deliveryFeeCents 0, totalCents = subtotalCents e
+### deliveryInstructions null
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "Ana Pereira"
+}
+
+# ---------------------------------------------------------------------------
+# Quem recebe padrão
+# ---------------------------------------------------------------------------
+
+### 36. Incluir B -> 200 com B (1)
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productB}}"
+}
+
+### 37. Confirmar com recipientName "" e instruções em branco -> 201 com recipientName igual ao
+### nome do passo 7 e deliveryInstructions null
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "",
+  "deliveryInstructions": "   "
+}
+
+### 38. recipientName que não é texto -> ignorado; carrinho vazio -> 400 ORDER_CART_EMPTY
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": 123
+}
+
+# ---------------------------------------------------------------------------
+# Preço congelado
+# ---------------------------------------------------------------------------
+
+### 39. Conferência antes de alterar: preço atual de A -> 200 com o priceCents do passo 9
+GET {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+
+### 40. Alterar o preço de A para 1 centavo (sempre abaixo do preço de lista) -> 200 com priceCents 1
+PUT {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProductA.response.body.name}}",
+  "categoryId": "{{adminProductA.response.body.categoryId}}",
+  "priceCents": 1,
+  "images": {{adminProductA.response.body.$.images}},
+  "isActive": true
+}
+
+### 41. O pedido do passo 30 mantém o preço -> 200 com A em unitPriceCents e lineTotalCents do
+### passo 30 e os mesmos totais
+GET {{baseUrl}}/me/orders/{{orderId}}
+Authorization: Bearer {{customerToken}}
+
+### 42. Restaurar o preço de A (restaura o seed) -> 200 com o priceCents do passo 9
+PUT {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "{{adminProductA.response.body.name}}",
+  "categoryId": "{{adminProductA.response.body.categoryId}}",
+  "priceCents": {{adminProductA.response.body.priceCents}},
+  "images": {{adminProductA.response.body.$.images}},
+  "isActive": true
+}
+
+# ---------------------------------------------------------------------------
+# Isolamento
+# ---------------------------------------------------------------------------
+
+### 43. Pedido da cliente com o token de outro usuário -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/me/orders/{{orderId}}
+Authorization: Bearer {{newUserToken}}
+
+### 44. Id malformado -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/me/orders/nao-e-uuid
+Authorization: Bearer {{customerToken}}
+
+### 45. uuid inexistente -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/me/orders/{{missingId}}
+Authorization: Bearer {{customerToken}}
+
+# ---------------------------------------------------------------------------
+# Estado final do seed
+# ---------------------------------------------------------------------------
+
+### 46. Produto A ativo e com o preço original -> 200 com isActive true e o priceCents do passo 9
+GET {{baseUrl}}/products/{{productA}}
+Authorization: Bearer {{adminToken}}
+
+### 47. Cliente do seed ativo -> 200 com isActive true
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{adminToken}}
