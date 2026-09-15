@@ -3,8 +3,8 @@
 CLI de manutenção do projeto: setup local, banco, qualidade, limpeza, deploy e monitoramento.
 Interface no estilo paleta de comandos, construída com [Ink](https://github.com/vadimdemedes/ink).
 
-> **Estado atual.** Implementados: **Doctor**, **Setup**, **Banco de dados** e o **Scraper da
-> Kalunga**. Qualidade, Limpeza, Deploy e Produção ainda são placeholders que apenas registram o
+> **Estado atual.** Implementados: **Doctor**, **Setup**, **Banco de dados**, **Mensageria local** e o
+> **Scraper da Kalunga**. Qualidade, Limpeza, Deploy e Produção ainda são placeholders que apenas registram o
 > que farão e terminam com o aviso "Ainda não implementado".
 
 ## Uso
@@ -33,12 +33,13 @@ para uso inválido.
 
 | id        | entrada               | tipo    | o que fará                                                            |
 | --------- | --------------------- | ------- | --------------------------------------------------------------------- |
-| `doctor`  | 🔎 Doctor             | ação    | Verifica Node, npm, git, Docker, gh, dependências, submódulos, `.env`, banco e Prisma Client |
-| `setup`   | 🧰 Setup              | wizard  | .env, Docker, submódulos, dependências, banco, Prisma Client, build, reset*, migrations, seed |
+| `doctor`  | 🔎 Doctor             | ação    | Verifica Node, npm, git, Docker, gh, dependências, submódulos, `.env`, banco, RabbitMQ e Prisma Client |
+| `setup`   | 🧰 Setup              | wizard  | .env, Docker, submódulos, dependências, banco, RabbitMQ, Prisma Client, build, reset*, migrations, seed |
 | `db`      | 🐘 Banco de dados     | menu    | `db:status`, `db:start`, `db:stop`, `db:logs`, `db:generate`, `db:migrate`, `db:seed`, `db:reset`, `db:studio` |
+| `broker`  | 🐇 Mensageria local   | menu    | `broker:status`, `broker:start`, `broker:stop`, `broker:logs` (RabbitMQ do `docker-compose.yml`) |
 | `scrape`  | 🕷️ Scraper da Kalunga | menu    | `scrape:products`, `scrape:seed`, `scrape:categories`, `scrape:status` |
 | `quality` | 🧪 Qualidade          | wizard  | lint, tipos, testes e build                                           |
-| `clean`   | 🧹 Limpeza            | wizard  | builds, caches, node_modules, lockfile e volume do banco              |
+| `clean`   | 🧹 Limpeza            | wizard  | builds, caches, node_modules, lockfile e volumes locais (banco e RabbitMQ) |
 | `deploy`  | 🚀 Deploy             | jornada | passos por área (`@prep`, `@db`, `@backend`, `@frontend`, `@cicd`) com estado detectado |
 | `monitor` | 📡 Produção           | ação    | verificação somente leitura do ambiente publicado                     |
 
@@ -62,6 +63,7 @@ ou `--dry-run` para ver o que seria feito.
 | `submodules` | sim    | `git submodule sync/update`, testando HTTPS e caindo para SSH se preciso                     |
 | `install`    | sim    | `npm install` na raiz                                                                        |
 | `db`         | sim    | Lê a `DATABASE_URL`; se a porta não responder, `docker compose up -d postgres` no backend e valida as credenciais com `prisma db execute` |
+| `broker`     | sim    | Lê `RABBITMQ_PORT` (padrão 5672); se a porta não responder, `docker compose up -d --wait rabbitmq` e espera o healthcheck. Falha vira aviso (o backend sobe sem o broker), com a dica `jaja broker:start` |
 | `generate`   | sim    | `npx prisma generate`                                                                        |
 | `build`      | sim    | `npm run build` (turbo)                                                                      |
 | `reset`      | não    | `npx prisma migrate reset --force` (apaga os dados)                                          |
@@ -72,8 +74,28 @@ O Postgres local publica a porta `DB_PORT` do `apps/backend/.env` (padrão **543
 costuma estar ocupada pelo container de outro projeto). Se a porta estiver aberta mas as credenciais
 falharem, o setup avisa que outra instância está usando a porta.
 
-`doctor` faz as mesmas verificações sem alterar nada. O menu `db` expõe cada ação do banco
-separadamente (`db:start` sobe o container se preciso; `db:migrate` e `db:seed` garantem o banco antes).
+`doctor` faz as mesmas verificações sem alterar nada (o RabbitMQ parado aparece como aviso, nunca como
+erro). O menu `db` expõe cada ação do banco separadamente (`db:start` sobe o container se preciso;
+`db:migrate` e `db:seed` garantem o banco antes). `db:stop` para só o PostgreSQL
+(`docker compose stop postgres`), sem derrubar o RabbitMQ.
+
+## Mensageria local
+
+O menu `broker` cuida só do serviço `rabbitmq` do `apps/backend/docker-compose.yml`, usado pelo backend
+para publicar os eventos de domínio. As portas vêm de `RABBITMQ_PORT` e `RABBITMQ_MANAGEMENT_PORT` do
+`apps/backend/.env` (padrões 5672 e 15672). O CLI nunca exibe a `RABBITMQ_URL`, que carrega usuário e senha:
+os endereços aparecem só com host e porta.
+
+| ação            | o que faz                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| `broker:status` | Estado do serviço (`docker compose ps`), `amqp://localhost:<porta>` e `http://localhost:<porta>` do painel; parado termina com aviso |
+| `broker:start`  | Se a porta AMQP não responder, `docker compose up -d --wait rabbitmq` (espera o healthcheck; no `docker-compose` legado, `up -d` + espera da porta) |
+| `broker:stop`   | `docker compose stop rabbitmq` (o PostgreSQL continua rodando)                               |
+| `broker:logs`   | `docker compose logs --tail 100 -f rabbitmq` (Esc encerra)                                  |
+
+> A limpeza de volume (`clean`, etapa `db`: `docker compose down -v`) apaga os dados do PostgreSQL **e
+> também os do RabbitMQ** (filas e mensagens não consumidas). Os eventos pendentes ficam no outbox do
+> Postgres, não no broker.
 
 ## Scraper da Kalunga
 
@@ -159,6 +181,7 @@ src/
     doctor/           checks.ts (verificações) + env.ts (parse de .env, DATABASE_URL, submódulos)
     setup/            setup.wizard.ts + lib.ts (env, submódulos, install, build) + docker.ts + git.ts
     db/               db.commands.ts + lib.ts (docker compose, prisma, validação de credenciais)
+    broker/           broker.commands.ts + lib.ts (portas e URLs sem senha, estado do serviço rabbitmq, ensureBrokerUp)
     quality/ clean/ deploy/ monitor/   placeholders
     scrape/           scraper da Kalunga (scrape.commands.ts + kalunga/{api,client,parse,sampler,store,types}.ts)
                       e conversão para o seed do backend (kalunga/seed/{brands,categories,products}.ts)

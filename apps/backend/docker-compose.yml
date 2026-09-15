@@ -18,6 +18,28 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: jaja-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: jaja
+      RABBITMQ_DEFAULT_PASS: jaja
+    ports:
+      # AMQP: porta usada pelo backend para publicar os eventos (RABBITMQ_PORT do .env, 5672 por padrão).
+      - '${RABBITMQ_PORT:-5672}:5672'
+      # Painel de gerenciamento em http://localhost:15672 (RABBITMQ_MANAGEMENT_PORT do .env, 15672 por padrão).
+      - '${RABBITMQ_MANAGEMENT_PORT:-15672}:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD-SHELL', 'rabbitmq-diagnostics -q ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+    driver: local
+  rabbitmq_data:
     driver: local

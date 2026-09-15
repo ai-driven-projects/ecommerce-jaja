@@ -1,5 +1,6 @@
 import type { CommandContext, CommandResult, WizardStep } from '../../core/command.js';
 import { wizard } from '../../core/wizard.js';
+import { ensureBrokerUp } from '../broker/lib.js';
 import { ensureDatabaseUp, inspectDatabase, isPrismaCliInstalled, migrateDevArgs, prisma, requireBackend } from '../db/lib.js';
 import { ensureDockerRunning } from './docker.js';
 import { buildProject, ensureEnvFiles, installDependencies, syncSubmodules } from './lib.js';
@@ -21,6 +22,18 @@ async function databaseReady(ctx: CommandContext): Promise<CommandResult> {
   // Sem Prisma CLI ainda (antes do install) a validação fica pendente; não é falha.
   if (!isPrismaCliInstalled(ctx)) return { status: 'warn', summary: 'Banco no ar; credenciais serão validadas após o install' };
   return { status: 'error', summary: 'Banco indisponível' };
+}
+
+/** Nunca devolve `error`: o backend sobe sem o broker, e um erro interromperia as etapas seguintes (build, migrations, seed). */
+async function brokerReady(ctx: CommandContext): Promise<CommandResult> {
+  try {
+    if (await ensureBrokerUp(ctx)) return { status: 'ok', summary: 'RabbitMQ pronto' };
+  } catch (error) {
+    ctx.report.warn(error instanceof Error ? error.message : String(error));
+  }
+  if (ctx.dryRun) return { status: 'ok', summary: 'Dry-run: RabbitMQ não verificado a fundo' };
+  ctx.report.detail('O backend sobe sem o broker; os eventos ficam pendentes até ele voltar.');
+  return { status: 'warn', summary: 'RabbitMQ indisponível; rode `jaja broker:start` depois' };
 }
 
 async function requireDatabase(ctx: CommandContext, what: string): Promise<CommandResult | null> {
@@ -82,6 +95,14 @@ export const setupSteps: WizardStep[] = [
     run: databaseReady,
   },
   {
+    id: 'broker',
+    label: 'Mensageria local',
+    description: 'Se a porta do RabbitMQ não responder, sobe o serviço rabbitmq com Docker Compose e espera o healthcheck',
+    defaultSelected: true,
+    requires: ['env', 'docker'],
+    run: brokerReady,
+  },
+  {
     id: 'generate',
     label: 'Prisma Client',
     description: 'npx prisma generate',
@@ -127,9 +148,9 @@ export const setupSteps: WizardStep[] = [
 export const setupWizard = wizard({
   id: 'setup',
   title: 'Setup do ambiente local',
-  description: 'Escolha o que preparar: .env, Docker, submódulos, dependências, banco, Prisma, build, migrations e seed',
+  description: 'Escolha o que preparar: .env, Docker, submódulos, dependências, banco, RabbitMQ, Prisma, build, migrations e seed',
   group: 'Ambiente local',
   icon: '🧰',
-  keywords: ['inicial', 'bootstrap', 'onboarding', 'configurar', 'instalar', 'npm install', 'build', 'prisma', 'migrate', 'seed', 'env', 'docker'],
+  keywords: ['inicial', 'bootstrap', 'onboarding', 'configurar', 'instalar', 'npm install', 'build', 'prisma', 'migrate', 'seed', 'env', 'docker', 'rabbitmq', 'broker'],
   steps: setupSteps,
 });

@@ -8,11 +8,13 @@ import { StoresModule } from './modules/stores/stores.module.js';
 import { CustomersModule } from './modules/customers/customers.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { DbModule } from './db/db.module.js';
+import { MessagingModule } from './messaging/messaging.module.js';
 
 @Module({
   imports: [
     DbModule,
     SharedModule,
+    MessagingModule,
     CustomersModule,
     StoresModule,
     OrdersModule,

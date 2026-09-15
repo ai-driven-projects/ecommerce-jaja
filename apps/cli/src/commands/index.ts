@@ -1,4 +1,5 @@
 import type { Command } from '../core/command.js';
+import { brokerMenu } from './broker/broker.commands.js';
 import { cleanWizard } from './clean/clean.wizard.js';
 import { dbMenu } from './db/db.commands.js';
 import { deployJourney } from './deploy/deploy.journey.js';
@@ -13,5 +14,5 @@ import { setupWizard } from './setup/setup.wizard.js';
  * ou uma ação direta. A paleta, o modo headless e o --help leem daqui; ids aninhados continuam acessíveis (ex.: `jaja db:start`).
  */
 export function createCommands(): Command[] {
-  return [doctorCommand, setupWizard, dbMenu, scrapeMenu, qualityWizard, cleanWizard, deployJourney, monitorCommand];
+  return [doctorCommand, setupWizard, dbMenu, brokerMenu, scrapeMenu, qualityWizard, cleanWizard, deployJourney, monitorCommand];
 }

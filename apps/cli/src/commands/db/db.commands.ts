@@ -46,16 +46,16 @@ export const dbStart: Command = {
 export const dbStop: Command = {
   id: 'db:stop',
   title: 'Parar banco local',
-  description: 'Derruba os containers do Docker Compose (dados são mantidos no volume)',
+  description: 'Para o container do PostgreSQL (dados são mantidos no volume)',
   group: 'Banco',
-  keywords: ['postgres', 'docker', 'down', 'parar'],
+  keywords: ['postgres', 'docker', 'stop', 'parar'],
   async run(ctx) {
     if (ctx.dryRun) {
-      ctx.report.info('[dry-run] $ docker compose down');
+      ctx.report.info('[dry-run] $ docker compose stop postgres');
       return { status: 'ok', summary: 'Dry-run: nada executado' };
     }
-    const result = await compose(ctx, ['down']);
-    return result.ok ? { status: 'ok', summary: 'Containers parados' } : { status: 'error', summary: 'docker compose down falhou' };
+    const result = await compose(ctx, ['stop', 'postgres']);
+    return result.ok ? { status: 'ok', summary: 'PostgreSQL parado' } : { status: 'error', summary: 'docker compose stop postgres falhou' };
   },
 };
 

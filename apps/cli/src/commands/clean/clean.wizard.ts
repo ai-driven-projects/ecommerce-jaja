@@ -15,17 +15,17 @@ export const cleanSteps: WizardStep[] = [
   placeholderStep({ id: 'lock', label: 'package-lock.json', description: 'Força uma resolução nova de dependências', defaultSelected: false, danger: 'Pode mudar versões instaladas na próxima instalação.' }),
   placeholderStep({
     id: 'db',
-    label: 'Volume do banco local',
-    description: 'docker compose down -v (apaga todos os dados locais)',
+    label: 'Volumes locais (banco e RabbitMQ)',
+    description: 'docker compose down -v (apaga os dados do PostgreSQL e do RabbitMQ locais)',
     defaultSelected: false,
-    danger: 'Apaga TODOS os dados do PostgreSQL local.',
+    danger: 'Apaga TODOS os dados do PostgreSQL e do RabbitMQ locais.',
   }),
 ];
 
 export const cleanWizard = wizard({
   id: 'clean',
   title: 'Limpeza',
-  description: 'Remove builds, caches, node_modules, lockfile e o volume do banco local',
+  description: 'Remove builds, caches, node_modules, lockfile e os volumes locais (banco e RabbitMQ)',
   group: 'Projeto',
   icon: '🧹',
   keywords: ['limpar', 'apagar', 'remover', 'node_modules', 'dist', 'cache', 'reset'],

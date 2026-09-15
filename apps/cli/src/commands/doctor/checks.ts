@@ -4,6 +4,7 @@ import type { CommandContext } from '../../core/command.js';
 import { extractVersion, findOnPath } from '../../core/exec.js';
 import { isPortOpen } from '../../core/net.js';
 import { isDirectory, isFile } from '../../core/project.js';
+import { readBrokerPorts } from '../broker/lib.js';
 import { inspectDocker } from '../setup/docker.js';
 import { diffEnv, meetsMinimumMajor, parseDatabaseUrl, parseEnv, parseSubmoduleStatus } from './env.js';
 
@@ -71,8 +72,8 @@ const dockerCheck: Check = {
   label: 'Docker',
   async run(ctx) {
     const docker = await inspectDocker(ctx);
-    if (!docker.installed) return { status: 'warn', detail: 'não encontrado', hint: 'Necessário para o Postgres local (docker compose). Instale o Docker Desktop.' };
-    if (!docker.running) return { status: 'warn', detail: 'daemon parado', hint: 'Abra o Docker Desktop antes de subir o banco local (o setup tenta abrir sozinho).' };
+    if (!docker.installed) return { status: 'warn', detail: 'não encontrado', hint: 'Necessário para o Postgres e o RabbitMQ locais (docker compose). Instale o Docker Desktop.' };
+    if (!docker.running) return { status: 'warn', detail: 'daemon parado', hint: 'Abra o Docker Desktop antes de subir o Postgres e o RabbitMQ locais (o setup tenta abrir sozinho).' };
     return {
       status: docker.composeVersion ? 'ok' : 'warn',
       detail: `engine ${docker.version}${docker.composeVersion ? `, compose ${docker.composeVersion}` : ''}`,
@@ -158,6 +159,25 @@ const databaseCheck: Check = {
   },
 };
 
+/** RabbitMQ local: no máximo aviso, porque o backend sobe sem o broker (os eventos ficam pendentes no outbox). */
+const brokerCheck: Check = {
+  id: 'broker',
+  label: 'RabbitMQ',
+  async run(ctx) {
+    const backendDir = ctx.project.backendDir;
+    if (!backendDir) return { status: 'warn', detail: 'backend não encontrado' };
+    const envPath = path.join(backendDir, '.env');
+    const { amqp } = readBrokerPorts(isFile(envPath) ? parseEnv(fs.readFileSync(envPath, 'utf8')) : {});
+    const where = `localhost:${amqp}`;
+    if (await isPortOpen('localhost', amqp)) return { status: 'ok', detail: `${where} acessível` };
+    return {
+      status: 'warn',
+      detail: `${where} sem resposta`,
+      hint: 'O backend sobe sem o broker, mas os eventos ficam pendentes. Suba o RabbitMQ local com `jaja broker:start` (ou o setup).',
+    };
+  },
+};
+
 const prismaClientCheck: Check = {
   id: 'prisma-client',
   label: 'Prisma Client gerado',
@@ -182,6 +202,7 @@ export function createDoctorChecks(ctx: CommandContext): Check[] {
     envCheck('env-backend', 'Env do backend', ctx.project.backendDir, ['.env']),
     envCheck('env-frontend', 'Env do frontend', ctx.project.frontendDir, ['.env', '.env.local']),
     databaseCheck,
+    brokerCheck,
     prismaClientCheck,
   ];
 }

@@ -12,7 +12,7 @@ async function runCheck(check: Check, ctx: CommandContext): Promise<CheckResult>
 export const doctorCommand: Command = {
   id: 'doctor',
   title: 'Doctor',
-  description: 'Verifica Node, npm, git, Docker, dependências, submódulos, .env, banco e Prisma Client',
+  description: 'Verifica Node, npm, git, Docker, dependências, submódulos, .env, banco, RabbitMQ e Prisma Client',
   group: 'Ambiente local',
   icon: '🔎',
   keywords: ['diagnostico', 'ambiente', 'saude', 'check', 'verificar'],

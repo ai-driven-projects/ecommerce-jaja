@@ -1,0 +1,29 @@
+// Prisma models for the backend messaging infrastructure
+
+// Internal table of the backend that implements `DomainEventRepository` (the
+// outbox): the domain modules only know the port, never this table. A use case
+// appends the events of an aggregate in the same transaction that persists the
+// aggregate, and the relay (`OutboxRelay`) publishes them to the broker later.
+// `id` is the id of the domain event, so the same event is never stored twice.
+// `status` holds the values of `DomainEventStatus` (`PENDING`, `PUBLISHED`).
+// `availableAt` controls when a pending event may be published: today it is
+// only pushed forward by the retries after a failed publication.
+model OutboxEvent {
+  id            String    @id @db.Uuid
+  type          String
+  aggregateType String    @map("aggregate_type")
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  payload       Json
+  metadata      Json
+  occurredAt    DateTime  @map("occurred_at")
+  status        String    @default("PENDING")
+  attempts      Int       @default(0)
+  availableAt   DateTime  @default(now()) @map("available_at")
+  publishedAt   DateTime? @map("published_at")
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox_events")
+}
