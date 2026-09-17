@@ -1,3 +1,6 @@
 export * from './find-my-order-by-id.query'
+export * from './find-order-by-id.query'
 export * from './find-order-customer-by-user-id.query'
+export * from './find-orders-summary.query'
+export * from './find-orders.query'
 export * from './order.repository'

@@ -2,10 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { Id, Result, TransactionContext } from '@mentoria-360/shared';
 import {
   FindMyOrderByIdQuery,
+  FindOrderByIdQuery,
   FindOrderCustomerByUserIdQuery,
+  FindOrdersQuery,
+  FindOrdersSummaryQuery,
   Order,
+  OrderAdminDetailDTO,
   OrderDetailDTO,
   OrderErrors,
+  OrderFiltersDTO,
+  OrderListItemDTO,
   OrderRepository,
   OrderStatus,
 } from '@jaja/orders';
@@ -14,6 +20,13 @@ import {
   PrismaService,
   PrismaTransactionContext,
 } from '../../db/prisma.service.js';
+import { folded, toSearchTerms } from '../../db/text-search.sql.js';
+
+/**
+ * Time zone of the operation: "today" in the admin summary is the current day
+ * here. Fixed in this version (no environment variable).
+ */
+export const OPERATION_TIME_ZONE = 'America/Sao_Paulo';
 
 type ConstraintViolation = {
   fields: readonly string[];
@@ -51,6 +64,72 @@ const WITH_ITEMS = {
 } satisfies Prisma.OrderInclude;
 
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof WITH_ITEMS }>;
+
+const WITH_ITEMS_AND_CUSTOMER = {
+  ...WITH_ITEMS,
+  customer: {
+    select: { id: true, phone: true, user: { select: { name: true, email: true } } },
+  },
+} satisfies Prisma.OrderInclude;
+
+type OrderWithCustomerRow = Prisma.OrderGetPayload<{ include: typeof WITH_ITEMS_AND_CUSTOMER }>;
+
+// The listing reads the orders with the name of the user of the customer. The
+// customer is joined even when soft-deleted: its orders are still orders.
+const FROM_ORDERS = Prisma.sql`
+  FROM orders o
+  JOIN customers c ON c.id = o.customer_id
+  JOIN users u ON u.id = c.user_id`;
+
+// Columns of `OrderListItemDTO`. `itemCount` sums the quantities of the items;
+// `statusChangedAt` is the date of the most recent step reached.
+const LIST_ITEM_COLUMNS = Prisma.sql`
+  o.id::text AS id,
+  o.status,
+  u.name AS "customerName",
+  o.delivery_neighborhood AS "deliveryNeighborhood",
+  o.delivery_city AS "deliveryCity",
+  COALESCE((SELECT sum(i.quantity) FROM order_items i WHERE i.order_id = o.id), 0)::int AS "itemCount",
+  o.total_cents AS "totalCents",
+  o.placed_at AS "placedAt",
+  COALESCE(o.delivered_at, o.out_for_delivery_at, o.picking_started_at, o.payment_approved_at, o.placed_at)
+    AS "statusChangedAt"`;
+
+// Most recent first; `id` keeps pages stable between orders of the same instant.
+const LIST_ORDER = Prisma.sql`ORDER BY o.placed_at DESC, o.id`;
+
+const DELIVERED: OrderStatus = 'DELIVERED';
+const LATEST_IN_PROGRESS_LIMIT = 6;
+
+// The order number is the start of the id without dashes; the search compares
+// it only when the text (without dashes and spaces) is hexadecimal.
+const ORDER_NUMBER_SEARCH = /^[0-9a-f]{1,32}$/;
+
+// Order dates are `timestamp` without time zone holding UTC: each one is read as
+// UTC, converted to the operation time zone and reduced to its day. The zone is
+// a constant, never user input.
+const OPERATION_ZONE_SQL = Prisma.raw(`'${OPERATION_TIME_ZONE}'`);
+const TODAY = Prisma.sql`(now() AT TIME ZONE ${OPERATION_ZONE_SQL})::date`;
+
+function localDay(column: string): Prisma.Sql {
+  return Prisma.sql`((${Prisma.raw(column)} AT TIME ZONE 'UTC') AT TIME ZONE ${OPERATION_ZONE_SQL})::date`;
+}
+
+type OrderListItemRow = Omit<OrderListItemDTO, 'status'> & { status: string };
+
+type OrdersSummaryRow = {
+  placedToday: number;
+  inProgress: number;
+  deliveredToday: number;
+  // `bigint` in SQL, so the sum never overflows.
+  revenueTodayCents: bigint | number | string;
+  averageTicketTodayCents: number | null;
+  averageDeliveryMinutesToday: number | null;
+};
+
+function listItemToDTO(row: OrderListItemRow): OrderListItemDTO {
+  return { ...row, status: row.status as OrderStatus };
+}
 
 @Injectable()
 export class OrderPrisma implements OrderRepository {
@@ -111,6 +190,96 @@ export class OrderPrisma implements OrderRepository {
       }),
   };
 
+  // Admin listing: raw SQL for the sum of the items, the most recent step and
+  // the search that ignores accents (see `FindOrdersQuery`).
+  readonly findOrders: FindOrdersQuery = {
+    execute: (filters) =>
+      Result.tryAsync(async () => {
+        const page = Math.max(1, Math.trunc(filters.page) || 1);
+        const pageSize = Math.max(1, Math.trunc(filters.pageSize) || 1);
+        const where = this.listWhere(filters);
+
+        const client = this.prisma.client;
+        const [counts, rows] = await Promise.all([
+          client.$queryRaw<{ total: number }[]>`SELECT count(*)::int AS total ${FROM_ORDERS} WHERE ${where}`,
+          client.$queryRaw<OrderListItemRow[]>`
+            SELECT ${LIST_ITEM_COLUMNS}
+            ${FROM_ORDERS}
+            WHERE ${where}
+            ${LIST_ORDER}
+            LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
+        ]);
+
+        const total = counts[0]?.total ?? 0;
+        return {
+          items: rows.map(listItemToDTO),
+          total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize),
+        };
+      }),
+  };
+
+  // Indicators of the day in `OPERATION_TIME_ZONE`, computed by one aggregate
+  // query with `FILTER`, plus the latest in-progress orders.
+  readonly findOrdersSummary: FindOrdersSummaryQuery = {
+    execute: () =>
+      Result.tryAsync(async () => {
+        const placedToday = Prisma.sql`${localDay('o.placed_at')} = ${TODAY}`;
+        const deliveredToday = Prisma.sql`o.delivered_at IS NOT NULL AND ${localDay('o.delivered_at')} = ${TODAY}`;
+
+        const client = this.prisma.client;
+        const [totals, latest] = await Promise.all([
+          client.$queryRaw<OrdersSummaryRow[]>`
+            SELECT
+              count(*) FILTER (WHERE ${placedToday})::int AS "placedToday",
+              count(*) FILTER (WHERE o.status <> ${DELIVERED})::int AS "inProgress",
+              count(*) FILTER (WHERE ${deliveredToday})::int AS "deliveredToday",
+              COALESCE(sum(o.total_cents) FILTER (WHERE ${placedToday}), 0)::bigint AS "revenueTodayCents",
+              round(avg(o.total_cents) FILTER (WHERE ${placedToday}))::int AS "averageTicketTodayCents",
+              round(
+                (avg(extract(epoch FROM o.delivered_at - o.placed_at)) FILTER (WHERE ${deliveredToday}) / 60)::numeric,
+                1
+              )::float8 AS "averageDeliveryMinutesToday"
+            FROM orders o
+            WHERE o.deleted_at IS NULL`,
+          client.$queryRaw<OrderListItemRow[]>`
+            SELECT ${LIST_ITEM_COLUMNS}
+            ${FROM_ORDERS}
+            WHERE ${this.listWhere({ page: 1, pageSize: LATEST_IN_PROGRESS_LIMIT, status: 'IN_PROGRESS' })}
+            ${LIST_ORDER}
+            LIMIT ${LATEST_IN_PROGRESS_LIMIT}`,
+        ]);
+
+        const row = totals[0];
+        return {
+          placedToday: row?.placedToday ?? 0,
+          inProgress: row?.inProgress ?? 0,
+          deliveredToday: row?.deliveredToday ?? 0,
+          revenueTodayCents: Number(row?.revenueTodayCents ?? 0),
+          averageTicketTodayCents: row?.averageTicketTodayCents ?? null,
+          averageDeliveryMinutesToday: row?.averageDeliveryMinutesToday ?? null,
+          latestInProgress: latest.map(listItemToDTO),
+        };
+      }),
+  };
+
+  // Any order, with its customer, for administrators. The totals are read as
+  // stored, like in `findMyOrderById`.
+  readonly findOrderById: FindOrderByIdQuery = {
+    execute: (orderId) =>
+      Result.tryAsync(async () => {
+        if (!this.isUuid(orderId)) return null;
+
+        const row = await this.prisma.client.order.findFirst({
+          where: { id: orderId.trim(), deletedAt: null },
+          include: WITH_ITEMS_AND_CUSTOMER,
+        });
+        return row ? this.toAdminDetailDTO(row) : null;
+      }),
+  };
+
   async create(order: Order, tx?: TransactionContext): Promise<Result<void>> {
     return Result.tryAsync(async () => {
       try {
@@ -129,34 +298,22 @@ export class OrderPrisma implements OrderRepository {
     });
   }
 
-  // Exists only because of the repository contract; no use case changes orders
-  // in this delivery.
+  // Stores what changes after the order is placed: the status, the date of each
+  // step and `updatedAt` (used by `AdvanceOrderStatus`, with the client of the
+  // received transaction). Items, address, recipient and totals are copies made
+  // when the order is placed and never change, so they are not written again.
   async update(order: Order, tx?: TransactionContext): Promise<Result<void>> {
     return Result.tryAsync(async () => {
       try {
-        const write = async (client: Prisma.TransactionClient) => {
-          // `deletedAt: null` keeps a deleted order from being edited back to life.
-          await client.order.update({
-            where: { id: order.id, deletedAt: null },
-            data: this.fromDomain(order),
-          });
-
-          // Items have no identity: the stored list is replaced as a whole.
-          await client.orderItem.deleteMany({ where: { orderId: order.id } });
-          await client.orderItem.createMany({
-            data: this.itemsFromDomain(order).map((item) => ({
-              ...item,
-              orderId: order.id,
-            })),
-          });
-        };
-
-        const context = tx as PrismaTransactionContext | undefined;
-        if (context?.client) {
-          await write(context.client);
-        } else {
-          await this.prisma.client.$transaction((client) => write(client));
-        }
+        // `deletedAt: null` keeps a deleted order from being edited back to life.
+        await this.clientFor(tx).order.update({
+          where: { id: order.id, deletedAt: null },
+          data: {
+            status: order.status,
+            ...this.stepDatesFromDomain(order),
+            updatedAt: order.updatedAt,
+          },
+        });
         return Result.ok<void>();
       } catch (error) {
         return this.writeFailure(error);
@@ -193,6 +350,54 @@ export class OrderPrisma implements OrderRepository {
         return this.writeFailure(error);
       }
     });
+  }
+
+  // Conditions of the listing (see `FindOrdersQuery`): not deleted, status or
+  // `IN_PROGRESS`, and the search by order number `OR` customer name.
+  private listWhere(filters: OrderFiltersDTO): Prisma.Sql {
+    const conditions = [Prisma.sql`o.deleted_at IS NULL`];
+
+    if (filters.status === 'IN_PROGRESS') {
+      conditions.push(Prisma.sql`o.status <> ${DELIVERED}`);
+    } else if (filters.status) {
+      conditions.push(Prisma.sql`o.status = ${filters.status}`);
+    }
+
+    const search = this.searchCondition(filters.search);
+    if (search) conditions.push(search);
+
+    return Prisma.join(conditions, ' AND ');
+  }
+
+  // Number: the id without dashes starts with the text (lowercase, without
+  // dashes and spaces), only when that text is hexadecimal. Name: the name of
+  // the user, without accents and in lowercase, contains every term. Either one
+  // is enough. The terms and the number only have `[a-z0-9]`, so they never
+  // carry `LIKE` wildcards.
+  private searchCondition(search: string | undefined): Prisma.Sql | null {
+    if (typeof search !== 'string' || !search.trim()) return null;
+
+    const alternatives: Prisma.Sql[] = [];
+
+    const number = search.replace(/[\s-]+/g, '').toLowerCase();
+    if (ORDER_NUMBER_SEARCH.test(number)) {
+      alternatives.push(Prisma.sql`replace(o.id::text, '-', '') LIKE ${`${number}%`}`);
+    }
+
+    const terms = toSearchTerms(search);
+    if (terms.length) {
+      const name = Prisma.raw(folded('u.name'));
+      alternatives.push(
+        Prisma.sql`(${Prisma.join(
+          terms.map((term) => Prisma.sql`${name} LIKE ${`%${term}%`}`),
+          ' AND ',
+        )})`,
+      );
+    }
+
+    // Text without a number nor terms (e.g. only punctuation) matches nothing.
+    if (!alternatives.length) return Prisma.sql`FALSE`;
+    return Prisma.sql`(${Prisma.join(alternatives, ' OR ')})`;
   }
 
   private clientFor(tx?: TransactionContext) {
@@ -278,6 +483,10 @@ export class OrderPrisma implements OrderRepository {
       recipientName: row.recipientName,
       deliveryInstructions: row.deliveryInstructions,
       placedAt: row.placedAt,
+      paymentApprovedAt: row.paymentApprovedAt,
+      pickingStartedAt: row.pickingStartedAt,
+      outForDeliveryAt: row.outForDeliveryAt,
+      deliveredAt: row.deliveredAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       deletedAt: row.deletedAt,
@@ -304,9 +513,20 @@ export class OrderPrisma implements OrderRepository {
       deliveryFeeCents: order.deliveryFeeCents,
       totalCents: order.totalCents,
       placedAt: order.placedAt,
+      ...this.stepDatesFromDomain(order),
       // Persisting the entity timestamps keeps the database equal to the entity.
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+    };
+  }
+
+  // Dates of the steps after `PLACED` (`null` while the order has not reached them).
+  private stepDatesFromDomain(order: Order) {
+    return {
+      paymentApprovedAt: order.paymentApprovedAt,
+      pickingStartedAt: order.pickingStartedAt,
+      outForDeliveryAt: order.outForDeliveryAt,
+      deliveredAt: order.deliveredAt,
     };
   }
 
@@ -336,6 +556,19 @@ export class OrderPrisma implements OrderRepository {
     };
   }
 
+  private toAdminDetailDTO(row: OrderWithCustomerRow): OrderAdminDetailDTO {
+    return {
+      ...this.toDetailDTO(row),
+      customer: {
+        id: row.customer.id,
+        name: row.customer.user.name,
+        email: row.customer.user.email,
+        phone: row.customer.phone,
+      },
+      updatedAt: row.updatedAt,
+    };
+  }
+
   private toDetailDTO(row: OrderRow): OrderDetailDTO {
     return {
       id: row.id,
@@ -358,6 +591,10 @@ export class OrderPrisma implements OrderRepository {
       deliveryFeeCents: row.deliveryFeeCents,
       totalCents: row.totalCents,
       placedAt: row.placedAt,
+      paymentApprovedAt: row.paymentApprovedAt,
+      pickingStartedAt: row.pickingStartedAt,
+      outForDeliveryAt: row.outForDeliveryAt,
+      deliveredAt: row.deliveredAt,
     };
   }
 }

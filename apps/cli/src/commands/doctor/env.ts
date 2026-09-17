@@ -35,10 +35,23 @@ export function diffEnv(example: Record<string, string>, actual: Record<string, 
   return { missing, placeholders };
 }
 
+/** Destino da `DATABASE_URL`, sem a senha (seguro para exibir e para montar comandos). */
 export interface DatabaseTarget {
   host: string;
   port: number;
   isLocal: boolean;
+  /** Usuário da URL (decodificado); vazio quando a URL não tem usuário. */
+  user: string;
+  /** Nome do banco (caminho da URL, decodificado); vazio quando a URL não tem banco. */
+  database: string;
+}
+
+function decodeUrlPart(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 export function parseDatabaseUrl(url: string): DatabaseTarget | null {
@@ -48,7 +61,9 @@ export function parseDatabaseUrl(url: string): DatabaseTarget | null {
     if (!host) return null;
     const port = parsed.port ? Number(parsed.port) : 5432;
     const isLocal = ['localhost', '127.0.0.1', '::1', 'host.docker.internal'].includes(host);
-    return { host, port, isLocal };
+    const user = decodeUrlPart(parsed.username);
+    const database = decodeUrlPart(parsed.pathname.replace(/^\//, ''));
+    return { host, port, isLocal, user, database };
   } catch {
     return null;
   }

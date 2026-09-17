@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { brokerUrls, parseComposeServiceState, readBrokerPorts } from './lib.js';
+import { basicAuthHeader, brokerUrls, managementQueueContentsUrl, managementQueuesUrl, parseComposeServiceState, readBrokerCredentials, readBrokerPorts, summarizeQueues } from './lib.js';
 
 describe('readBrokerPorts', () => {
   it('usa 5672/15672 quando o .env não tem as chaves', () => {
@@ -54,5 +54,89 @@ describe('parseComposeServiceState', () => {
     assert.equal(parseComposeServiceState('  \n'), null);
     assert.equal(parseComposeServiceState('[]'), null);
     assert.equal(parseComposeServiceState('no such service'), null);
+  });
+});
+
+describe('readBrokerCredentials', () => {
+  it('tira usuário e senha da RABBITMQ_URL', () => {
+    assert.deepEqual(readBrokerCredentials({ RABBITMQ_URL: 'amqp://loja:s3nh4@localhost:5672' }), { username: 'loja', password: 's3nh4' });
+  });
+
+  it('usa jaja/jaja sem a chave, com URL inválida ou sem usuário', () => {
+    const fallback = { username: 'jaja', password: 'jaja' };
+    assert.deepEqual(readBrokerCredentials({}), fallback);
+    assert.deepEqual(readBrokerCredentials({ RABBITMQ_URL: '' }), fallback);
+    assert.deepEqual(readBrokerCredentials({ RABBITMQ_URL: 'não é uma url' }), fallback);
+    assert.deepEqual(readBrokerCredentials({ RABBITMQ_URL: 'amqp://localhost:5672' }), fallback);
+  });
+
+  it('decodifica caracteres codificados na senha', () => {
+    assert.deepEqual(readBrokerCredentials({ RABBITMQ_URL: 'amqp://jaja:p%40ss%3Aw%2Frd@localhost:5672' }), { username: 'jaja', password: 'p@ss:w/rd' });
+  });
+});
+
+describe('managementQueuesUrl e basicAuthHeader', () => {
+  it('monta a URL da API sem credenciais e manda a credencial só no cabeçalho', () => {
+    const url = managementQueuesUrl(readBrokerPorts({ RABBITMQ_MANAGEMENT_PORT: '15673', RABBITMQ_URL: 'amqp://jaja:s3nh4@localhost:5672' }));
+    assert.equal(url, 'http://localhost:15673/api/queues/%2F');
+    assert.equal(url.includes('s3nh4'), false);
+    assert.equal(basicAuthHeader({ username: 'jaja', password: 'jaja' }), `Basic ${Buffer.from('jaja:jaja').toString('base64')}`);
+  });
+
+  it('monta a URL das mensagens de uma fila com o nome codificado', () => {
+    const ports = readBrokerPorts({});
+    assert.equal(managementQueueContentsUrl(ports, 'jaja.payment.approve-order.wait'), 'http://localhost:15672/api/queues/%2F/jaja.payment.approve-order.wait/contents');
+    assert.equal(managementQueueContentsUrl(ports, 'fila com/barra'), 'http://localhost:15672/api/queues/%2F/fila%20com%2Fbarra/contents');
+  });
+});
+
+describe('summarizeQueues', () => {
+  it('agrupa a fila do consumidor, a .wait e a .dead numa linha e mantém a fila de inspeção à parte', () => {
+    const summary = summarizeQueues([
+      { name: 'jaja.orders.approve-payment', messages_ready: 3, messages_unacknowledged: 1, consumers: 2 },
+      { name: 'jaja.orders.approve-payment.wait', messages_ready: 4, messages_unacknowledged: 0, consumers: 0 },
+      { name: 'jaja.orders.approve-payment.dead', messages_ready: 2, messages_unacknowledged: 0, consumers: 0 },
+      { name: 'jaja.events.all', messages_ready: 7, messages_unacknowledged: 0, consumers: 0 },
+      { name: 'outro-projeto.fila', messages_ready: 9, consumers: 1 },
+    ]);
+    assert.deepEqual(summary.rows, [{ consumer: 'orders.approve-payment', ready: 3, unacked: 1, waiting: 4, dead: 2, consumers: 2 }]);
+    assert.deepEqual(summary.inspection, { name: 'jaja.events.all', ready: 7, unacked: 0, consumers: 0 });
+    assert.deepEqual(summary.deadLetters, [{ queue: 'jaja.orders.approve-payment.dead', messages: 2 }]);
+  });
+
+  it('lista só as filas .dead com mensagens, em ordem alfabética dos consumidores', () => {
+    const summary = summarizeQueues([
+      { name: 'jaja.orders.ship', messages_ready: 0, consumers: 1 },
+      { name: 'jaja.orders.ship.dead', messages_ready: 0 },
+      { name: 'jaja.orders.approve-payment', consumers: 1 },
+      { name: 'jaja.orders.approve-payment.dead', messages_ready: 1 },
+    ]);
+    assert.deepEqual(
+      summary.rows.map((row) => row.consumer),
+      ['orders.approve-payment', 'orders.ship'],
+    );
+    assert.deepEqual(summary.deadLetters, [{ queue: 'jaja.orders.approve-payment.dead', messages: 1 }]);
+    assert.equal(summary.inspection, null);
+  });
+
+  it('fila .wait ou .dead sem a principal ainda aparece no consumidor', () => {
+    const summary = summarizeQueues([
+      { name: 'jaja.cli-test.check.dead', messages_ready: 1 },
+      { name: 'jaja.orders.pick.wait', messages_ready: 2 },
+    ]);
+    assert.deepEqual(summary.rows, [
+      { consumer: 'cli-test.check', ready: 0, unacked: 0, waiting: 0, dead: 1, consumers: 0 },
+      { consumer: 'orders.pick', ready: 0, unacked: 0, waiting: 2, dead: 0, consumers: 0 },
+    ]);
+    assert.deepEqual(summary.deadLetters, [{ queue: 'jaja.cli-test.check.dead', messages: 1 }]);
+  });
+
+  it('contadores ausentes (fila recém-criada) contam como zero', () => {
+    const summary = summarizeQueues([{ name: 'jaja.orders.pick' }]);
+    assert.deepEqual(summary.rows, [{ consumer: 'orders.pick', ready: 0, unacked: 0, waiting: 0, dead: 0, consumers: 0 }]);
+  });
+
+  it('lista vazia não gera linhas', () => {
+    assert.deepEqual(summarizeQueues([]), { rows: [], inspection: null, deadLetters: [] });
   });
 });

@@ -17,8 +17,9 @@ import {
   ORDER_STATUSES,
   OrderErrors,
   OrderStatus,
+  orderStatusIndex,
 } from '../errors'
-import { OrderPlacedEvent } from '../event'
+import { OrderEvent, OrderPlacedEvent, OrderStatusChangedEvent } from '../event'
 import {
   OrderDeliveryAddress,
   OrderDeliveryAddressProps,
@@ -33,7 +34,32 @@ export interface OrderProps extends EntityProps {
   recipientName: string
   deliveryInstructions?: string | null
   placedAt: Date
+  // Dates of the next steps; missing resolves to `null`.
+  paymentApprovedAt?: Date | null
+  pickingStartedAt?: Date | null
+  outForDeliveryAt?: Date | null
+  deliveredAt?: Date | null
 }
+
+// The prop that holds the date of each step of the sequence.
+type OrderStepDateProp =
+  | 'placedAt'
+  | 'paymentApprovedAt'
+  | 'pickingStartedAt'
+  | 'outForDeliveryAt'
+  | 'deliveredAt'
+
+const ORDER_STEP_DATE_PROPS: Record<OrderStatus, OrderStepDateProp> = {
+  PLACED: 'placedAt',
+  PAYMENT_APPROVED: 'paymentApprovedAt',
+  PICKING: 'pickingStartedAt',
+  OUT_FOR_DELIVERY: 'outForDeliveryAt',
+  DELIVERED: 'deliveredAt',
+}
+
+// The optional step dates, in the order of the sequence (`placedAt` is always
+// required and checked on its own).
+const ORDER_NEXT_STEP_STATUSES = ORDER_STATUSES.slice(1)
 
 // What the customer's confirmation provides to `Order.place`; id, status and
 // `placedAt` are generated.
@@ -54,11 +80,18 @@ const ORDER_RECIPIENT_NAME_MIN_LENGTH = 2
 // record. The totals are always computed from the items; the database stores
 // them only for reading.
 //
-// `place` creates a new order and adds `OrderPlacedEvent`; `tryCreate` and
+// The status follows the sequence of `ORDER_STATUSES`: `PLACED` →
+// `PAYMENT_APPROVED` → `PICKING` → `OUT_FOR_DELIVERY` → `DELIVERED`, and only
+// advances one step at a time (`advanceTo`). Each step has its date
+// (`placedAt`, `paymentApprovedAt`, `pickingStartedAt`, `outForDeliveryAt`,
+// `deliveredAt`), filled if and only if the order has reached the step.
+//
+// `place` creates a new order and adds `OrderPlacedEvent`; `advanceTo` returns
+// a clone in the next status with `OrderStatusChangedEvent`; `tryCreate` and
 // `create` rehydrate a stored order and never add events. `cloneWith` carries
-// the pending events to the clone, so future behavior methods add their events
-// to the returned instance.
-export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
+// the pending events to the clone, so behavior methods add their events to the
+// returned instance and the original one never changes.
+export class Order extends AggregateRoot<Order, OrderProps, OrderEvent> {
   private constructor(props: OrderProps) {
     super(props)
   }
@@ -118,6 +151,12 @@ export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
     const placedAt = isValidDate(input.placedAt)
       ? Result.ok()
       : Result.fail(OrderErrors.ORDER_STATUS_INVALID)
+    // Each next step date must be valid when present, and present if and only
+    // if the status has reached the step; any inconsistency is an invalid
+    // status. Only checked for a known status, which fails on its own otherwise.
+    const stepDates = Order.isValidStatus(input.status)
+      ? Order.checkStepDates(input.status, input)
+      : Result.ok()
 
     const attrs = Result.combine([
       id,
@@ -130,6 +169,7 @@ export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
       recipientName,
       deliveryInstructions,
       placedAt,
+      stepDates,
     ])
     if (attrs.isFailure) return Result.fail([...new Set(attrs.errors)])
 
@@ -144,8 +184,29 @@ export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
         recipientName: recipientName.instance.value,
         deliveryInstructions: deliveryInstructions.instance?.value ?? null,
         placedAt: new Date((input.placedAt as Date).getTime()),
+        paymentApprovedAt: copyDate(input.paymentApprovedAt),
+        pickingStartedAt: copyDate(input.pickingStartedAt),
+        outForDeliveryAt: copyDate(input.outForDeliveryAt),
+        deliveredAt: copyDate(input.deliveredAt),
       }),
     )
+  }
+
+  private static checkStepDates(
+    status: OrderStatus,
+    input: Partial<OrderProps>,
+  ): Result<void> {
+    const reached = orderStatusIndex(status)
+    const consistent = ORDER_NEXT_STEP_STATUSES.every((step) => {
+      const value = input[ORDER_STEP_DATE_PROPS[step]]
+      const present = value !== undefined && value !== null
+      if (present && !isValidDate(value)) return false
+      return present === reached >= orderStatusIndex(step)
+    })
+
+    return consistent
+      ? Result.ok()
+      : Result.fail(OrderErrors.ORDER_STATUS_INVALID)
   }
 
   // A new order from the customer's confirmation: generates the id, `PLACED`
@@ -191,6 +252,53 @@ export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
     return (ORDER_STATUSES as readonly unknown[]).includes(value)
   }
 
+  // Advances the order to `status`, which must be the **next** one of the
+  // sequence: the current status, a previous one, a skipped step, an unknown
+  // status or any status after `DELIVERED` fail with
+  // `ORDER_STATUS_TRANSITION_INVALID`. Returns a clone with the status, the date
+  // of the step and `updatedAt` set to `now`, and adds `OrderStatusChangedEvent`
+  // to it; this instance never changes and never receives events.
+  advanceTo(status: OrderStatus, now: Date = new Date()): Result<Order> {
+    const next = ORDER_STATUSES[orderStatusIndex(this.status) + 1]
+    if (next === undefined || status !== next) {
+      return Result.fail(OrderErrors.ORDER_STATUS_TRANSITION_INVALID)
+    }
+
+    const advanced = this.cloneWith({
+      status: next,
+      [ORDER_STEP_DATE_PROPS[next]]: now,
+      updatedAt: now,
+    })
+    if (advanced.isFailure) return advanced.withFail
+
+    const event = OrderStatusChangedEvent.tryCreate({
+      orderId: this.id,
+      customerId: this.customerId,
+      previousStatus: this.status,
+      status: next,
+      changedAt: advanced.instance.dateOf(next) as Date,
+    })
+    if (event.isFailure) return event.withFail
+
+    advanced.instance.addEvent(event.instance)
+    return advanced
+  }
+
+  // Whether the order is in `status` or has already passed it. `false` for an
+  // unknown status.
+  hasReached(status: OrderStatus): boolean {
+    return (
+      Order.isValidStatus(status) &&
+      orderStatusIndex(this.status) >= orderStatusIndex(status)
+    )
+  }
+
+  // A copy of the date of the step, or `null` while the order has not reached
+  // it.
+  private dateOf(status: OrderStatus): Date | null {
+    return copyDate(this.props[ORDER_STEP_DATE_PROPS[status]])
+  }
+
   get customerId(): string {
     return this.props.customerId
   }
@@ -219,6 +327,23 @@ export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
   // A copy, so callers cannot change the entity.
   get placedAt(): Date {
     return new Date(this.props.placedAt.getTime())
+  }
+
+  // Copies, or `null` while the order has not reached the step.
+  get paymentApprovedAt(): Date | null {
+    return this.dateOf('PAYMENT_APPROVED')
+  }
+
+  get pickingStartedAt(): Date | null {
+    return this.dateOf('PICKING')
+  }
+
+  get outForDeliveryAt(): Date | null {
+    return this.dateOf('OUT_FOR_DELIVERY')
+  }
+
+  get deliveredAt(): Date | null {
+    return this.dateOf('DELIVERED')
   }
 
   // Sum of the quantities of every item.
@@ -259,6 +384,10 @@ export class Order extends AggregateRoot<Order, OrderProps, OrderPlacedEvent> {
       deliveryFeeCents: this.deliveryFeeCents,
       totalCents: this.totalCents,
       placedAt: this.placedAt,
+      paymentApprovedAt: this.paymentApprovedAt,
+      pickingStartedAt: this.pickingStartedAt,
+      outForDeliveryAt: this.outForDeliveryAt,
+      deliveredAt: this.deliveredAt,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     }
@@ -272,4 +401,11 @@ function isValidDate(value: unknown): value is Date {
     Object.prototype.toString.call(value) === '[object Date]' &&
     !Number.isNaN((value as Date).getTime())
   )
+}
+
+// A copy of a date, or `null` for a missing one.
+function copyDate(value: Date | null | undefined): Date | null {
+  return value === undefined || value === null
+    ? null
+    : new Date(value.getTime())
 }

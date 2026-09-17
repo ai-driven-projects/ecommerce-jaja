@@ -6,13 +6,16 @@ import {
   TransactionContext,
 } from '@mentoria-360/shared';
 import { PrismaTransactionContext } from '../../db/prisma.service.js';
+import { readCausation } from '../consumer/message-causation.js';
 import { MessagingErrors } from '../messaging-errors.js';
 import { toOutboxEventRow } from './outbox-event.mapper.js';
 
 // The outbox side of `DomainEventRepository`: a use case calls
 // `append(aggregate.pullEvents(), tx)` inside `runInTransaction`, after
 // persisting the aggregate, and the events are stored as pending in that same
-// transaction. The relay publishes them later.
+// transaction. The relay publishes them later. When the transaction is the one
+// of an event consumer, the events also receive the `causationId` and the
+// `correlationId` of the message being processed (`readCausation`).
 @Injectable()
 export class DomainEventPrisma implements DomainEventRepository {
   async append(events: DomainEvent[], tx?: TransactionContext): Promise<Result<void>> {
@@ -30,7 +33,10 @@ export class DomainEventPrisma implements DomainEventRepository {
       // `status`, `attempts` and `available_at` come from the database defaults.
       // The event id is the primary key: storing the same event twice fails and
       // rolls the transaction back.
-      await client.outboxEvent.createMany({ data: events.map(toOutboxEventRow) });
+      const causation = readCausation(tx);
+      await client.outboxEvent.createMany({
+        data: events.map((event) => toOutboxEventRow(event, causation)),
+      });
       return Result.ok<void>();
     });
   }

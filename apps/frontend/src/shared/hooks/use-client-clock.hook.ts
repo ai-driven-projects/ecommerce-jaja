@@ -25,3 +25,41 @@ function getServerSnapshot(): number | null {
 export function useClientMinute(): number | null {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+const SECOND_MS = 1_000;
+
+// Um único intervalo de 1 s para todos os componentes inscritos: liga com o
+// primeiro e desliga com o último (o relógio só roda com a tela aberta).
+const secondListeners = new Set<() => void>();
+let secondTimer: number | null = null;
+
+function subscribeToSecond(onChange: () => void) {
+  secondListeners.add(onChange);
+  if (secondTimer === null) {
+    secondTimer = window.setInterval(() => {
+      for (const listener of secondListeners) listener();
+    }, SECOND_MS);
+  }
+  return () => {
+    secondListeners.delete(onChange);
+    if (secondListeners.size === 0 && secondTimer !== null) {
+      window.clearInterval(secondTimer);
+      secondTimer = null;
+    }
+  };
+}
+
+function getSecondSnapshot(): number {
+  return Math.floor(Date.now() / SECOND_MS) * SECOND_MS;
+}
+
+/**
+ * Timestamp (ms) do segundo atual no cliente, atualizado a cada segundo, para
+ * tempos relativos e contagens regressivas (ex.: painel do pedido no admin).
+ * É `null` no servidor e durante a hidratação, como `useClientMinute`. Os
+ * componentes inscritos compartilham um único intervalo, ligado só enquanto há
+ * algum montado.
+ */
+export function useClientSecond(): number | null {
+  return useSyncExternalStore(subscribeToSecond, getSecondSnapshot, getServerSnapshot);
+}

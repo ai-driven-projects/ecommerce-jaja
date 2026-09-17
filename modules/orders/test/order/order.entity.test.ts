@@ -5,6 +5,8 @@ import {
   OrderItemProps,
   OrderPlacedEvent,
   OrderProps,
+  OrderStatus,
+  OrderStatusChangedEvent,
   PlaceOrderProps,
 } from '../../src/order'
 
@@ -13,6 +15,10 @@ const customerId = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
 const productA = '550e8400-e29b-41d4-a716-446655440000'
 const productB = '11111111-2222-4333-8444-555555555555'
 const placedAt = new Date('2026-09-14T15:30:00.000Z')
+const paymentApprovedAt = new Date('2026-09-14T15:30:03.000Z')
+const pickingStartedAt = new Date('2026-09-14T15:30:05.000Z')
+const outForDeliveryAt = new Date('2026-09-14T15:30:11.000Z')
+const deliveredAt = new Date('2026-09-14T15:30:19.000Z')
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
@@ -76,6 +82,19 @@ function stored(overrides: Partial<OrderProps> = {}): OrderProps {
     updatedAt: placedAt,
     ...overrides,
   }
+}
+
+// A stored order in `DELIVERED`, with every step date.
+function delivered(overrides: Partial<OrderProps> = {}): OrderProps {
+  return stored({
+    status: 'DELIVERED',
+    paymentApprovedAt,
+    pickingStartedAt,
+    outForDeliveryAt,
+    deliveredAt,
+    updatedAt: deliveredAt,
+    ...overrides,
+  })
 }
 
 function placement(overrides: Partial<PlaceOrderProps> = {}): PlaceOrderProps {
@@ -295,7 +314,7 @@ describe('Order', () => {
       },
     )
 
-    test.each(['DELIVERED', 'placed', undefined])(
+    test.each(['CANCELLED', 'placed', undefined])(
       'fails with ORDER_STATUS_INVALID for the status %p',
       (status) => {
         const result = Order.tryCreate(
@@ -349,6 +368,69 @@ describe('Order', () => {
       expect(result.errors).toEqual([OrderErrors.ORDER_STATUS_INVALID])
     })
 
+    test('resolves missing step dates to null', () => {
+      const order = Order.create(stored())
+
+      expect(order.paymentApprovedAt).toBeNull()
+      expect(order.pickingStartedAt).toBeNull()
+      expect(order.outForDeliveryAt).toBeNull()
+      expect(order.deliveredAt).toBeNull()
+    })
+
+    test('restores a DELIVERED order with every step date and without events', () => {
+      const result = Order.tryCreate(delivered())
+
+      expect(result.isOk).toBe(true)
+      const order = result.instance
+      expect(order.status).toBe('DELIVERED')
+      expect(order.paymentApprovedAt).toEqual(paymentApprovedAt)
+      expect(order.pickingStartedAt).toEqual(pickingStartedAt)
+      expect(order.outForDeliveryAt).toEqual(outForDeliveryAt)
+      expect(order.deliveredAt).toEqual(deliveredAt)
+      expect(order.hasEvents()).toBe(false)
+    })
+
+    test('accepts PICKING with the dates up to the step and null after it', () => {
+      const result = Order.tryCreate(
+        stored({
+          status: 'PICKING',
+          paymentApprovedAt,
+          pickingStartedAt,
+          outForDeliveryAt: null,
+          deliveredAt: undefined,
+        }),
+      )
+
+      expect(result.isOk).toBe(true)
+    })
+
+    test.each([
+      ['PLACED with paymentApprovedAt', { paymentApprovedAt }],
+      ['PLACED with deliveredAt', { deliveredAt }],
+      ['PICKING without paymentApprovedAt', { status: 'PICKING', pickingStartedAt }],
+      ['PICKING without pickingStartedAt', { status: 'PICKING', paymentApprovedAt }],
+      [
+        'PICKING with outForDeliveryAt',
+        { status: 'PICKING', paymentApprovedAt, pickingStartedAt, outForDeliveryAt },
+      ],
+      ['DELIVERED without deliveredAt', delivered({ deliveredAt: null })],
+      [
+        'PAYMENT_APPROVED with an invalid paymentApprovedAt',
+        { status: 'PAYMENT_APPROVED', paymentApprovedAt: new Date('invalid') },
+      ],
+      [
+        'PAYMENT_APPROVED with a paymentApprovedAt that is not a date',
+        { status: 'PAYMENT_APPROVED', paymentApprovedAt: '2026-09-14' },
+      ],
+    ] as [string, Partial<OrderProps>][])(
+      'fails with ORDER_STATUS_INVALID for %s',
+      (_, overrides) => {
+        const result = Order.tryCreate(stored(overrides))
+
+        expect(result.errors).toEqual([OrderErrors.ORDER_STATUS_INVALID])
+      },
+    )
+
     test('create throws on invalid props', () => {
       expect(() => Order.create(stored({ items: [] }))).toThrow()
     })
@@ -392,12 +474,183 @@ describe('Order', () => {
     })
   })
 
+  describe('advanceTo', () => {
+    test('walks the whole sequence with one date and one event per step', () => {
+      const steps: [OrderStatus, Date, string][] = [
+        ['PAYMENT_APPROVED', paymentApprovedAt, 'order.payment-approved'],
+        ['PICKING', pickingStartedAt, 'order.picking-started'],
+        ['OUT_FOR_DELIVERY', outForDeliveryAt, 'order.out-for-delivery'],
+        ['DELIVERED', deliveredAt, 'order.delivered'],
+      ]
+      let order = Order.create(stored())
+
+      for (const [status, now, type] of steps) {
+        const previousStatus = order.status
+        const result = order.advanceTo(status, now)
+
+        expect(result.isOk).toBe(true)
+        order = result.instance
+        expect(order.status).toBe(status)
+        expect(order.updatedAt).toEqual(now)
+        const events = order.pullEvents()
+        expect(events).toHaveLength(1)
+        const event = events[0]!
+        expect(event).toBeInstanceOf(OrderStatusChangedEvent)
+        expect(event.type).toBe(type)
+        expect(event.aggregateType).toBe('Order')
+        expect(event.aggregateId).toBe(id)
+        expect(event.occurredAt).toEqual(now)
+        expect(event.metadata).toEqual({})
+        expect(event.payload).toEqual({
+          customerId,
+          previousStatus,
+          status,
+          changedAt: now.toISOString(),
+        })
+      }
+
+      expect(order.toDTO()).toMatchObject({
+        status: 'DELIVERED',
+        placedAt,
+        paymentApprovedAt,
+        pickingStartedAt,
+        outForDeliveryAt,
+        deliveredAt,
+        updatedAt: deliveredAt,
+      })
+    })
+
+    test('fills only the date of the reached step', () => {
+      const order = Order.create(stored())
+        .advanceTo('PAYMENT_APPROVED', paymentApprovedAt)
+        .instance.advanceTo('PICKING', pickingStartedAt).instance
+
+      expect(order.placedAt).toEqual(placedAt)
+      expect(order.paymentApprovedAt).toEqual(paymentApprovedAt)
+      expect(order.pickingStartedAt).toEqual(pickingStartedAt)
+      expect(order.outForDeliveryAt).toBeNull()
+      expect(order.deliveredAt).toBeNull()
+    })
+
+    test('uses the current date by default', () => {
+      const before = Date.now()
+
+      const order = Order.create(stored()).advanceTo('PAYMENT_APPROVED').instance
+
+      expect(order.paymentApprovedAt!.getTime()).toBeGreaterThanOrEqual(before)
+      expect(order.paymentApprovedAt!.getTime()).toBeLessThanOrEqual(Date.now())
+      expect(order.updatedAt).toEqual(order.paymentApprovedAt)
+      expect(order.peekEvents()[0]!.occurredAt).toEqual(order.paymentApprovedAt)
+    })
+
+    test.each([
+      ['to the current status', stored(), 'PLACED'],
+      ['skipping a step', stored(), 'PICKING'],
+      ['skipping to DELIVERED', stored(), 'DELIVERED'],
+      [
+        'to a previous status',
+        stored({ status: 'PAYMENT_APPROVED', paymentApprovedAt }),
+        'PLACED',
+      ],
+      ['after DELIVERED', delivered(), 'DELIVERED'],
+      ['after DELIVERED to a previous status', delivered(), 'OUT_FOR_DELIVERY'],
+      ['to an unknown status', stored(), 'CANCELLED'],
+    ] as [string, OrderProps, OrderStatus][])(
+      'fails with ORDER_STATUS_TRANSITION_INVALID %s, without events',
+      (_, props, status) => {
+        const order = Order.create(props)
+
+        const result = order.advanceTo(status, paymentApprovedAt)
+
+        expect(result.isFailure).toBe(true)
+        expect(result.errors).toEqual([
+          OrderErrors.ORDER_STATUS_TRANSITION_INVALID,
+        ])
+        expect(order.status).toBe(props.status)
+        expect(order.hasEvents()).toBe(false)
+      },
+    )
+
+    test('keeps the original instance unchanged and without events', () => {
+      const order = Order.create(stored())
+      const before = order.toDTO()
+
+      const advanced = order.advanceTo('PAYMENT_APPROVED', paymentApprovedAt)
+
+      expect(advanced.isOk).toBe(true)
+      expect(advanced.instance).not.toBe(order)
+      expect(order.toDTO()).toEqual(before)
+      expect(order.status).toBe('PLACED')
+      expect(order.paymentApprovedAt).toBeNull()
+      expect(order.hasEvents()).toBe(false)
+    })
+
+    test('the advanced order keeps a pending order.placed before its own event', () => {
+      const order = Order.place(placement()).instance
+
+      const advanced = order.advanceTo('PAYMENT_APPROVED').instance
+
+      expect(advanced.peekEvents().map((event) => event.type)).toEqual([
+        'order.placed',
+        'order.payment-approved',
+      ])
+      expect(order.peekEvents()).toHaveLength(1)
+    })
+
+    test('fails with ORDER_STATUS_INVALID for an invalid date, without events', () => {
+      const order = Order.create(stored())
+
+      const result = order.advanceTo('PAYMENT_APPROVED', new Date('invalid'))
+
+      expect(result.errors).toEqual([OrderErrors.ORDER_STATUS_INVALID])
+      expect(order.hasEvents()).toBe(false)
+    })
+  })
+
+  describe('hasReached', () => {
+    test.each([
+      ['PLACED', true],
+      ['PAYMENT_APPROVED', true],
+      ['PICKING', true],
+      ['OUT_FOR_DELIVERY', false],
+      ['DELIVERED', false],
+      ['CANCELLED', false],
+    ] as [OrderStatus, boolean][])(
+      'a PICKING order has reached %s: %p',
+      (status, expected) => {
+        const order = Order.create(
+          stored({ status: 'PICKING', paymentApprovedAt, pickingStartedAt }),
+        )
+
+        expect(order.hasReached(status)).toBe(expected)
+      },
+    )
+
+    test('a DELIVERED order has reached every status', () => {
+      const order = Order.create(delivered())
+
+      expect(
+        (['PLACED', 'PAYMENT_APPROVED', 'PICKING', 'OUT_FOR_DELIVERY', 'DELIVERED'] as OrderStatus[]).every(
+          (status) => order.hasReached(status),
+        ),
+      ).toBe(true)
+    })
+  })
+
   test('getters return copies that do not change the entity', () => {
-    const order = Order.create(stored())
+    const order = Order.create(delivered())
 
     order.placedAt.setFullYear(2000)
+    order.paymentApprovedAt!.setFullYear(2000)
+    order.pickingStartedAt!.setFullYear(2000)
+    order.outForDeliveryAt!.setFullYear(2000)
+    order.deliveredAt!.setFullYear(2000)
 
     expect(order.placedAt).toEqual(placedAt)
+    expect(order.paymentApprovedAt).toEqual(paymentApprovedAt)
+    expect(order.pickingStartedAt).toEqual(pickingStartedAt)
+    expect(order.outForDeliveryAt).toEqual(outForDeliveryAt)
+    expect(order.deliveredAt).toEqual(deliveredAt)
     expect(Object.isFrozen(order.items[0]!.value)).toBe(true)
   })
 
@@ -434,8 +687,23 @@ describe('Order', () => {
       deliveryFeeCents: 490,
       totalCents: 2637,
       placedAt,
+      paymentApprovedAt: null,
+      pickingStartedAt: null,
+      outForDeliveryAt: null,
+      deliveredAt: null,
       createdAt: placedAt,
       updatedAt: placedAt,
+    })
+  })
+
+  test('toDTO exposes the step dates', () => {
+    expect(Order.create(delivered()).toDTO()).toMatchObject({
+      status: 'DELIVERED',
+      placedAt,
+      paymentApprovedAt,
+      pickingStartedAt,
+      outForDeliveryAt,
+      deliveredAt,
     })
   })
 

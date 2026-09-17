@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { CommandContext } from '../../core/command.js';
-import { isPortOpen, waitForPort } from '../../core/net.js';
+import { httpProbe, isPortOpen, waitForPort } from '../../core/net.js';
 import { isFile } from '../../core/project.js';
 import { compose, detectCompose, requireBackend } from '../db/lib.js';
 import { parseEnv } from '../doctor/env.js';
@@ -157,4 +157,181 @@ export async function ensureBrokerUp(ctx: CommandContext): Promise<boolean> {
   }
   ctx.report.info(`RabbitMQ local fora do ar. Subindo o serviço rabbitmq com Docker Compose em ${where}...`);
   return startBroker(ctx, ports);
+}
+
+/** Usuário e senha do broker. Servem só para autenticar na API do painel e nunca são exibidos. */
+export interface BrokerCredentials {
+  username: string;
+  password: string;
+}
+
+/** Credencial de desenvolvimento do `apps/backend/docker-compose.yml`. */
+export const DEFAULT_BROKER_CREDENTIALS: BrokerCredentials = { username: 'jaja', password: 'jaja' };
+
+function decodeUrlPart(value: string): string | null {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lê usuário e senha da `RABBITMQ_URL` do .env do backend (ex.: `amqp://jaja:jaja@localhost:5672`), decodificando
+ * caracteres codificados (`%40` → `@`). Chave ausente, URL inválida ou sem usuário voltam ao padrão `jaja`/`jaja`.
+ * O resultado só vai no cabeçalho `Authorization`: nunca na URL nem em mensagens.
+ */
+export function readBrokerCredentials(env: Record<string, string>): BrokerCredentials {
+  const raw = env.RABBITMQ_URL?.trim();
+  if (!raw) return { ...DEFAULT_BROKER_CREDENTIALS };
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return { ...DEFAULT_BROKER_CREDENTIALS };
+  }
+  if (!url.username) return { ...DEFAULT_BROKER_CREDENTIALS };
+  const username = decodeUrlPart(url.username);
+  const password = decodeUrlPart(url.password);
+  if (username === null || password === null) return { ...DEFAULT_BROKER_CREDENTIALS };
+  return { username, password };
+}
+
+/** Cabeçalho de autenticação básica para a API do painel. */
+export function basicAuthHeader(credentials: BrokerCredentials): string {
+  return `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`, 'utf8').toString('base64')}`;
+}
+
+/** URL da listagem de filas do vhost `/` na API do painel, só com host e porta. */
+export function managementQueuesUrl(ports: BrokerPorts): string {
+  return `${brokerUrls(ports).management}/api/queues/%2F`;
+}
+
+/** URL das mensagens de uma fila do vhost `/` (`DELETE` esvazia a fila), com o nome codificado e sem credenciais. */
+export function managementQueueContentsUrl(ports: BrokerPorts, queue: string): string {
+  return `${managementQueuesUrl(ports)}/${encodeURIComponent(queue)}/contents`;
+}
+
+/** Campos usados de cada fila devolvida por `GET /api/queues/%2F`. A API omite os contadores enquanto não há estatística. */
+export interface ManagementQueue {
+  name: string;
+  messages_ready?: number;
+  messages_unacknowledged?: number;
+  consumers?: number;
+}
+
+/** Linha da tabela por consumidor: soma das filas `jaja.<consumidor>`, `.wait` e `.dead`. */
+export interface ConsumerQueueRow {
+  /** Nome do consumidor, sem o prefixo `jaja.` (ex.: `orders.approve-payment`). */
+  consumer: string;
+  /** Prontas para entrega na fila do consumidor. */
+  ready: number;
+  /** Entregues e ainda sem confirmação (em processamento). */
+  unacked: number;
+  /** Na fila `.wait` (nova tentativa ou espera inicial). */
+  waiting: number;
+  /** Na fila `.dead` (descartadas). */
+  dead: number;
+  /** Consumidores conectados à fila do consumidor. */
+  consumers: number;
+}
+
+/** Fila de inspeção (`jaja.events.all`), mostrada à parte. */
+export interface InspectionQueueRow {
+  name: string;
+  ready: number;
+  unacked: number;
+  consumers: number;
+}
+
+export interface QueuesSummary {
+  /** Linhas por consumidor, em ordem alfabética. */
+  rows: ConsumerQueueRow[];
+  /** `null` quando a fila de inspeção não existe. */
+  inspection: InspectionQueueRow | null;
+  /** Filas `.dead` com mensagens, na ordem das linhas. */
+  deadLetters: { queue: string; messages: number }[];
+}
+
+/** Prefixo das filas do projeto. */
+export const QUEUE_PREFIX = 'jaja.';
+
+/** Fila de inspeção padrão (`RABBITMQ_INSPECTION_QUEUE`). */
+export const DEFAULT_INSPECTION_QUEUE = 'jaja.events.all';
+
+function count(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+/**
+ * Agrupa as filas da API do painel por consumidor: `jaja.<consumidor>` (prontas, em processamento e consumidores
+ * conectados), `jaja.<consumidor>.wait` (na espera) e `jaja.<consumidor>.dead` (descartadas). Uma `.wait` ou `.dead`
+ * sem a fila principal ainda gera a linha. A fila de inspeção fica à parte e filas fora do prefixo `jaja.` são ignoradas.
+ * Função pura: não acessa rede nem arquivos.
+ */
+export function summarizeQueues(queues: ManagementQueue[], inspectionQueue: string = DEFAULT_INSPECTION_QUEUE): QueuesSummary {
+  const rows = new Map<string, ConsumerQueueRow>();
+  let inspection: InspectionQueueRow | null = null;
+  const rowOf = (consumer: string) => {
+    let row = rows.get(consumer);
+    if (!row) {
+      row = { consumer, ready: 0, unacked: 0, waiting: 0, dead: 0, consumers: 0 };
+      rows.set(consumer, row);
+    }
+    return row;
+  };
+
+  for (const queue of queues) {
+    if (typeof queue?.name !== 'string') continue;
+    const ready = count(queue.messages_ready);
+    const unacked = count(queue.messages_unacknowledged);
+    const consumers = count(queue.consumers);
+    if (queue.name === inspectionQueue) {
+      inspection = { name: queue.name, ready, unacked, consumers };
+      continue;
+    }
+    if (!queue.name.startsWith(QUEUE_PREFIX)) continue;
+    const base = queue.name.slice(QUEUE_PREFIX.length);
+    const suffix = base.endsWith('.wait') ? '.wait' : base.endsWith('.dead') ? '.dead' : '';
+    const consumer = base.slice(0, base.length - suffix.length);
+    if (!consumer) continue;
+    const row = rowOf(consumer);
+    if (suffix === '.wait') row.waiting += ready + unacked;
+    else if (suffix === '.dead') row.dead += ready + unacked;
+    else {
+      row.ready += ready;
+      row.unacked += unacked;
+      row.consumers += consumers;
+    }
+  }
+
+  const sorted = [...rows.values()].sort((a, b) => a.consumer.localeCompare(b.consumer));
+  const deadLetters = sorted.filter((row) => row.dead > 0).map((row) => ({ queue: `${QUEUE_PREFIX}${row.consumer}.dead`, messages: row.dead }));
+  return { rows: sorted, inspection, deadLetters };
+}
+
+/** Resultado de `listManagementQueues`: as filas, ou o motivo (sem credenciais) de não conseguir lê-las. */
+export type ManagementQueuesListing = { ok: true; queues: ManagementQueue[] } | { ok: false; reason: string };
+
+/**
+ * Lê `GET /api/queues/%2F` do painel com a credencial só no cabeçalho. Nunca lança: painel sem resposta, credencial
+ * recusada, HTTP de erro ou resposta que não é lista viram `{ ok: false, reason }`, com host e porta mas sem credenciais.
+ */
+export async function listManagementQueues(ctx: CommandContext, ports: BrokerPorts, credentials: BrokerCredentials): Promise<ManagementQueuesListing> {
+  const { management } = brokerUrls(ports);
+  const probe = await httpProbe(managementQueuesUrl(ports), {
+    timeoutMs: 5000,
+    signal: ctx.signal,
+    headers: { authorization: basicAuthHeader(credentials), accept: 'application/json' },
+  });
+  if (probe.status === null) return { ok: false, reason: `o painel do RabbitMQ não respondeu em ${management}${probe.error ? ` (${probe.error})` : ''}` };
+  if (probe.status === 401 || probe.status === 403) return { ok: false, reason: `o painel do RabbitMQ recusou a credencial de RABBITMQ_URL (HTTP ${probe.status})` };
+  if (!probe.ok) return { ok: false, reason: `o painel do RabbitMQ respondeu HTTP ${probe.status} em ${management}` };
+  try {
+    const parsed: unknown = JSON.parse(probe.body);
+    if (!Array.isArray(parsed)) throw new Error('resposta não é uma lista');
+    return { ok: true, queues: (parsed as ManagementQueue[]).filter((queue) => typeof queue?.name === 'string') };
+  } catch {
+    return { ok: false, reason: `resposta inesperada da API do painel em ${management}` };
+  }
 }

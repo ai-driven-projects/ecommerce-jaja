@@ -42,7 +42,11 @@ model CartItem {
 // customer record change later. The totals are stored only for reading: the
 // rule belongs to the `Order` entity, which recomputes them from the items.
 // `status` is text (not a PostgreSQL enum), so a new status only needs
-// `ORDER_STATUSES`. The `order.placed` event is stored in the outbox
+// `ORDER_STATUSES`. The date of each step (`placed_at`, `payment_approved_at`,
+// `picking_started_at`, `out_for_delivery_at`, `delivered_at`) is stored when the
+// order reaches the step and stays null before it; the sequence rule (only the
+// next status, dates coherent with the status) belongs to the `Order` entity.
+// The `order.placed` event is stored in the outbox
 // (`outbox_events`) in the same transaction as the order and the emptied cart.
 // The `Restrict` relations only guard against physical deletes, since
 // customers and products are soft-deleted.
@@ -63,6 +67,10 @@ model Order {
   deliveryFeeCents     Int         @map("delivery_fee_cents")
   totalCents           Int         @map("total_cents")
   placedAt             DateTime    @map("placed_at")
+  paymentApprovedAt    DateTime?   @map("payment_approved_at")
+  pickingStartedAt     DateTime?   @map("picking_started_at")
+  outForDeliveryAt     DateTime?   @map("out_for_delivery_at")
+  deliveredAt          DateTime?   @map("delivered_at")
   createdAt            DateTime    @default(now()) @map("created_at")
   updatedAt            DateTime    @updatedAt @map("updated_at")
   deletedAt            DateTime?   @map("deleted_at")
@@ -70,6 +78,7 @@ model Order {
   items                OrderItem[]
 
   @@index([customerId, placedAt])
+  @@index([status, placedAt])
   @@map("orders")
 }
 

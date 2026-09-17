@@ -2,6 +2,7 @@ import type { ErrorMessages } from './messages.pt';
 
 export const errorMessagesEn: ErrorMessages = {
   ADMIN_PERMISSION_REQUIRED: 'Only administrators can perform this action.',
+  ADMIN_REQUIRED: 'You must be an administrator to perform this action.',
   ACCOUNT_NOT_FOUND: 'Account not found.',
   AUTH_ADMIN_REQUIRED: 'You must be an administrator to perform this action.',
   AUTH_FIND_ALL_USERS_ERROR: 'Unable to load the users list right now.',
@@ -117,6 +118,7 @@ export const errorMessagesEn: ErrorMessages = {
   ORDER_NOT_FOUND: 'Order not found.',
   ORDER_PRODUCT_NOT_FOUND: 'A product in the cart is no longer available.',
   ORDER_STATUS_INVALID: 'Invalid order status.',
+  ORDER_STATUS_TRANSITION_INVALID: 'Could not update the order status.',
   PARENT_CATEGORY_NOT_FOUND: 'Parent category not found.',
   PASSWORD_INVALID_FORMAT: 'Invalid password format.',
   PASSWORD_MISMATCH: 'Incorrect username or password.',

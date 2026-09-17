@@ -8,8 +8,12 @@ import { ApiError, apiRequest } from '@/shared/util/api-client.util';
  * sobre `apiRequest`, que lançam `ApiError` em resposta com erro.
  */
 
-/** Status do pedido (`ORDER_STATUSES`); nesta versão só existe `PLACED` ("Pedido recebido"). */
-export type OrderStatus = 'PLACED';
+/**
+ * Status do pedido (`ORDER_STATUSES`), na sequência em que o pedido avança, um
+ * passo por vez: recebido, pagamento aprovado, separando na loja, a caminho e
+ * entregue. Rótulos, badges e passos em `order-status.util.ts`.
+ */
+export type OrderStatus = 'PLACED' | 'PAYMENT_APPROVED' | 'PICKING' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
 
 /** Item do pedido (`OrderItemDTO`), congelado na confirmação. */
 export type OrderItem = {
@@ -55,7 +59,25 @@ export type OrderDetail = {
   /** 0 quando a entrega é grátis. */
   deliveryFeeCents: number;
   totalCents: number;
+  /** Data de cada passo: `placedAt` sempre; as demais `null` enquanto o pedido não chegou ao status. */
   placedAt: string;
+  paymentApprovedAt: string | null;
+  pickingStartedAt: string | null;
+  outForDeliveryAt: string | null;
+  deliveredAt: string | null;
+};
+
+/**
+ * `data` do evento `order` de `GET /me/orders/:id/stream`: só avisa que um evento
+ * do pedido foi publicado, sem dados do pedido. O estado é relido por `getMyOrder`.
+ */
+export type OrderStreamNotice = {
+  orderId: string;
+  /** Tipo do evento (ex.: `order.payment-approved`). */
+  eventType: string;
+  messageId: string;
+  /** ISO 8601. */
+  occurredAt: string;
 };
 
 /**
@@ -71,6 +93,16 @@ const MY_ORDERS_PATH = '/me/orders';
 
 function myOrderPath(orderId: string): string {
   return `${MY_ORDERS_PATH}/${encodeURIComponent(orderId)}`;
+}
+
+/**
+ * Caminho do stream de avisos do pedido (`/me/orders/<id codificado>/stream`),
+ * para `openEventStream`, que envia o token no cabeçalho e nunca na URL. A API
+ * confere o dono antes de abrir: `401` sem sessão e `404` para pedido inexistente
+ * ou de outro usuário.
+ */
+export function myOrderStreamPath(orderId: string): string {
+  return `${myOrderPath(orderId)}/stream`;
 }
 
 /**

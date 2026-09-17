@@ -29,11 +29,18 @@ describe('diffEnv', () => {
 });
 
 describe('parseDatabaseUrl', () => {
-  it('extrai host e porta com padrão 5432 e reconhece hosts remotos', () => {
-    assert.deepEqual(parseDatabaseUrl('postgresql://u:p@localhost/db'), { host: 'localhost', port: 5432, isLocal: true });
-    assert.deepEqual(parseDatabaseUrl('postgresql://jaja:jaja@localhost:5433/jaja?schema=public'), { host: 'localhost', port: 5433, isLocal: true });
-    assert.deepEqual(parseDatabaseUrl('postgresql://u:p@ep-1.aws.neon.tech:5432/db?sslmode=require'), { host: 'ep-1.aws.neon.tech', port: 5432, isLocal: false });
+  it('extrai host, porta (padrão 5432), usuário e banco, e reconhece hosts remotos', () => {
+    assert.deepEqual(parseDatabaseUrl('postgresql://u:p@localhost/db'), { host: 'localhost', port: 5432, isLocal: true, user: 'u', database: 'db' });
+    assert.deepEqual(parseDatabaseUrl('postgresql://jaja:jaja@localhost:5433/jaja?schema=public'), { host: 'localhost', port: 5433, isLocal: true, user: 'jaja', database: 'jaja' });
+    assert.deepEqual(parseDatabaseUrl('postgresql://u:p@ep-1.aws.neon.tech:5432/db?sslmode=require'), { host: 'ep-1.aws.neon.tech', port: 5432, isLocal: false, user: 'u', database: 'db' });
     assert.equal(parseDatabaseUrl('nada'), null);
+  });
+
+  it('decodifica usuário e banco e nunca devolve a senha', () => {
+    const target = parseDatabaseUrl('postgresql://dev%40jaja:s3nh4@localhost:5433/loja%2Ddemo');
+    assert.deepEqual(target, { host: 'localhost', port: 5433, isLocal: true, user: 'dev@jaja', database: 'loja-demo' });
+    assert.equal(JSON.stringify(target).includes('s3nh4'), false);
+    assert.deepEqual(parseDatabaseUrl('postgresql://localhost:5433'), { host: 'localhost', port: 5433, isLocal: true, user: '', database: '' });
   });
 });
 

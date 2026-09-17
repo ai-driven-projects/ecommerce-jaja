@@ -1,0 +1,301 @@
+# Testes de integração da administração de pedidos (VS Code Rest Client)
+# Pré-requisitos: Postgres e RabbitMQ do docker-compose.yml no ar (npm run db:start e
+# npm run broker:start), migrations aplicadas (npm run prisma:migrate:deploy), seeds
+# `auth`, `customers` e `catalog` aplicados (npm run prisma:seed -- --only=auth,customers,catalog)
+# e backend rodando em http://localhost:4000 (npm run dev --workspace=@jaja/backend), com o
+# relay do outbox ligado (OUTBOX_RELAY_ENABLED="true"), os consumidores ligados
+# (EVENT_CONSUMERS_ENABLED="true"), o feed ao vivo ligado (LIVE_EVENTS_ENABLED="true") e a
+# simulação do pedido ligada com fator 1 (ORDER_SIMULATION_ENABLED="true",
+# ORDER_SIMULATION_DELAY_FACTOR="1"): o pedido do passo 12 chega a DELIVERED em cerca de 20 s.
+#
+# Ordem: executar de cima para baixo. Os passos 1 a 3 guardam os tokens; o passo 4 guarda o
+# resumo antes do pedido; os passos 8 a 11 montam o carrinho da cliente do seed com os dois
+# produtos disponíveis mais baratos (A com quantidade 2 e B com 1), como em
+# `order.integration.http`; o passo 12 confirma o pedido, e os passos seguintes usam o id dele.
+# Os passos marcados "logo depois" precisam rodar nos primeiros ~3 s depois do passo 12 (antes
+# de o pagamento ser aprovado); os marcados "depois da entrega", ~22 s depois.
+#
+# Stream administrativo: o Rest Client não mostra SSE. Abra, ANTES do passo 12, num terminal:
+#   curl -N -H "Authorization: Bearer <token do passo 2>" http://localhost:4000/orders/stream
+# Em cerca de 20 s chegam cinco eventos `order` do pedido, com data
+# { orderId, eventType, messageId, occurredAt } e eventType order.placed, order.payment-approved,
+# order.picking-started, order.out-for-delivery e order.delivered, sem nenhum dado do pedido, e
+# um `ping` (data {}) a cada 20 s. Ctrl+C encerra.
+#
+# O arquivo cria um pedido real, que continua no banco. Para zerar os pedidos antes de uma
+# demonstração: npm run cli -- db:clear-orders --yes.
+
+@baseUrl = http://localhost:4000
+@adminEmail = usuario@formacao.dev
+@customerEmail = ana.pereira.carvalho@jaja.dev
+@seedPassword = #Senha123
+# uuid v4 válido que não corresponde a nenhum pedido.
+@missingId = 3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55
+@adminToken = {{loginAdmin.response.body.token}}
+@customerToken = {{loginCustomer.response.body.token}}
+@productA = {{cheapProducts.response.body.$.items[0].id}}
+@productB = {{cheapProducts.response.body.$.items[1].id}}
+@orderId = {{placeOrder.response.body.id}}
+
+# ---------------------------------------------------------------------------
+# Preparação
+# ---------------------------------------------------------------------------
+
+### 1. Login da cliente do seed (admin = false, com cadastro de cliente) -> 200 com token
+# @name loginCustomer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{customerEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 2. Login do administrador do seed -> 200 com token
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{seedPassword}}"
+}
+
+### 3. Fixture: os dois produtos disponíveis mais baratos (A e B) -> 200 com 2 itens
+# @name cheapProducts
+GET {{baseUrl}}/storefront/products?sort=price-asc&pageSize=2
+
+### 4. Resumo ANTES do pedido -> 200 com placedToday, inProgress, deliveredToday,
+### revenueTodayCents, averageTicketTodayCents (null sem pedidos hoje),
+### averageDeliveryMinutesToday (null sem entregas hoje) e latestInProgress (até 6, do mais
+### recente para o mais antigo). "Hoje" é o dia em America/Sao_Paulo. Anote os três contadores.
+# @name summaryBefore
+GET {{baseUrl}}/orders/summary
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Acesso: sem token -> 401; token de usuário comum -> 403 ADMIN_REQUIRED (sempre em JSON)
+# ---------------------------------------------------------------------------
+
+### 5.1. GET /orders sem token -> 401
+GET {{baseUrl}}/orders
+
+### 5.2. GET /orders/summary sem token -> 401
+GET {{baseUrl}}/orders/summary
+
+### 5.3. GET /orders/:id sem token -> 401
+GET {{baseUrl}}/orders/{{missingId}}
+
+### 5.4. GET /orders/:id/events sem token -> 401
+GET {{baseUrl}}/orders/{{missingId}}/events
+
+### 5.5. GET /orders/stream sem token -> 401 em JSON (Content-Type application/json), sem abrir o stream
+GET {{baseUrl}}/orders/stream
+
+### 6.1. GET /orders com o token da cliente -> 403 ADMIN_REQUIRED
+GET {{baseUrl}}/orders
+Authorization: Bearer {{customerToken}}
+
+### 6.2. GET /orders/summary com o token da cliente -> 403 ADMIN_REQUIRED
+GET {{baseUrl}}/orders/summary
+Authorization: Bearer {{customerToken}}
+
+### 6.3. GET /orders/:id com o token da cliente -> 403 ADMIN_REQUIRED
+GET {{baseUrl}}/orders/{{missingId}}
+Authorization: Bearer {{customerToken}}
+
+### 6.4. GET /orders/:id/events com o token da cliente -> 403 ADMIN_REQUIRED
+GET {{baseUrl}}/orders/{{missingId}}/events
+Authorization: Bearer {{customerToken}}
+
+### 6.5. GET /orders/stream com o token da cliente -> 403 ADMIN_REQUIRED em JSON, sem abrir o stream
+GET {{baseUrl}}/orders/stream
+Authorization: Bearer {{customerToken}}
+
+### 7. GET /orders/stream com o token do administrador -> 200 com Content-Type text/event-stream
+### (a requisição fica aberta; use o curl -N do cabeçalho para ver os avisos). `stream` e
+### `summary` nunca caem em `:id`.
+GET {{baseUrl}}/orders/stream
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Fluxo: a cliente confirma um pedido
+# ---------------------------------------------------------------------------
+
+### 8. Esvaziar o carrinho da cliente -> 200 com o carrinho vazio
+DELETE {{baseUrl}}/me/cart
+Authorization: Bearer {{customerToken}}
+
+### 9. Incluir A -> 200 com A (1)
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productA}}"
+}
+
+### 10. A com quantity 2 -> 200 com A (2)
+PUT {{baseUrl}}/me/cart/items/{{productA}}
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+### 11. Incluir B -> 200 com A (2) e B (1)
+POST {{baseUrl}}/me/cart/items
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productB}}"
+}
+
+### 12. Confirmar o pedido -> 201 com status "PLACED" e itemCount 3 (o carrinho é esvaziado)
+# @name placeOrder
+POST {{baseUrl}}/me/orders
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+
+{
+  "recipientName": "Ana na portaria"
+}
+
+# ---------------------------------------------------------------------------
+# Eventos logo depois da confirmação
+# ---------------------------------------------------------------------------
+
+### 13. Logo depois (1 a 3 s após o passo 12): GET /orders/:id/events -> 200 com um único evento
+### `order.placed`, causationId e correlationId null, outbox { status "PUBLISHED", attempts 0,
+### publishedAt preenchido, lastError null } e consumers com um item: `payment.approve-order`,
+### delayMs 3000, registered true, processedAt null, state "waiting" e expectedAt = publishedAt +
+### 3 s. Se rodar antes de o relay publicar (< 1 s), o evento está "PENDING" e o consumidor em
+### "event-pending" com expectedAt null.
+GET {{baseUrl}}/orders/{{orderId}}/events
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Lista
+# ---------------------------------------------------------------------------
+
+### 14. GET /orders -> 200 { items, total, page 1, pageSize 20, totalPages }; o primeiro item é o
+### pedido do passo 12, com customerName "Ana Pereira Carvalho", deliveryNeighborhood e
+### deliveryCity do endereço da cliente, itemCount 3, totalCents igual ao do passo 12, placedAt e
+### statusChangedAt (a data do passo mais recente, ou placedAt)
+GET {{baseUrl}}/orders
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Filtros e busca
+# ---------------------------------------------------------------------------
+
+### 15. status=IN_PROGRESS (enquanto o pedido anda) -> 200 com o pedido do passo 12 e só pedidos
+### com status diferente de "DELIVERED"
+GET {{baseUrl}}/orders?status=IN_PROGRESS
+Authorization: Bearer {{adminToken}}
+
+### 16. Busca pelo id completo do pedido (o número é o começo do id sem hífens) -> 200 só com o
+### pedido do passo 12
+GET {{baseUrl}}/orders?search={{placeOrder.response.body.id}}
+Authorization: Bearer {{adminToken}}
+
+### 16.1. Busca pelo número do pedido: os 8 primeiros caracteres do id do passo 12, em minúsculas
+### (ex.: 0cfd7dab para o pedido #0CFD7DAB), informados ao enviar -> 200 com o pedido (maiúsculas
+### também funcionam)
+# @prompt orderNumber Os 8 primeiros caracteres do id do passo 12, em minúsculas
+GET {{baseUrl}}/orders?search={{orderNumber}}
+Authorization: Bearer {{adminToken}}
+
+### 17. Busca por parte do nome da cliente, sem acentos nem maiúsculas -> 200 com os pedidos de
+### "Ana Pereira Carvalho" (o do passo 12 entre eles)
+GET {{baseUrl}}/orders?search=ana%20pereira
+Authorization: Bearer {{adminToken}}
+
+### 18. Busca com acento e maiúsculas -> 200 com os mesmos pedidos do passo 17
+GET {{baseUrl}}/orders?search=PEREIR%20carv%C3%A1lho
+Authorization: Bearer {{adminToken}}
+
+### 19. Busca sem resultado -> 200 com items [], total 0 e totalPages 0
+GET {{baseUrl}}/orders?search=zzzz
+Authorization: Bearer {{adminToken}}
+
+### 20. status=XYZ e pageSize=0 -> 200: o status é ignorado (mesmo total do passo 14) e pageSize 20
+GET {{baseUrl}}/orders?status=XYZ&pageSize=0
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Paginação
+# ---------------------------------------------------------------------------
+
+### 21. pageSize=1&page=2 -> 200 com um item (o segundo pedido mais recente), page 2, pageSize 1 e
+### totalPages = total (com pelo menos 2 pedidos no banco)
+GET {{baseUrl}}/orders?pageSize=1&page=2
+Authorization: Bearer {{adminToken}}
+
+### 22. Página além da última -> 200 com items [] e o mesmo total
+GET {{baseUrl}}/orders?page=999
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Detalhe
+# ---------------------------------------------------------------------------
+
+### 23. GET /orders/:id -> 200 com o pedido do passo 12: customer { id, name "Ana Pereira Carvalho",
+### email "ana.pereira.carvalho@jaja.dev", phone só com dígitos }, itens A (2) e B (1) nessa
+### ordem, endereço, recipientName, totais, status, placedAt, as datas dos passos (null enquanto
+### não alcançados) e updatedAt
+GET {{baseUrl}}/orders/{{orderId}}
+Authorization: Bearer {{adminToken}}
+
+### 24. Id malformado -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/orders/nao-e-uuid
+Authorization: Bearer {{adminToken}}
+
+### 25. uuid inexistente -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/orders/{{missingId}}
+Authorization: Bearer {{adminToken}}
+
+### 26. Eventos de uuid inexistente -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/orders/{{missingId}}/events
+Authorization: Bearer {{adminToken}}
+
+### 27. Eventos de id malformado -> 404 ORDER_NOT_FOUND
+GET {{baseUrl}}/orders/nao-e-uuid/events
+Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Depois da entrega (~22 s depois do passo 12)
+# ---------------------------------------------------------------------------
+
+### 28. GET /orders/:id -> 200 com status "DELIVERED" e placedAt, paymentApprovedAt,
+### pickingStartedAt, outForDeliveryAt e deliveredAt preenchidas, em ordem crescente, e
+### updatedAt = deliveredAt
+GET {{baseUrl}}/orders/{{orderId}}
+Authorization: Bearer {{adminToken}}
+
+### 29. GET /orders/:id/events -> 200 com cinco eventos em ordem: order.placed,
+### order.payment-approved, order.picking-started, order.out-for-delivery e order.delivered, todos
+### "PUBLISHED". Os quatro últimos têm correlationId = id do order.placed e causationId = id do
+### evento anterior. Consumidores "processed", com processedAt: payment.approve-order
+### (order.placed), store.start-picking (order.payment-approved), delivery.dispatch-order
+### (order.picking-started) e delivery.complete-order (order.out-for-delivery); order.delivered sem
+### consumidores.
+GET {{baseUrl}}/orders/{{orderId}}/events
+Authorization: Bearer {{adminToken}}
+
+### 30. status=DELIVERED -> 200 com o pedido do passo 12 (statusChangedAt = deliveredAt)
+GET {{baseUrl}}/orders?status=DELIVERED
+Authorization: Bearer {{adminToken}}
+
+### 31. status=IN_PROGRESS -> 200 sem o pedido do passo 12
+GET {{baseUrl}}/orders?status=IN_PROGRESS
+Authorization: Bearer {{adminToken}}
+
+### 32. Resumo DEPOIS da entrega -> 200 comparado ao passo 4: placedToday +1, deliveredToday +1,
+### inProgress igual (o pedido entrou e saiu), revenueTodayCents + totalCents do pedido,
+### averageDeliveryMinutesToday com uma casa decimal considerando o pedido e latestInProgress
+### sem ele. (Entre os passos 12 e 28, inProgress fica +1 e latestInProgress começa pelo pedido.)
+GET {{baseUrl}}/orders/summary
+Authorization: Bearer {{adminToken}}

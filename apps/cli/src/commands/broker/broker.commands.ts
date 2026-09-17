@@ -1,8 +1,21 @@
 import type { Command } from '../../core/command.js';
-import { isPortOpen } from '../../core/net.js';
+import { httpProbe, isPortOpen } from '../../core/net.js';
 import { menu } from '../../core/wizard.js';
 import { compose } from '../db/lib.js';
-import { brokerUrls, ensureBrokerUp, inspectBrokerService, readBackendEnv, readBrokerPorts } from './lib.js';
+import {
+  basicAuthHeader,
+  brokerUrls,
+  type ConsumerQueueRow,
+  DEFAULT_INSPECTION_QUEUE,
+  ensureBrokerUp,
+  inspectBrokerService,
+  type ManagementQueue,
+  managementQueuesUrl,
+  readBackendEnv,
+  readBrokerCredentials,
+  readBrokerPorts,
+  summarizeQueues,
+} from './lib.js';
 
 export const brokerStatus: Command = {
   id: 'broker:status',
@@ -95,12 +108,103 @@ export const brokerLogs: Command = {
   },
 };
 
+const QUEUE_COLUMNS: { label: string; value: (row: ConsumerQueueRow) => number }[] = [
+  { label: 'prontas', value: (row) => row.ready },
+  { label: 'em processamento', value: (row) => row.unacked },
+  { label: 'na espera', value: (row) => row.waiting },
+  { label: 'descartadas', value: (row) => row.dead },
+  { label: 'consumidores', value: (row) => row.consumers },
+];
+
+/** Linhas alinhadas da tabela por consumidor (cabeçalho + uma linha por consumidor). */
+function queuesTable(rows: ConsumerQueueRow[]): string[] {
+  const width = Math.max('consumidor'.length, ...rows.map((row) => row.consumer.length));
+  const header = ['consumidor'.padEnd(width), ...QUEUE_COLUMNS.map((column) => column.label)].join('  ');
+  const lines = rows.map((row) =>
+    [row.consumer.padEnd(width), ...QUEUE_COLUMNS.map((column) => String(column.value(row)).padStart(column.label.length))].join('  '),
+  );
+  return [header, ...lines];
+}
+
+export const brokerQueues: Command = {
+  id: 'broker:queues',
+  title: 'Filas do RabbitMQ',
+  description: 'Mostra, por consumidor, as mensagens prontas, em processamento, na espera e descartadas (API do painel)',
+  group: 'Mensageria',
+  keywords: ['filas', 'queues', 'dead', 'descarte'],
+  async run(ctx) {
+    const env = readBackendEnv(ctx);
+    const ports = readBrokerPorts(env);
+    const { management } = brokerUrls(ports);
+    const inspectionQueue = env.RABBITMQ_INSPECTION_QUEUE?.trim() || DEFAULT_INSPECTION_QUEUE;
+    // A credencial vai só no cabeçalho: a URL consultada (e qualquer erro do fetch) tem apenas host e porta.
+    const probe = await httpProbe(managementQueuesUrl(ports), {
+      timeoutMs: 5000,
+      signal: ctx.signal,
+      headers: { authorization: basicAuthHeader(readBrokerCredentials(env)), accept: 'application/json' },
+    });
+    if (ctx.signal.aborted) return { status: 'warn', summary: 'Interrompido' };
+
+    if (probe.status === null) {
+      ctx.report.warn(`O painel do RabbitMQ não respondeu em ${management}${probe.error ? ` (${probe.error})` : ''}.`);
+      ctx.report.detail('Suba o broker com `jaja broker:start`.');
+      return { status: 'warn', summary: `Painel do RabbitMQ sem resposta em ${management}` };
+    }
+    if (probe.status === 401 || probe.status === 403) {
+      ctx.report.warn(`O painel do RabbitMQ recusou a credencial de RABBITMQ_URL (HTTP ${probe.status}).`);
+      ctx.report.detail('Confira o usuário e a senha de RABBITMQ_URL no apps/backend/.env ou suba o broker local com `jaja broker:start`.');
+      return { status: 'warn', summary: 'Painel do RabbitMQ recusou a credencial' };
+    }
+    if (!probe.ok) {
+      ctx.report.warn(`O painel do RabbitMQ respondeu HTTP ${probe.status} em ${management}.`);
+      ctx.report.detail('O broker pode estar iniciando. Suba ou aguarde com `jaja broker:start`.');
+      return { status: 'warn', summary: `Painel do RabbitMQ respondeu HTTP ${probe.status}` };
+    }
+
+    let queues: ManagementQueue[];
+    try {
+      const parsed: unknown = JSON.parse(probe.body);
+      if (!Array.isArray(parsed)) throw new Error('resposta não é uma lista');
+      queues = parsed as ManagementQueue[];
+    } catch {
+      ctx.report.warn(`Resposta inesperada da API do painel em ${management}.`);
+      ctx.report.detail('Confira se RABBITMQ_MANAGEMENT_PORT aponta para o painel do RabbitMQ ou suba o broker com `jaja broker:start`.');
+      return { status: 'warn', summary: 'Resposta inesperada do painel do RabbitMQ' };
+    }
+
+    const summary = summarizeQueues(queues, inspectionQueue);
+    ctx.report.title('Filas por consumidor');
+    if (summary.rows.length === 0) {
+      ctx.report.info('Nenhuma fila de consumidor (jaja.<consumidor>) encontrada.');
+    } else {
+      for (const line of queuesTable(summary.rows)) ctx.report.info(line);
+      ctx.report.detail('na espera = fila .wait (nova tentativa ou espera inicial); descartadas = fila .dead');
+    }
+
+    ctx.report.title('Fila de inspeção');
+    if (summary.inspection) {
+      const { name, ready, unacked, consumers } = summary.inspection;
+      ctx.report.info(`${name}: ${ready} pronta(s), ${unacked} em processamento, ${consumers} consumidor(es)`);
+    } else {
+      ctx.report.info(`${inspectionQueue} não encontrada (é criada quando o backend publica o primeiro evento).`);
+    }
+
+    if (summary.deadLetters.length > 0) {
+      const messages = summary.deadLetters.map(({ queue, messages: total }) => `${total} mensagem(ns) descartada(s) em ${queue}`);
+      for (const message of messages) ctx.report.warn(message);
+      ctx.report.detail(`Inspecione pelo painel em ${management} (Queues → fila .dead → Get messages): cabeçalhos x-jaja-dead-reason e x-jaja-last-error.`);
+      return { status: 'warn', summary: messages.join('; ') };
+    }
+    return { status: 'ok', summary: `Filas ok: ${summary.rows.length} consumidor(es), nenhuma mensagem descartada` };
+  },
+};
+
 export const brokerMenu: Command = menu({
   id: 'broker',
   title: 'Mensageria local',
-  description: 'Status, subir, parar e logs do RabbitMQ local',
+  description: 'Status, subir, parar, logs e filas do RabbitMQ local',
   group: 'Ambiente local',
   icon: '🐇',
   keywords: ['rabbitmq', 'amqp', 'docker', 'broker', 'mensageria', 'eventos', 'fila'],
-  children: [brokerStatus, brokerStart, brokerStop, brokerLogs],
+  children: [brokerStatus, brokerStart, brokerStop, brokerLogs, brokerQueues],
 });

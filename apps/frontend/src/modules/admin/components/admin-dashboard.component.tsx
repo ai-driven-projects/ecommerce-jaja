@@ -1,8 +1,14 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
 import Link from 'next/link';
 import { useAuth } from '@/modules/auth/data/auth.context';
+import { LiveIndicator } from '@/modules/orders/components/live-indicator.component';
+import { OrderListTable } from '@/modules/orders/components/order-list-table.component';
+import type { OrdersSummary } from '@/modules/orders/data/admin-order.api';
+import { useOrdersLive } from '@/modules/orders/data/orders-live.context';
+import { useOrdersSummary } from '@/modules/orders/data/use-orders-summary.hook';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
@@ -11,18 +17,15 @@ import { CATALOG_ROUTE } from '@/shared/navigation/catalog-routes';
 import { ORDERS_ROUTE } from '@/shared/navigation/orders-routes';
 import { STOREFRONT_ROUTE } from '@/shared/navigation/storefront-routes';
 import { cn } from '@/shared/lib/class-name.util';
-import {
-  COURIERS_ONLINE,
-  DASHBOARD_KPIS,
-  DELIVERY_TARGET_MINUTES,
-  HOURLY_BARS,
-  LOW_STOCK_PRODUCTS,
-  ONGOING_ORDERS,
-} from '../data';
-import { OrderStatusBadge, CourierCell } from './order-status.component';
+import { formatPrice } from '@/shared/util/price.util';
+import { COURIERS_ONLINE, LOW_STOCK_PRODUCTS } from '../data';
 
 const CARD_CLASS = 'rounded-2xl border border-line bg-card px-[22px] py-5';
-const MAX_BAR_MINUTES = 45;
+
+/** Valor dos indicadores enquanto o resumo não chegou. */
+const LOADING_VALUE = '…';
+
+const decimal = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
 function firstNameOf(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] ?? fullName;
@@ -43,10 +46,13 @@ function useTodayLabel(): { greeting: string; date: string } | null {
   return { greeting: greetingFor(now.getHours()), date: date.charAt(0).toUpperCase() + date.slice(1) };
 }
 
-function CardTitleRow({ title, action }: { title: string; action?: { label: string; href: string } }) {
+function CardTitleRow({ title, aside, action }: { title: string; aside?: ReactNode; action?: { label: string; href: string } }) {
   return (
-    <div className="mb-3.5 flex items-center justify-between gap-3">
-      <h2 className="font-display text-[17px] font-extrabold">{title}</h2>
+    <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="font-display text-[17px] font-extrabold">{title}</h2>
+        {aside}
+      </div>
       {action ? (
         <Link href={action.href} className="text-[13px] font-bold text-brand transition-colors duration-150 hover:text-brand-link">
           {action.label} →
@@ -56,67 +62,72 @@ function CardTitleRow({ title, action }: { title: string; action?: { label: stri
   );
 }
 
-function OngoingOrdersCard() {
+/**
+ * "Tempo até a entrega" (média de hoje, com uma casa): "X min", "Y s" abaixo de
+ * 1 min, ou "—" sem entregas hoje.
+ */
+function formatAverageDelivery(minutes: number | null): string {
+  if (minutes === null) return '—';
+  if (minutes < 1) return `${Math.round(minutes * 60)} s`;
+  return `${decimal.format(minutes)} min`;
+}
+
+// Os quatro indicadores do dia, do resumo de pedidos (relido ao vivo).
+function SummaryKpis({ summary }: { summary: OrdersSummary | null }) {
+  const delivered = summary ? `${summary.deliveredToday} ${summary.deliveredToday === 1 ? 'entregue' : 'entregues'}` : LOADING_VALUE;
+
+  return (
+    <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+      <MetricCard
+        title="Pedidos hoje"
+        value={summary ? summary.placedToday : LOADING_VALUE}
+        subtitle={delivered}
+        deltaTone="success"
+        icon="📦"
+        iconTintClassName="bg-tint-peach"
+      />
+      <MetricCard
+        title="Em andamento"
+        value={summary ? summary.inProgress : LOADING_VALUE}
+        icon="🚴"
+        iconTintClassName="bg-tint-mint"
+      />
+      <MetricCard
+        title="Ticket médio hoje"
+        value={summary ? (summary.averageTicketTodayCents === null ? '—' : formatPrice(summary.averageTicketTodayCents)) : LOADING_VALUE}
+        icon="🧾"
+        iconTintClassName="bg-tint-blue"
+      />
+      <MetricCard
+        title="Tempo até a entrega"
+        value={summary ? formatAverageDelivery(summary.averageDeliveryMinutesToday) : LOADING_VALUE}
+        icon="⏱️"
+        iconTintClassName="bg-tint-green"
+      />
+    </div>
+  );
+}
+
+// Últimos pedidos em andamento (até 6), ao vivo; a linha leva ao painel do pedido.
+function OngoingOrdersCard({ summary }: { summary: OrdersSummary | null }) {
+  const { status } = useOrdersLive();
+
   return (
     <section className={CARD_CLASS}>
-      <CardTitleRow title="Pedidos em andamento" action={{ label: 'Ver todos', href: ORDERS_ROUTE }} />
-      <div className="overflow-x-auto">
-        <div className="grid min-w-[480px] grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-x-4 gap-y-2.5 text-[13.5px]">
-          {['Pedido', 'Destino', 'Entregador', 'Status', 'ETA'].map((label, index) => (
-            <span key={label} className={cn('text-xs font-extrabold uppercase tracking-[0.04em] text-muted-ink', index === 4 && 'text-right')}>
-              {label}
-            </span>
-          ))}
-          {ONGOING_ORDERS.map((order) => (
-            <OrderRowFragment key={order.id} order={order} />
+      <CardTitleRow title="Pedidos em andamento" aside={<LiveIndicator status={status} />} action={{ label: 'Ver todos', href: ORDERS_ROUTE }} />
+      {summary === null ? (
+        <div className="flex flex-col gap-2.5" aria-hidden="true">
+          {[0, 1, 2].map((index) => (
+            <div key={index} className="h-9 rounded-lg bg-surface" />
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function OrderRowFragment({ order }: { order: (typeof ONGOING_ORDERS)[number] }) {
-  return (
-    <>
-      <span className="font-extrabold">#{order.id}</span>
-      <span className="min-w-0 truncate">
-        {order.destination}
-        <span className="text-muted-ink"> · {order.itemsLabel}</span>
-      </span>
-      <CourierCell mode={order.mode} name={order.courier} />
-      <OrderStatusBadge status={order.status} />
-      <span className={cn('text-right font-extrabold', order.late ? 'text-danger' : 'text-ink')}>{order.etaLabel}</span>
-    </>
-  );
-}
-
-// No desktop o cartão estica até a altura de "Pedidos em andamento" e as barras
-// ocupam o espaço livre; abaixo disso mantém a altura fixa de 120px.
-function HourlyChartCard() {
-  return (
-    <section className={cn(CARD_CLASS, 'flex flex-col')}>
-      <h2 className="mb-1 font-display text-[17px] font-extrabold">Tempo médio por hora</h2>
-      <p className="mb-3.5 text-[12.5px] text-muted-ink">Meta: até {DELIVERY_TARGET_MINUTES} min por entrega</p>
-      <div
-        className="flex h-[120px] items-end gap-2 xl:h-auto xl:min-h-[120px] xl:flex-1"
-        role="img"
-        aria-label="Tempo médio de entrega por hora do dia"
-      >
-        {HOURLY_BARS.map((bar) => {
-          const overTarget = bar.minutes > DELIVERY_TARGET_MINUTES;
-          return (
-            <div key={bar.hour} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-              <span className={cn('text-[10.5px] font-extrabold', overTarget ? 'text-danger' : 'text-muted-ink')}>{bar.minutes}&#8242;</span>
-              <span
-                className={cn('w-full rounded-t-[7px] rounded-b-[3px]', overTarget ? 'bg-brand-light/70' : 'bg-brand')}
-                style={{ height: `${Math.round((bar.minutes / MAX_BAR_MINUTES) * 100)}%` }}
-              />
-              <span className="text-[10.5px] font-bold text-muted-ink">{bar.hour}</span>
-            </div>
-          );
-        })}
-      </div>
+      ) : summary.latestInProgress.length === 0 ? (
+        <p className="rounded-xl bg-surface px-4 py-6 text-center text-[13.5px] font-bold text-muted-ink">Nenhum pedido em andamento agora.</p>
+      ) : (
+        <div className="-mx-3">
+          <OrderListTable orders={summary.latestInProgress} />
+        </div>
+      )}
     </section>
   );
 }
@@ -147,10 +158,15 @@ function LowStockCard() {
   );
 }
 
-/** Dashboard da operação: saudação, KPIs, pedidos em andamento, tempo por hora e estoque baixo. */
+/**
+ * Dashboard da operação: saudação, os indicadores do dia e "Pedidos em
+ * andamento" (do resumo de pedidos da API, relido ao vivo pelo stream
+ * administrativo), entregadores online e "Estoque baixo" (dados locais de exemplo).
+ */
 export function AdminDashboardComponent() {
   const { user } = useAuth();
   const today = useTodayLabel();
+  const { summary } = useOrdersSummary();
 
   return (
     <div className="flex flex-col gap-[22px]">
@@ -175,24 +191,9 @@ export function AdminDashboardComponent() {
         </div>
       </div>
 
-      <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
-        {DASHBOARD_KPIS.map((kpi) => (
-          <MetricCard
-            key={kpi.id}
-            title={kpi.label}
-            value={kpi.value}
-            subtitle={kpi.delta}
-            deltaTone={kpi.deltaTone}
-            icon={kpi.icon}
-            iconTintClassName={kpi.tintClassName}
-          />
-        ))}
-      </div>
+      <SummaryKpis summary={summary} />
 
-      <div className="grid gap-3.5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <OngoingOrdersCard />
-        <HourlyChartCard />
-      </div>
+      <OngoingOrdersCard summary={summary} />
 
       <LowStockCard />
     </div>

@@ -47,16 +47,25 @@ function describeFetchError(error: unknown): string {
   if (error.name === 'TimeoutError') return 'tempo esgotado';
   if (error.name === 'AbortError') return 'cancelado';
   // O fetch do Node embrulha a causa real (ENOTFOUND, ECONNREFUSED...) em `cause`.
+  // Com `localhost` resolvendo para IPv4 e IPv6, a causa é um AggregateError sem mensagem: vale o código (ECONNREFUSED).
   const cause: unknown = (error as Error & { cause?: unknown }).cause;
-  return cause instanceof Error ? cause.message : error.message;
+  if (!(cause instanceof Error)) return error.message;
+  const code: unknown = (cause as Error & { code?: unknown }).code;
+  return cause.message || (typeof code === 'string' ? code : '') || error.message;
 }
 
-/** GET com tempo limite, para verificações de saúde. Nunca lança. */
-export async function httpProbe(url: string, options: { timeoutMs?: number; signal?: AbortSignal } = {}): Promise<HttpProbe> {
+/**
+ * Requisição HTTP com tempo limite (GET por padrão), para verificações de saúde e chamadas simples de API. Nunca lança.
+ * `headers` permite autenticar (ex.: `Authorization`) sem colocar credenciais na URL, que pode aparecer em mensagens de erro.
+ */
+export async function httpProbe(
+  url: string,
+  options: { timeoutMs?: number; signal?: AbortSignal; headers?: Record<string, string>; method?: string } = {},
+): Promise<HttpProbe> {
   const started = Date.now();
   const signals = [AbortSignal.timeout(options.timeoutMs ?? 15000), ...(options.signal ? [options.signal] : [])];
   try {
-    const response = await fetch(url, { signal: AbortSignal.any(signals), headers: { 'user-agent': 'jaja-cli' } });
+    const response = await fetch(url, { method: options.method ?? 'GET', signal: AbortSignal.any(signals), headers: { 'user-agent': 'jaja-cli', ...options.headers } });
     const body = await response.text();
     return { ok: response.ok, status: response.status, ms: Date.now() - started, body };
   } catch (error) {

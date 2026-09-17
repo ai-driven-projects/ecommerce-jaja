@@ -42,7 +42,7 @@ A introdução da proteção administrativa MUST NOT alterar o acesso aos endpoi
 - `GET /auth/me` continua exigindo apenas token válido, de qualquer usuário;
 - `GET /` continua acessível sem token.
 
-Os endpoints de lojas seguem `stores/store-registration` e `stores/address-geocoding`: `/stores` e `/geocoding` são administrativos. Os endpoints de clientes seguem `customers/customer-registration`: `/customers` é administrativo, e `/me/customer` exige apenas token válido, de qualquer usuário. Os endpoints do carrinho seguem `orders/cart`: `/me/cart` exige apenas token válido, de qualquer usuário, e `POST /cart/preview` é público. Os endpoints do pedido seguem `orders/order-placement`: `/me/orders` exige apenas token válido, de qualquer usuário. O endpoint de exemplo `GET /orders` deixa de existir.
+Os endpoints de lojas seguem `stores/store-registration` e `stores/address-geocoding`: `/stores` e `/geocoding` são administrativos. Os endpoints de clientes seguem `customers/customer-registration`: `/customers` é administrativo, e `/me/customer` exige apenas token válido, de qualquer usuário. Os endpoints do carrinho seguem `orders/cart`: `/me/cart` exige apenas token válido, de qualquer usuário, e `POST /cart/preview` é público. Os endpoints do pedido do próprio cliente seguem `orders/order-placement`: `/me/orders` exige apenas token válido, de qualquer usuário. Os endpoints da administração de pedidos seguem `orders/order-admin` e `orders/order-monitor`: `/orders` é administrativo.
 
 #### Scenario: Usuário comum no /auth/me
 - **WHEN** um usuário com `admin = false` chama `GET /auth/me` com seu token
@@ -90,4 +90,8 @@ Os endpoints de lojas seguem `stores/store-registration` e `stores/address-geoco
 
 #### Scenario: Exemplo de pedidos removido
 - **WHEN** um cliente sem token chama `GET /orders`
-- **THEN** o sistema responde `404`
+- **THEN** o sistema responde `401`, porque o endpoint de exemplo não existe mais e `/orders` passou a ser a lista administrativa de pedidos
+
+#### Scenario: Pedidos administrativos com token comum
+- **WHEN** um usuário com `admin = false` chama `GET /orders` com seu token
+- **THEN** o sistema responde `403` com `ADMIN_REQUIRED`

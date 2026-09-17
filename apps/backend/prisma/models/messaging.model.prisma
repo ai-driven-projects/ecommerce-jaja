@@ -27,3 +27,20 @@ model OutboxEvent {
   @@index([aggregateType, aggregateId])
   @@map("outbox_events")
 }
+
+// Internal table of the backend that guarantees each message is processed once
+// per consumer. The row is stored in the same transaction as the use case called
+// by the consumer, so a failure rolls the mark back together with the rest and
+// the message is tried again. The key is composite because the same event is
+// processed by several consumers (each one with its own row). The table grows
+// with use; the cleanup of old rows (by `processedAt`) comes later.
+model ProcessedMessage {
+  consumer    String
+  messageId   String   @map("message_id") @db.Uuid
+  messageType String   @map("message_type")
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@id([consumer, messageId])
+  @@index([processedAt])
+  @@map("processed_messages")
+}

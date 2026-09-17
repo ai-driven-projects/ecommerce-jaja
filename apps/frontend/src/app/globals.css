@@ -169,6 +169,10 @@
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  /* Destaque breve do passo do pedido recém-concluído: fundo verde claro que some. */
+  --animate-step-done: step-done 1.6s ease-out;
+  /* Destaque breve do que chegou ao vivo no admin (linha nova, status que mudou, evento novo): fundo pêssego que some. */
+  --animate-live-new: live-new 2.4s ease-out;
 
   @keyframes pulse-soft {
     0%,
@@ -177,6 +181,24 @@
     }
     50% {
       opacity: 0.45;
+    }
+  }
+
+  @keyframes step-done {
+    0% {
+      background-color: var(--success-soft);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+
+  @keyframes live-new {
+    0% {
+      background-color: var(--brand-soft);
+    }
+    100% {
+      background-color: transparent;
     }
   }
 }

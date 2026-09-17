@@ -1,12 +1,11 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MapPin, UserRound } from 'lucide-react';
 import { useAuth } from '@/modules/auth/data/auth.context';
 import { ProductArt } from '@/shared/components/store/product-art.component';
-import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
@@ -14,8 +13,11 @@ import { STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE } from '@/shared/navigation/st
 import { cn } from '@/shared/lib/class-name.util';
 import { formatPrice } from '@/shared/util/price.util';
 import type { OrderDetail } from '../data/order.api';
-import { formatOrderAddress, formatOrderNumber, formatOrderPlacedAt, formatOrderTime } from '../data/order.util';
-import { useMyOrder } from '../data/use-my-order.hook';
+import { isOrderFinished, ORDER_STEPS, orderStepState } from '../data/order-status.util';
+import { formatOrderAddress, formatOrderNumber, formatOrderPlacedAt, formatOrderTime, formatOrderTimeWithSeconds } from '../data/order.util';
+import { useMyOrder, type MyOrderLiveStatus } from '../data/use-my-order.hook';
+import { LiveIndicator } from './live-indicator.component';
+import { OrderStatusBadge } from './order-status-badge.component';
 
 const MAIN_CLASS = 'mx-auto w-full max-w-[1080px] px-4 pb-12 pt-[26px] sm:px-6';
 const CARD_CLASS = 'rounded-3xl border border-line bg-card px-5 py-5 sm:px-6';
@@ -27,27 +29,43 @@ const CARD_CLASS = 'rounded-3xl border border-line bg-card px-5 py-5 sm:px-6';
  */
 const ORDER_ITEM_ART_CATEGORY = '';
 
-/** Passos do pedido, na ordem. Com o status `PLACED`, só o primeiro está concluído. */
-const ORDER_STEPS = ['Pedido recebido', 'Pagamento aprovado', 'Separando na loja', 'A caminho', 'Entregue'] as const;
+type TimelineStepProps = {
+  title: string;
+  detail: string;
+  state: ReturnType<typeof orderStepState>;
+  /** Passo concluído com a página aberta: recebe o destaque breve (sem animação com `prefers-reduced-motion`). */
+  highlight: boolean;
+  isLast: boolean;
+};
 
-function TimelineStep({ title, detail, done, isLast }: { title: string; detail: string; done: boolean; isLast: boolean }) {
+// Passo do pedido: concluído (círculo verde com ✓ e a hora), atual (laranja, "Em andamento…") ou pendente (cinza, "Aguardando").
+function TimelineStep({ title, detail, state, highlight, isLast }: TimelineStepProps) {
+  const done = state === 'done';
+  const current = state === 'current';
+
   return (
-    <li className="flex gap-3.5">
+    <li className={cn('-mx-2 -mt-1 flex gap-3.5 rounded-xl px-2 pt-1', highlight && 'motion-safe:animate-step-done')}>
       <div className="flex flex-col items-center">
         <span
           className={cn(
             'flex size-[26px] shrink-0 items-center justify-center rounded-full border-2 text-xs font-extrabold text-white',
-            done ? 'border-success bg-success' : 'border-line bg-card',
+            done && 'border-success bg-success',
+            current && 'border-brand bg-brand-soft',
+            state === 'pending' && 'border-line bg-card',
           )}
           aria-hidden="true"
         >
           {done ? '✓' : null}
+          {current ? <span className="size-2 rounded-full bg-brand" /> : null}
         </span>
         {!isLast ? <span className={cn('min-h-[26px] w-0.5 flex-1', done ? 'bg-success' : 'bg-line')} aria-hidden="true" /> : null}
       </div>
       <div className="pb-[18px]">
-        <div className={cn('text-[14.5px] font-extrabold', done ? 'text-ink' : 'text-placeholder')}>{title}</div>
-        <div className="mt-0.5 text-[12.5px] text-muted-ink">{detail}</div>
+        <div className={cn('text-[14.5px] font-extrabold', state === 'pending' ? 'text-placeholder' : 'text-ink')}>
+          {done ? <span className="sr-only">Concluído: </span> : null}
+          {title}
+        </div>
+        <div className={cn('mt-0.5 text-[12.5px]', current ? 'font-bold text-brand' : 'text-muted-ink')}>{detail}</div>
       </div>
     </li>
   );
@@ -68,7 +86,7 @@ function TrackingSkeleton() {
               <div className="mb-5 h-5 w-40 rounded-md bg-surface" />
               <div className="flex flex-col gap-5">
                 {ORDER_STEPS.map((step) => (
-                  <div key={step} className="flex items-center gap-3.5">
+                  <div key={step.status} className="flex items-center gap-3.5">
                     <div className="size-[26px] shrink-0 rounded-full bg-surface" />
                     <div className="h-4 w-36 rounded-md bg-surface" />
                   </div>
@@ -118,19 +136,28 @@ function BackToStoreButton() {
   );
 }
 
-function OrderView({ order }: { order: OrderDetail }) {
+function OrderView({ order, live }: { order: OrderDetail; live: MyOrderLiveStatus }) {
   // Só é exibido depois da hidratação: horários no fuso do navegador, sem divergir do HTML do servidor.
   const minute = useClientMinute();
   const placedAtLabel = minute === null ? '…' : formatOrderPlacedAt(order.placedAt, new Date(minute));
-  const placedTime = minute === null ? '…' : formatOrderTime(order.placedAt);
+  const timeOf = (iso: string | null) => (minute === null || iso === null ? '…' : formatOrderTime(iso));
+  // Passos com segundos: o ciclo inteiro cabe em poucos segundos.
+  const stepTimeOf = (iso: string | null) => (minute === null || iso === null ? '…' : formatOrderTimeWithSeconds(iso));
+
+  // Status com que a página abriu: os passos concluídos depois dele mudaram com a
+  // página aberta e recebem o destaque breve (a animação roda uma vez, quando a
+  // classe entra).
+  const [openedStatus] = useState(order.status);
+  const openedIndex = ORDER_STEPS.findIndex((step) => step.status === openedStatus);
+  const finished = isOrderFinished(order);
 
   return (
     <main className={MAIN_CLASS}>
       <div className="mb-1.5 flex flex-wrap items-center gap-3">
         <h1 className="font-display text-[30px] font-extrabold tracking-[-0.8px]">Pedido #{formatOrderNumber(order.id)}</h1>
-        <Badge variant="success" className="px-3.5 py-1.5 text-[13px]">
-          Pedido recebido
-        </Badge>
+        <OrderStatusBadge status={order.status} className="px-3.5 py-1.5 text-[13px]" />
+        {/* Sem stream (`off`) ou com o stream encerrado (`closed`), o acompanhamento não mostra o indicador. */}
+        <LiveIndicator status={live} hideWhenOff />
       </div>
       <p className="text-sm text-muted-ink">{placedAtLabel}</p>
       <div className="mb-[22px] mt-2.5 flex flex-col gap-1.5 text-[13.5px] leading-[1.5]">
@@ -149,21 +176,28 @@ function OrderView({ order }: { order: OrderDetail }) {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <section className={CARD_CLASS}>
           <h2 className="mb-4 font-display text-[17px] font-extrabold">Status do pedido</h2>
-          <ol className="flex flex-col">
+          {/* `aria-live`: leitores de tela anunciam o avanço dos passos sem mover o foco. */}
+          <ol className="flex flex-col" aria-live="polite">
             {ORDER_STEPS.map((step, index) => {
-              // Nesta versão todo pedido está em `PLACED`: só "Pedido recebido" está concluído.
-              const done = index === 0;
+              const state = orderStepState(order, index);
+              const detail = state === 'done' ? stepTimeOf(order[step.dateKey]) : state === 'current' ? 'Em andamento…' : 'Aguardando';
               return (
                 <TimelineStep
-                  key={step}
-                  title={step}
-                  detail={done ? placedTime : 'Aguardando'}
-                  done={done}
+                  key={step.status}
+                  title={step.label}
+                  detail={detail}
+                  state={state}
+                  highlight={state === 'done' && index > openedIndex}
                   isLast={index === ORDER_STEPS.length - 1}
                 />
               );
             })}
           </ol>
+          {finished ? (
+            <p role="status" className="mt-1 rounded-xl bg-success-soft px-3.5 py-2.5 text-[13.5px] font-bold text-success-strong">
+              Pedido entregue às {timeOf(order.deliveredAt)}. Obrigado por comprar no já já!
+            </p>
+          ) : null}
         </section>
 
         <div className="flex flex-col gap-4 lg:sticky lg:top-5">
@@ -220,12 +254,19 @@ function OrderView({ order }: { order: OrderDetail }) {
 }
 
 /**
- * Acompanhamento do pedido real do cliente autenticado: cabeçalho com número,
- * badge, horário, endereço copiado e quem recebe; passos do pedido (só "Pedido
- * recebido" concluído); itens, totais gravados e instruções. Sem sessão, pede
- * para entrar e volta a esta rota; pedido inexistente ou de outra conta mostra
- * "Pedido não encontrado.". Mapa, entregador e previsão de chegada voltam com
- * o fluxo de entrega.
+ * Acompanhamento do pedido real do cliente autenticado, atualizado ao vivo:
+ * - cabeçalho com número, badge do status atual, indicador "Ao vivo" /
+ *   "Reconectando…", horário, endereço copiado e quem recebe;
+ * - passos derivados do status (`orderStepState`): concluídos com a hora do
+ *   passo (`HH:MM:SS`), o seguinte "Em andamento…" e os demais "Aguardando"; entregue mostra
+ *   "Pedido entregue às HH:MM. Obrigado por comprar no já já!";
+ * - itens, totais gravados e instruções.
+ *
+ * Enquanto o pedido não foi entregue, `useMyOrder` mantém o stream de avisos
+ * aberto e relê o pedido a cada aviso, então badge e passos avançam sem
+ * recarregar. Sem sessão, pede para entrar e volta a esta rota; pedido
+ * inexistente ou de outra conta mostra "Pedido não encontrado.". Mapa,
+ * entregador e previsão de chegada voltam com o fluxo de entrega.
  */
 export function OrderTracking({ orderId }: { orderId: string }) {
   // A sessão só é conhecida no cliente: até hidratar, o servidor e o cliente
@@ -233,7 +274,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const hydrated = useHydrated();
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
-  const { order, loading, notFound } = useMyOrder(orderId);
+  const { order, loading, notFound, live } = useMyOrder(orderId);
 
   if (!hydrated || loading) return <TrackingSkeleton />;
 
@@ -265,5 +306,5 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     );
   }
 
-  return <OrderView order={order} />;
+  return <OrderView order={order} live={live} />;
 }

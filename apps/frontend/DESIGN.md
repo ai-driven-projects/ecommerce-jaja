@@ -63,8 +63,10 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   o tom pastel da categoria raiz é só **reserva**: produto sem foto ou foto que
   não carrega (categoria sem ilustração própria usa 🛒 sobre `--tint-green`).
 - Transições só em hover/estado, ≤150ms. Cartão clicável: `-translate-y-0.5`
-  + `shadow-card`. A única animação contínua é o ponto verde pulsando
-  (`animate-pulse-soft`) em "entregadores online" / "a caminho".
+  + `shadow-card`. A única animação contínua é o pulso suave
+  (`animate-pulse-soft`): o ponto verde em "entregadores online" / "a caminho" /
+  "Ao vivo" e, no painel do pedido do admin, "Em andamento…" e os consumidores
+  aguardando; com `prefers-reduced-motion`, os de pedido não pulsam (`motion-safe:`).
 - Foco de teclado: `outline: 2px solid var(--brand); offset 2px` (global).
   Inputs trocam a borda para laranja no foco e não mostram outline.
 - Carregando: a estrutura da página com blocos creme estáticos
@@ -223,13 +225,31 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   pedido inexistente ou de outra conta, 🔎 "Pedido não encontrado." com "Voltar
   para a loja" em contorno.
 - `h1` "Pedido #3F1C9A52" (8 primeiros caracteres do id em maiúsculas) + badge
-  verde "Pedido recebido"; "Feito hoje às HH:MM" (ou "Feito em DD/MM/AAAA às
-  HH:MM") em cinza, só depois da hidratação; endereço copiado no pedido
-  (ícone de pino) e "Quem recebe".
+  com o nome do status atual ("Pedido recebido", "Pagamento aprovado" e "A
+  caminho" em verde; "Separando na loja" em amarelo; "Entregue" neutro) +
+  indicador ao vivo: bolinha verde pulsando com "Ao vivo" enquanto o stream está
+  aberto, "Reconectando…" em cinza enquanto abre ou reabre, e nada sem stream
+  (pedido entregue ou recusado); com `prefers-reduced-motion`, a bolinha não
+  pulsa. "Feito hoje às HH:MM" (ou "Feito em DD/MM/AAAA às HH:MM") em cinza, só
+  depois da hidratação; endereço copiado no pedido (ícone de pino) e "Quem
+  recebe".
 - Esquerda: cartão "Status do pedido" com os passos "Pedido recebido",
-  "Pagamento aprovado", "Separando na loja", "A caminho" e "Entregue". Só o
-  primeiro está concluído (círculo verde com ✓, linha verde e a hora do
-  pedido); os demais em cinza-claro com "Aguardando".
+  "Pagamento aprovado", "Separando na loja", "A caminho" e "Entregue", derivados
+  do status:
+  - concluídos até o status atual: círculo verde com ✓, linha verde e a hora
+    (`HH:MM:SS`, com segundos para mostrar a demora de cada serviço) do passo;
+  - o seguinte, enquanto não foi entregue: círculo laranja claro com miolo
+    laranja e "Em andamento…" em laranja;
+  - os demais em cinza-claro com "Aguardando".
+  A lista anuncia as mudanças a leitores de tela (`aria-live="polite"`). O passo
+  que se conclui com a página aberta recebe um destaque breve (fundo verde claro
+  que some, sem animação com `prefers-reduced-motion`). Entregue: todos
+  concluídos e, abaixo, o bloco verde claro "Pedido entregue às HH:MM.
+  Obrigado por comprar no já já!".
+- Ao vivo: enquanto o pedido não foi entregue, a página abre o stream de avisos
+  da API (token no cabeçalho, nunca na URL) e relê o pedido a cada aviso e a
+  cada reconexão, então badge e passos avançam sem recarregar. O stream fecha
+  na entrega.
 - Direita (fixa no desktop): cartão "Itens do pedido" com a foto (`ProductArt`
   `xs`; sem foto, a reserva padrão 🛒), nome em até 2 linhas, "× quantidade" e
   total da linha; régua tracejada, subtotal, entrega (**Grátis** em verde) e o
@@ -246,15 +266,63 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
 - Conteúdo sobre papel, padding 26/30: saudação "Bom dia, Paula 👋" em
   Bricolage 26 + data e status da operação; à direita a badge verde "14 entregadores online"
   e "Ver loja →" em contorno.
-- KPIs: cartões brancos (raio 18) com rótulo cinza, quadradinho pastel com
-  emoji, valor em Bricolage 28 e a variação (verde/cinza) abaixo.
-- "Pedidos em andamento": grade de 5 colunas com cabeçalho em caixa alta
-  pequena, entregador com 🚴/🚶, status em badge colorida e ETA (vermelho quando
-  atrasado). Ao lado: "Tempo médio por hora" (barras laranja, acima da meta em
-  laranja claro com o número em vermelho), que no desktop estica até a altura
-  da tabela.
-- "Estoque baixo": cartões com emoji, nome e barra de progresso
-  amarela (< 20% vermelha).
+- Ao vivo: o layout abre **uma** conexão com o stream administrativo de pedidos
+  por aba (token no cabeçalho, nunca na URL), compartilhada por menu, lista,
+  dashboard e painel; cada tela relê a API a cada aviso e a cada reconexão.
+  `LiveIndicator` (o mesmo do acompanhamento): bolinha verde pulsando com "Ao
+  vivo", cinza com "Reconectando…" enquanto abre ou reabre e vermelha com
+  "Desconectado" quando a API recusa o stream; sem pulso com
+  `prefers-reduced-motion`. O contador de "Pedidos" no menu são os pedidos em
+  andamento reais, oculto enquanto carrega e quando é 0.
+- Destaque ao vivo: o que chega com a tela aberta (linha nova, célula de status
+  que mudou, evento novo) recebe um fundo `--brand-soft` que some
+  (`animate-live-new`), só com `motion-safe:`.
+- KPIs do dia (resumo de pedidos da API, relido ao vivo): cartões brancos (raio
+  18) com rótulo cinza, quadradinho pastel com emoji e valor em Bricolage 28 —
+  "Pedidos hoje" (com "N entregues" em verde abaixo), "Em andamento", "Ticket
+  médio hoje" e "Tempo até a entrega" ("X min", "Y s" abaixo de 1 min); "—" sem
+  dados de hoje e "…" enquanto carrega.
+- "Pedidos em andamento" (largura toda): título com o `LiveIndicator` e "Ver
+  todos →"; a tabela dos últimos pedidos em andamento (Pedido, Cliente, Destino,
+  Status e Atualizado), com a linha levando ao painel; vazio: "Nenhum pedido em
+  andamento agora." num bloco creme. Sem "Tempo médio por hora".
+- Entregadores online (badge verde) e "Estoque baixo" (cartões com emoji, nome e
+  barra de progresso amarela, < 20% vermelha) continuam com dados de exemplo.
+- Lista de pedidos (`/admin/orders`): `PageSectionHeader` "Pedidos" com "N
+  pedido(s) · M em andamento" e o `LiveIndicator` à direita; busca em pílula
+  "Buscar por número ou cliente"; chips (Todos, Em andamento e os cinco status),
+  o ativo laranja sobre pêssego; página, status e busca na URL. Tabela em
+  `TableCard` (rola na horizontal dentro do cartão): Pedido (`#NÚMERO` em negrito,
+  link), Cliente, Destino ("bairro · cidade · N itens"), Status (badge do
+  status), Atualizado (`HH:MM:SS`) e Total. A linha inteira é clicável e leva ao
+  painel mantendo a query. Vazio: 📦 "Nenhum pedido ainda." ("Os pedidos feitos
+  na loja aparecem aqui na hora, sem recarregar."); com filtros: 🔎 "Nenhum
+  pedido encontrado." com "Limpar filtros"; carregando: linhas creme.
+- Painel do pedido (`/admin/orders/:id`, aba "Pedido #NÚMERO — Operação"):
+  "← Pedidos" em laranja; "Pedido #NÚMERO" em Bricolage 26 com a badge do status
+  e o `LiveIndicator`; "Feito às HH:MM:SS · há X" (relógio de 1 s, só depois da
+  hidratação) e, entregue, "Entregue em Y" em verde. Duas colunas a partir de
+  `xl` (1fr / 1.45fr), uma abaixo disso, com os cartões brancos (raio 18):
+  - "Progresso": os passos do acompanhamento, concluídos com `HH:MM:SS` e a
+    duração desde o anterior ("+3,2 s"), o atual "Em andamento…" pulsando em
+    laranja e os demais "Aguardando";
+  - "Cliente e entrega": pares rótulo/valor (cliente, e-mail, telefone
+    formatado, endereço copiado, quem recebe e instruções);
+  - "Itens": miniatura, nome, "× quantidade" e total da linha; subtotal, entrega
+    e total;
+  - "Eventos": "correlação `abcd1234` · N eventos" e a linha do tempo vertical
+    (régua de 2px com um ponto verde por evento publicado, âmbar pendente). Cada
+    evento é um cartão com borda `--line`: o `type` em mono, a hora
+    `HH:MM:SS.mmm`, "mensagem `abcd1234`", "causado por `abcd1234`" (link para o
+    cartão anterior), "Publicado às HH:MM:SS.mmm" em verde ou "Pendente" em âmbar
+    (tentativas e último erro em vermelho), os consumidores (nome em mono +
+    "Processado às HH:MM:SS" em verde; "Aguardando · espera de 3 s · em 2 s" e
+    depois "processando…" em âmbar pulsando; "Aguardando publicação" em cinza; a
+    badge "não registrado nesta instância") e o `<details>` "Payload e metadata"
+    com o JSON em mono sobre creme. Rodapé discreto: "Atualizado pelos eventos
+    que chegam do RabbitMQ. Falhas e descartes: painel do RabbitMQ ou `jaja
+    broker:queues`." Pedido inexistente: 🔎 "Pedido não encontrado." com "Voltar
+    para os pedidos".
 - Páginas de módulo: `PageSectionHeader` (título Bricolage 26 + subtítulo +
   ações), filtros em chips, tabelas dentro de `TableCard`. Módulos sem dados
   usam `EmptyDashboardState` (emoji + título + explicação).

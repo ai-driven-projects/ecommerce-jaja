@@ -10,6 +10,7 @@ import amqp from 'amqplib';
 import type { ChannelModel, ConfirmChannel, Options } from 'amqplib';
 import { errorMessage } from '../error-message.util.js';
 import { MessagingErrors } from '../messaging-errors.js';
+import { brokerAddress, redactCredentials } from './rabbitmq-url.util.js';
 
 export interface RabbitMqPublisherConfig {
   // Carries user and password: never logged nor copied into an error message.
@@ -186,47 +187,6 @@ export class RabbitMqMessagePublisher implements MessagePublisher, OnModuleInit,
 
   private describe(error: unknown): string {
     return redactCredentials(errorMessage(error), this.config.url);
-  }
-}
-
-function brokerAddress(url: string): string {
-  try {
-    const parsed = new URL(url);
-    const port = parsed.port || (parsed.protocol === 'amqps:' ? '5671' : '5672');
-    return `${parsed.hostname}:${port}`;
-  } catch {
-    return 'an invalid RABBITMQ_URL';
-  }
-}
-
-// Removes the URL and its credentials from third-party messages before they
-// reach a log or an error.
-function redactCredentials(text: string, url: string): string {
-  const secrets = new Set<string>([url]);
-  try {
-    const { username, password } = new URL(url);
-    for (const value of [password, username]) {
-      if (value) {
-        secrets.add(value);
-        secrets.add(safeDecode(value));
-      }
-    }
-  } catch {
-    // Unparseable URL: the whole URL and any `scheme://user:password@` are still removed.
-  }
-
-  let safe = text.replace(/([a-z][a-z\d+.-]*:\/\/)[^\s/@]*@/gi, '$1***@');
-  for (const secret of [...secrets].sort((a, b) => b.length - a.length)) {
-    safe = safe.split(secret).join('***');
-  }
-  return safe;
-}
-
-function safeDecode(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
   }
 }
 

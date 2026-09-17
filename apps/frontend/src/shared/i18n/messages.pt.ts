@@ -1,5 +1,6 @@
 export const errorMessagesPt = {
   ADMIN_PERMISSION_REQUIRED: 'Apenas administradores podem realizar esta ação.',
+  ADMIN_REQUIRED: 'Você precisa ser administrador para realizar esta ação.',
   ACCOUNT_NOT_FOUND: 'Conta não encontrada.',
   AUTH_ADMIN_REQUIRED: 'Você precisa ser administrador para realizar esta ação.',
   AUTH_FIND_ALL_USERS_ERROR: 'Não foi possível carregar a lista de usuários no momento.',
@@ -115,6 +116,7 @@ export const errorMessagesPt = {
   ORDER_NOT_FOUND: 'Pedido não encontrado.',
   ORDER_PRODUCT_NOT_FOUND: 'Um produto do carrinho não está mais disponível.',
   ORDER_STATUS_INVALID: 'Status do pedido inválido.',
+  ORDER_STATUS_TRANSITION_INVALID: 'Não foi possível atualizar o status do pedido.',
   PARENT_CATEGORY_NOT_FOUND: 'Categoria pai não encontrada.',
   PASSWORD_INVALID_FORMAT: 'Formato de senha inválido.',
   PASSWORD_MISMATCH: 'Usuário ou senha incorretos.',

@@ -79,4 +79,42 @@ describe('outbox event mapper', () => {
     expect(event.metadata).toEqual({});
     expect(event.occurredAt).toEqual(new Date('2026-09-14T12:30:00.000Z'));
   });
+
+  describe('inside a consumer', () => {
+    const CAUSATION = { causationId: 'message-a', correlationId: 'chain-1' };
+
+    it('keeps the metadata as it came without a causation', () => {
+      expect(toOutboxEventRow(EVENT).metadata).toEqual({ correlationId: 'abc-123' });
+      expect(toOutboxEventRow(EVENT, null).metadata).toEqual({ correlationId: 'abc-123' });
+    });
+
+    it('adds causationId and correlationId and keeps the other keys', () => {
+      const row = toOutboxEventRow({ ...EVENT, metadata: { source: 'orders' } }, CAUSATION);
+
+      expect(row.metadata).toEqual({
+        source: 'orders',
+        causationId: 'message-a',
+        correlationId: 'chain-1',
+      });
+    });
+
+    it('keeps the causationId and the correlationId already present in the event', () => {
+      const row = toOutboxEventRow(EVENT, CAUSATION);
+      expect(row.metadata).toEqual({ correlationId: 'abc-123', causationId: 'message-a' });
+
+      const own = toOutboxEventRow(
+        { ...EVENT, metadata: { causationId: 'own-cause', correlationId: 'own-chain' } },
+        CAUSATION,
+      );
+      expect(own.metadata).toEqual({ causationId: 'own-cause', correlationId: 'own-chain' });
+    });
+
+    it('does not change the metadata of the event', () => {
+      const metadata = { source: 'orders' };
+
+      toOutboxEventRow({ ...EVENT, metadata }, CAUSATION);
+
+      expect(metadata).toEqual({ source: 'orders' });
+    });
+  });
 });

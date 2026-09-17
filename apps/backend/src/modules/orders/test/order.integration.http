@@ -3,7 +3,9 @@
 # npm run broker:start), migrations aplicadas (npm run prisma:migrate:deploy), seeds
 # `auth`, `customers` e `catalog` aplicados (npm run prisma:seed -- --only=auth,customers,catalog)
 # e backend rodando em http://localhost:4000 (npm run dev --workspace=@jaja/backend), com o
-# relay do outbox ligado (OUTBOX_RELAY_ENABLED="true").
+# relay do outbox ligado (OUTBOX_RELAY_ENABLED="true") e a simulação do pedido ligada
+# (ORDER_SIMULATION_ENABLED="true", ORDER_SIMULATION_DELAY_FACTOR="1"): todo pedido criado
+# avança sozinho até DELIVERED em cerca de 20 s (passos 32.1 a 32.3).
 #
 # Ordem: executar de cima para baixo. O passo 1 registra um usuário novo (sem cadastro de
 # cliente) com email de sufixo de timestamp, para o arquivo poder ser executado de novo; os
@@ -121,6 +123,10 @@ Content-Type: application/json
 
 ### 11. GET /me/orders/:id sem token -> 401
 GET {{baseUrl}}/me/orders/{{missingId}}
+
+### 11.1. GET /me/orders/:id/stream sem token -> 401 em JSON (Content-Type application/json),
+### sem abrir o stream
+GET {{baseUrl}}/me/orders/{{missingId}}/stream
 
 # ---------------------------------------------------------------------------
 # Cliente: usuário sem cadastro de cliente
@@ -292,7 +298,8 @@ Authorization: Bearer {{customerToken}}
 ### com nome, unit, thumbUrl e unitPriceCents = priceCents do passo 27, lineTotalCents = preço *
 ### quantidade, itemCount 3, subtotalCents = soma das linhas, deliveryFeeCents 490, totalCents =
 ### subtotal + 490 (não 1), deliveryAddress = endereço do passo 7, recipientName
-### "Ana na portaria", as instruções enviadas, placedAt e nenhum campo de pagamento
+### "Ana na portaria", as instruções enviadas, placedAt, paymentApprovedAt, pickingStartedAt,
+### outForDeliveryAt e deliveredAt null e nenhum campo de pagamento
 # @name placeOrder
 POST {{baseUrl}}/me/orders
 Authorization: Bearer {{customerToken}}
@@ -312,7 +319,31 @@ Content-Type: application/json
 GET {{baseUrl}}/me/cart
 Authorization: Bearer {{customerToken}}
 
-### 32. GET /me/orders/:id do pedido do passo 30 -> 200 com o mesmo detalhe
+### 32. GET /me/orders/:id do pedido do passo 30 -> 200 com o mesmo detalhe (logo depois do
+### passo 30 ainda "PLACED"; se passaram mais de 3 s, o status já avançou, ver 32.1)
+GET {{baseUrl}}/me/orders/{{orderId}}
+Authorization: Bearer {{customerToken}}
+
+### 32.1. Acompanhar ao vivo: GET /me/orders/:id/stream -> 200 com Content-Type text/event-stream.
+### O Rest Client não mostra SSE (a requisição fica aberta sem exibir os eventos); use curl -N,
+### abrindo o stream logo depois do passo 30:
+###   curl -N -H "Authorization: Bearer <token do passo 3>" http://localhost:4000/me/orders/<id do passo 30>/stream
+### Em cerca de 20 s chegam eventos `order` com data { orderId, eventType, messageId, occurredAt }
+### e eventType order.payment-approved, order.picking-started, order.out-for-delivery e
+### order.delivered (e order.placed, se o stream abrir antes de o relay publicá-lo), sem nenhum
+### dado do pedido, e um `ping` (data {}) a cada 20 s. Ctrl+C encerra.
+GET {{baseUrl}}/me/orders/{{orderId}}/stream
+Authorization: Bearer {{customerToken}}
+
+### 32.2. Alguns segundos depois do passo 30 (ex.: 6 s): o status avançou -> 200 com status
+### "PAYMENT_APPROVED" ou "PICKING", placedAt, paymentApprovedAt (e pickingStartedAt em PICKING)
+### preenchidas, em ordem crescente, e as datas dos passos seguintes null
+GET {{baseUrl}}/me/orders/{{orderId}}
+Authorization: Bearer {{customerToken}}
+
+### 32.3. Cerca de 20 s depois do passo 30: pedido entregue -> 200 com status "DELIVERED" e
+### placedAt, paymentApprovedAt, pickingStartedAt, outForDeliveryAt e deliveredAt preenchidas,
+### em ordem crescente
 GET {{baseUrl}}/me/orders/{{orderId}}
 Authorization: Bearer {{customerToken}}
 
@@ -426,6 +457,11 @@ Content-Type: application/json
 
 ### 43. Pedido da cliente com o token de outro usuário -> 404 ORDER_NOT_FOUND
 GET {{baseUrl}}/me/orders/{{orderId}}
+Authorization: Bearer {{newUserToken}}
+
+### 43.1. Stream do pedido da cliente com o token de outro usuário -> 404 ORDER_NOT_FOUND em JSON
+### (Content-Type application/json), sem abrir o stream
+GET {{baseUrl}}/me/orders/{{orderId}}/stream
 Authorization: Bearer {{newUserToken}}
 
 ### 44. Id malformado -> 404 ORDER_NOT_FOUND

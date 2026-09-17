@@ -1,3 +1,10 @@
 export * from './messaging.module.js';
 export * from './messaging-errors.js';
 export * from './outbox/domain-event.prisma.js';
+export * from './consumer/event-consumer.registry.js';
+export * from './live/live-event-feed.js';
+export * from './monitoring/event-timeline.prisma.js';
+export * from './monitoring/event-timeline.builder.js';
+export type * from './monitoring/event-timeline.types.js';
+export type { TransactionalEventConsumer } from './consumer/event-consumer.js';
+export type { MessageCausation } from './consumer/message-causation.js';

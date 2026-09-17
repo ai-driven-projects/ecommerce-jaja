@@ -14,18 +14,39 @@ export const OrderErrors = {
   ORDER_ITEM_PRICE_INVALID: 'ORDER_ITEM_PRICE_INVALID',
   ORDER_DELIVERY_ADDRESS_INVALID: 'ORDER_DELIVERY_ADDRESS_INVALID',
   ORDER_STATUS_INVALID: 'ORDER_STATUS_INVALID',
+  ORDER_STATUS_TRANSITION_INVALID: 'ORDER_STATUS_TRANSITION_INVALID',
 } as const
 
 export type OrderErrorCode = (typeof OrderErrors)[keyof typeof OrderErrors]
 
 /**
- * Statuses an order can have. `PLACED` ("Pedido recebido") is the status of
- * every new order; the next deliveries append the others here. Stored as text,
- * so a new status needs no database type migration.
+ * Statuses an order can have, **in the order of the sequence**:
+ * `PLACED` ("Pedido recebido") → `PAYMENT_APPROVED` ("Pagamento aprovado") →
+ * `PICKING` ("Separando na loja") → `OUT_FOR_DELIVERY` ("A caminho") →
+ * `DELIVERED` ("Entregue").
+ *
+ * Every new order starts `PLACED`, and each status only advances to the next
+ * one (`Order.advanceTo`): staying, going back, skipping a step or advancing
+ * after `DELIVERED` fails with `ORDER_STATUS_TRANSITION_INVALID`. Stored as
+ * text, so a new status needs no database type migration.
  */
-export const ORDER_STATUSES = ['PLACED'] as const
+export const ORDER_STATUSES = [
+  'PLACED',
+  'PAYMENT_APPROVED',
+  'PICKING',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+] as const
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
+
+/**
+ * Position of the status in `ORDER_STATUSES` (`PLACED` is 0, `DELIVERED` is 4).
+ * Comparing positions tells whether an order has reached a status.
+ */
+export function orderStatusIndex(status: OrderStatus): number {
+  return ORDER_STATUSES.indexOf(status)
+}
 
 /** Maximum length of the recipient name, after trimming (minimum 2). */
 export const ORDER_RECIPIENT_NAME_MAX_LENGTH = 100

@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { MESSAGE_PUBLISHER } from '@mentoria-360/shared';
 import type { MessagePublisher } from '@mentoria-360/shared';
+import { readInteger } from '../config.util.js';
 import { errorMessage } from '../error-message.util.js';
 import { OutboxBatchResult, OutboxPrisma } from './outbox.prisma.js';
 import { publishInOrder } from './publish-in-order.js';
@@ -118,19 +119,4 @@ export class OutboxRelay implements OnApplicationBootstrap, OnModuleDestroy {
       return { published: 0, failed: 0 };
     }
   }
-}
-
-// A missing, non-integer or out-of-range value falls back to the default (it is
-// not clamped to the nearest limit).
-function readInteger(
-  value: string | undefined,
-  fallback: number,
-  min: number,
-  max: number,
-): number {
-  const text = value === undefined || value === null ? '' : String(value).trim();
-  if (!text) return fallback;
-
-  const parsed = Number(text);
-  return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
 }

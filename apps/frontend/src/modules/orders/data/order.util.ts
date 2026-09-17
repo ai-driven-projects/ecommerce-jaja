@@ -34,6 +34,16 @@ export function formatOrderTime(iso: string): string {
 }
 
 /**
+ * Hora `HH:MM:SS` de uma data ISO, no fuso do navegador, para os passos do
+ * pedido: o ciclo simulado leva segundos, e só com os segundos dá para ver a
+ * demora de cada serviço. Use só depois da hidratação.
+ */
+export function formatOrderTimeWithSeconds(iso: string): string {
+  const date = new Date(iso);
+  return `${formatOrderTime(iso)}:${pad(date.getSeconds())}`;
+}
+
+/**
  * "Feito hoje às HH:MM" quando o pedido é do mesmo dia de `now`, senão "Feito
  * em DD/MM/AAAA às HH:MM", no fuso do navegador. Depende do relógio: use só
  * depois da hidratação.

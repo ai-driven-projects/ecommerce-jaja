@@ -6,7 +6,8 @@ import { errorMessagesPt } from '@/shared/i18n/messages.pt';
  * para o usuário; a tela só precisa exibir `error.message` ou olhar `codes`.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+/** Origem da API (`NEXT_PUBLIC_API_URL`); os caminhos começam com `/`. */
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
 export type ApiErrorPayload = {
   statusCode?: number;

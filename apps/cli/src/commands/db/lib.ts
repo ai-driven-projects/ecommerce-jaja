@@ -22,7 +22,8 @@ export function readDatabaseTarget(ctx: CommandContext): DatabaseTarget {
   const url = readDatabaseUrl(ctx);
   if (!url) throw new Error('DATABASE_URL não definida em apps/backend/.env. Rode a etapa "Arquivos .env" do setup antes.');
   const target = parseDatabaseUrl(url);
-  if (!target) throw new Error(`DATABASE_URL inválida: ${url}`);
+  // A URL carrega a senha: a mensagem não a repete.
+  if (!target) throw new Error('DATABASE_URL inválida em apps/backend/.env.');
   return target;
 }
 
@@ -40,13 +41,16 @@ export async function detectCompose(ctx: CommandContext): Promise<ComposeCommand
   return null;
 }
 
-/** Executa `docker compose ... <args>` na pasta do backend, onde está o docker-compose.yml (e o .env com DB_PORT). */
-export async function compose(ctx: CommandContext, args: string[], quiet = false): Promise<ExecResult> {
+/**
+ * Executa `docker compose ... <args>` na pasta do backend, onde está o docker-compose.yml (e o .env com DB_PORT).
+ * `input` vai para o stdin do processo (ex.: SQL para `exec -T postgres psql`).
+ */
+export async function compose(ctx: CommandContext, args: string[], quiet = false, input?: string): Promise<ExecResult> {
   const backendDir = requireBackend(ctx);
   if (!isFile(path.join(backendDir, 'docker-compose.yml'))) throw new Error('apps/backend/docker-compose.yml não encontrado.');
   const engine = await detectCompose(ctx);
   if (!engine) throw new Error('Docker Compose não encontrado. Instale o Docker Desktop.');
-  return ctx.exec(engine.command, [...engine.baseArgs, '-f', 'docker-compose.yml', ...args], { cwd: backendDir, quiet });
+  return ctx.exec(engine.command, [...engine.baseArgs, '-f', 'docker-compose.yml', ...args], { cwd: backendDir, quiet, input });
 }
 
 /** Executa `npx prisma <args>` na pasta do backend. */
@@ -174,4 +178,56 @@ export function prismaCommand(spec: { id: string; title: string; description: st
       return result.ok ? { status: 'ok', summary: `prisma ${args[0]} concluído` } : { status: 'error', summary: `prisma ${args.join(' ')} falhou (código ${result.code})` };
     },
   };
+}
+
+/** Tipo de agregado dos eventos de pedido no outbox (`outbox_events.aggregate_type`). */
+export const ORDER_AGGREGATE_TYPE = 'Order';
+
+/**
+ * SQL de `db:clear-orders`: uma **única** instrução (atômica no Postgres) com CTEs que apagam, nesta ordem,
+ * as marcas de processamento (`processed_messages`) das mensagens de eventos de pedido, os eventos de pedido do
+ * outbox (`aggregate_type = 'Order'`) e todos os pedidos (os itens saem pela FK em cascata), e devolve as três
+ * contagens numa linha: pedidos, eventos e marcas. Clientes, carrinhos, catálogo, usuários e eventos de outros
+ * agregados não são tocados. Função pura.
+ */
+export function clearOrdersSql(): string {
+  return [
+    `WITH order_events AS (SELECT id FROM outbox_events WHERE aggregate_type = '${ORDER_AGGREGATE_TYPE}'),`,
+    '     deleted_marks AS (DELETE FROM processed_messages WHERE message_id IN (SELECT id FROM order_events) RETURNING 1),',
+    '     deleted_events AS (DELETE FROM outbox_events WHERE id IN (SELECT id FROM order_events) RETURNING 1),',
+    '     deleted_orders AS (DELETE FROM orders RETURNING 1)',
+    'SELECT (SELECT count(*) FROM deleted_orders), (SELECT count(*) FROM deleted_events), (SELECT count(*) FROM deleted_marks);',
+    '',
+  ].join('\n');
+}
+
+/** Quantidades apagadas por `db:clear-orders`. */
+export interface ClearOrdersCounts {
+  orders: number;
+  events: number;
+  marks: number;
+}
+
+/**
+ * Lê a saída de `psql -At` para `clearOrdersSql()`: uma linha `pedidos|eventos|marcas` (ex.: `3|15|12`).
+ * Qualquer outra saída devolve `null`. Função pura.
+ */
+export function parseClearOrdersOutput(stdout: string): ClearOrdersCounts | null {
+  const match = /^(\d+)\|(\d+)\|(\d+)$/.exec(stdout.trim());
+  if (!match) return null;
+  return { orders: Number(match[1]), events: Number(match[2]), marks: Number(match[3]) };
+}
+
+/** Prefixo das filas do projeto no RabbitMQ. */
+const PROJECT_QUEUE_PREFIX = 'jaja.';
+
+/** Filas transitórias de avisos ao vivo de cada instância do backend (`jaja.live.*`). */
+const LIVE_QUEUE_PREFIX = 'jaja.live.';
+
+/**
+ * Filas que `db:clear-orders` esvazia: as do projeto (`jaja.*`: consumidores, `.wait`, `.dead` e a fila de inspeção),
+ * exceto as `jaja.live.*`, que pertencem às instâncias do backend em execução. Mantém a ordem recebida. Função pura.
+ */
+export function queuesToPurge(names: string[]): string[] {
+  return names.filter((name) => name.startsWith(PROJECT_QUEUE_PREFIX) && !name.startsWith(LIVE_QUEUE_PREFIX));
 }

@@ -35,8 +35,8 @@ para uso inválido.
 | --------- | --------------------- | ------- | --------------------------------------------------------------------- |
 | `doctor`  | 🔎 Doctor             | ação    | Verifica Node, npm, git, Docker, gh, dependências, submódulos, `.env`, banco, RabbitMQ e Prisma Client |
 | `setup`   | 🧰 Setup              | wizard  | .env, Docker, submódulos, dependências, banco, RabbitMQ, Prisma Client, build, reset*, migrations, seed |
-| `db`      | 🐘 Banco de dados     | menu    | `db:status`, `db:start`, `db:stop`, `db:logs`, `db:generate`, `db:migrate`, `db:seed`, `db:reset`, `db:studio` |
-| `broker`  | 🐇 Mensageria local   | menu    | `broker:status`, `broker:start`, `broker:stop`, `broker:logs` (RabbitMQ do `docker-compose.yml`) |
+| `db`      | 🐘 Banco de dados     | menu    | `db:status`, `db:start`, `db:stop`, `db:logs`, `db:generate`, `db:migrate`, `db:seed`, `db:reset`, `db:clear-orders`, `db:studio` |
+| `broker`  | 🐇 Mensageria local   | menu    | `broker:status`, `broker:start`, `broker:stop`, `broker:logs`, `broker:queues` (RabbitMQ do `docker-compose.yml`) |
 | `scrape`  | 🕷️ Scraper da Kalunga | menu    | `scrape:products`, `scrape:seed`, `scrape:categories`, `scrape:status` |
 | `quality` | 🧪 Qualidade          | wizard  | lint, tipos, testes e build                                           |
 | `clean`   | 🧹 Limpeza            | wizard  | builds, caches, node_modules, lockfile e volumes locais (banco e RabbitMQ) |
@@ -79,10 +79,37 @@ erro). O menu `db` expõe cada ação do banco separadamente (`db:start` sobe o 
 `db:migrate` e `db:seed` garantem o banco antes). `db:stop` para só o PostgreSQL
 (`docker compose stop postgres`), sem derrubar o RabbitMQ.
 
+### Limpar pedidos (`db:clear-orders`)
+
+Zera os pedidos antes de uma demonstração, sem mexer no resto dos dados:
+
+```bash
+npm run cli -- db:clear-orders --dry-run   # mostra a SQL e as filas que seriam esvaziadas, sem apagar nada
+npm run cli -- db:clear-orders --yes       # apaga sem perguntar
+```
+
+1. Pede confirmação ("Isso apaga TODOS os pedidos, os eventos deles e as mensagens nas filas. Continuar?"). Sem
+   `--yes` a resposta padrão é "não" (e sem terminal, também).
+2. Roda, com `docker compose exec -T postgres psql -U <usuário> -d <banco> -At -v ON_ERROR_STOP=1` (usuário e banco
+   da `DATABASE_URL`, nunca a senha), **uma única instrução SQL** com CTEs, atômica, que apaga as marcas de
+   processamento (`processed_messages`) das mensagens de eventos de pedido, os eventos `aggregate_type = 'Order'` do
+   outbox e todos os pedidos (os itens saem em cascata), devolvendo as três contagens. Clientes, carrinhos, catálogo,
+   usuários e eventos de outros agregados continuam iguais. Só funciona com o PostgreSQL local do Docker Compose; com
+   o serviço fora do ar termina com erro, sem apagar nada.
+3. Com o RabbitMQ no ar, esvazia pela API do painel (`DELETE /api/queues/%2F/<fila>/contents`, credencial da
+   `RABBITMQ_URL` só no cabeçalho, nunca exibida) as filas `jaja.*` — consumidores, `.wait`, `.dead` e a fila de
+   inspeção `jaja.events.all` —, exceto as `jaja.live.*` das instâncias do backend. Broker fora do ar termina com
+   aviso: os dados do banco já foram apagados, e basta rodar de novo com o broker no ar para esvaziar as filas.
+4. Resume: `N pedido(s), M evento(s) e K marca(s) apagados · Q fila(s) esvaziada(s)`.
+
+> **Rode com o backend parado ou sem pedidos em andamento.** Um consumidor que processa um pedido durante a limpeza
+> pode gravar um evento de um pedido já apagado; as mensagens restantes caem em `ORDER_NOT_FOUND` e vão para a
+> `.dead`, que o próprio comando esvazia se rodado de novo.
+
 ## Mensageria local
 
 O menu `broker` cuida só do serviço `rabbitmq` do `apps/backend/docker-compose.yml`, usado pelo backend
-para publicar os eventos de domínio. As portas vêm de `RABBITMQ_PORT` e `RABBITMQ_MANAGEMENT_PORT` do
+para publicar e consumir os eventos de domínio. As portas vêm de `RABBITMQ_PORT` e `RABBITMQ_MANAGEMENT_PORT` do
 `apps/backend/.env` (padrões 5672 e 15672). O CLI nunca exibe a `RABBITMQ_URL`, que carrega usuário e senha:
 os endereços aparecem só com host e porta.
 
@@ -92,6 +119,15 @@ os endereços aparecem só com host e porta.
 | `broker:start`  | Se a porta AMQP não responder, `docker compose up -d --wait rabbitmq` (espera o healthcheck; no `docker-compose` legado, `up -d` + espera da porta) |
 | `broker:stop`   | `docker compose stop rabbitmq` (o PostgreSQL continua rodando)                               |
 | `broker:logs`   | `docker compose logs --tail 100 -f rabbitmq` (Esc encerra)                                  |
+| `broker:queues` | Consulta `GET /api/queues/%2F` do painel com o usuário e a senha da `RABBITMQ_URL` (padrão `jaja`/`jaja`, só no cabeçalho `Authorization`, nunca exibidos) e mostra, por consumidor, mensagens prontas, em processamento, na espera e descartadas e os consumidores conectados, com a fila de inspeção `jaja.events.all` à parte. Painel sem resposta ou credencial recusada termina com aviso e a dica `jaja broker:start`; mensagens em alguma `.dead` terminam com o aviso `N mensagem(ns) descartada(s) em <fila>` |
+
+Cada consumidor do backend tem três filas duráveis, que `broker:queues` agrupa numa linha:
+
+- `jaja.<consumidor>`: ligada ao exchange `jaja.events` pelo tipo do evento; é de onde o backend consome;
+- `jaja.<consumidor>.wait`: fila de espera, sem consumidores. Recebe a mensagem que falhou (nova tentativa com espera
+  crescente) ou que aguarda a espera inicial do consumidor; ao expirar, ela volta direto para `jaja.<consumidor>`;
+- `jaja.<consumidor>.dead`: fila de descarte, sem consumidores. Guarda as mensagens que esgotaram as tentativas ou
+  que não são válidas (cabeçalho `x-jaja-dead-reason`), para inspeção e reprocessamento manual pelo painel.
 
 > A limpeza de volume (`clean`, etapa `db`: `docker compose down -v`) apaga os dados do PostgreSQL **e
 > também os do RabbitMQ** (filas e mensagens não consumidas). Os eventos pendentes ficam no outbox do
@@ -181,7 +217,7 @@ src/
     doctor/           checks.ts (verificações) + env.ts (parse de .env, DATABASE_URL, submódulos)
     setup/            setup.wizard.ts + lib.ts (env, submódulos, install, build) + docker.ts + git.ts
     db/               db.commands.ts + lib.ts (docker compose, prisma, validação de credenciais)
-    broker/           broker.commands.ts + lib.ts (portas e URLs sem senha, estado do serviço rabbitmq, ensureBrokerUp)
+    broker/           broker.commands.ts + lib.ts (portas e URLs sem senha, estado do serviço rabbitmq, ensureBrokerUp, credencial do painel e resumo das filas)
     quality/ clean/ deploy/ monitor/   placeholders
     scrape/           scraper da Kalunga (scrape.commands.ts + kalunga/{api,client,parse,sampler,store,types}.ts)
                       e conversão para o seed do backend (kalunga/seed/{brands,categories,products}.ts)
