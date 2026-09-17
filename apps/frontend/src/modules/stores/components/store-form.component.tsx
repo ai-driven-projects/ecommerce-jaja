@@ -109,7 +109,7 @@ export function StoreForm({ form, token, isEditing, onSubmit, cancelHref }: Stor
                   type="tel"
                   inputMode="tel"
                   autoComplete="off"
-                  placeholder="(85) 3000-1001"
+                  placeholder="(11) 3000-1001"
                   className="tabular-nums"
                   aria-invalid={errors.phone ? true : undefined}
                   disabled={isSubmitting}

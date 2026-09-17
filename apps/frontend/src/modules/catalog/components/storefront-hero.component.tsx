@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { BikeIcon } from '@/shared/components/branding/app-logo.component';
 
 type StorefrontHeroProps = {
-  neighborhood: string;
+  /** Nome da loja em vigor; `null` enquanto as lojas carregam. */
+  storeName: string | null;
   couriersOnline: number;
   /** Destino do botão "Pedir agora" (âncora da primeira seção). */
   ctaHref: string;
@@ -14,13 +15,13 @@ const LIVE_CARDS = [
 ] as const;
 
 /** Bloco escuro de abertura da vitrine: promessa, CTA e dois "pedidos ao vivo". */
-export function StorefrontHero({ neighborhood, couriersOnline, ctaHref }: StorefrontHeroProps) {
+export function StorefrontHero({ storeName, couriersOnline, ctaHref }: StorefrontHeroProps) {
   return (
     <section className="relative flex flex-wrap items-center gap-8 overflow-hidden rounded-4xl bg-dark px-6 py-8 sm:px-11 sm:py-10">
       <div className="min-w-[260px] flex-1">
         <span className="mb-4 inline-flex items-center gap-2 rounded-pill border border-white/20 bg-white/10 px-3.5 py-1.5 text-[13px] font-bold text-brand-pale">
           <BikeIcon className="size-[15px]" strokeWidth={2} />
-          De bike e a pé por {neighborhood}
+          {storeName ? `De bike e a pé, saindo da ${storeName}` : 'De bike e a pé até você'}
         </span>
         <h1 className="mb-3 font-display text-[32px] font-extrabold leading-[1.1] tracking-[-1px] text-white sm:text-[40px]">
           Acabou no escritório?

@@ -4,7 +4,7 @@ export function onlyDigits(value: string | null | undefined): string {
 }
 
 /**
- * Telefone com DDD: `(85) 99999-9999` com 11 dígitos e `(85) 9999-9999` com
+ * Telefone com DDD: `(11) 99999-9999` com 11 dígitos e `(11) 9999-9999` com
  * 10. Aceita texto parcial (máscara durante a digitação); acima de 11 dígitos
  * (a API aceita até 15) devolve só os dígitos, sem máscara. Vazio devolve `''`:
  * quem exibe decide o texto de ausência (ex.: "—").

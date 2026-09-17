@@ -5,6 +5,7 @@ import {
   CustomerDetailDTO,
   CustomerErrors,
   CustomerListItemDTO,
+  CustomerLocationDTO,
   CustomerRepository,
   FindCustomerByIdQuery,
   FindCustomerByUserIdQuery,
@@ -330,6 +331,7 @@ export class CustomerPrisma implements CustomerRepository {
         neighborhood: row.neighborhood,
         city: row.city,
         state: row.state,
+        location: this.toLocation(row),
       },
       isActive: row.isActive,
       createdAt: row.createdAt,
@@ -352,6 +354,9 @@ export class CustomerPrisma implements CustomerRepository {
       neighborhood: address.neighborhood,
       city: address.city,
       state: address.state,
+      // Both columns or none, as the `customers_location_both_or_none` constraint requires.
+      latitude: address.location?.latitude ?? null,
+      longitude: address.location?.longitude ?? null,
       isActive: customer.isActive,
       // Persisting the entity timestamps keeps the database equal to the returned DTO.
       createdAt: customer.createdAt,
@@ -375,10 +380,18 @@ export class CustomerPrisma implements CustomerRepository {
         neighborhood: row.neighborhood,
         city: row.city,
         state: row.state,
+        location: this.toLocation(row),
       },
       isActive: row.isActive,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
+  }
+
+  // The point of the address, or `null` when the customer has not marked one.
+  // The check constraint keeps both columns set or both null.
+  private toLocation(row: CustomerRow): CustomerLocationDTO | null {
+    if (row.latitude === null || row.longitude === null) return null;
+    return { latitude: row.latitude, longitude: row.longitude };
   }
 }

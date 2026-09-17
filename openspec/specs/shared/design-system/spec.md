@@ -3,9 +3,7 @@
 ## Purpose
 
 Define o visual único do frontend do Jaja: tokens, tipografia, regras globais e o comportamento visual dos componentes compartilhados de UI, do logo, do shell administrativo e dos componentes reutilizáveis da loja, conforme o design "já já." (modernista e flat, sem decoração).
-
 ## Requirements
-
 ### Requirement: Tokens visuais únicos
 O frontend SHALL usar um único conjunto de tokens visuais em toda a aplicação: papel `#ffffff` como fundo, superfície `#eae9e9` para áreas de imagem e campos, tinta `#201e1d` para texto e divisores, vermelho `#ec3013` como cor de destaque, cinza `#55524f` para texto secundário, `#d5d3cf` para linhas internas de tabela, `#B0ADA4` para estados de carregamento e `#b3260f` para texto pequeno em vermelho. Os tokens semânticos já consumidos pelos componentes (fundo, primeiro plano, primária, borda, anel de foco, destrutivo) MUST resolver para esses valores. O sistema MUST NOT oferecer tema escuro: a aplicação tem o mesmo visual independentemente da preferência de esquema de cores do navegador.
 
@@ -86,25 +84,6 @@ Campos de texto compartilhados SHALL ter fundo superfície, borda inferior de 2p
 #### Scenario: Aba ativa
 - **WHEN** uma aba está selecionada
 - **THEN** ela exibe sublinhado de 2px vermelho e as demais exibem sublinhado fino em tinta
-
-### Requirement: Cabeçalho da loja
-O cabeçalho reutilizável da loja SHALL exibir, da esquerda para a direita: o logo, um seletor de bairro sublinhado (sem borda além da inferior de 2px), o tempo estimado de entrega no formato "chega em X min" em mono com o número em vermelho, o controle de conta e o botão da sacola com ícone de sacola e contador numérico em mono com borda de 2px. O controle de conta MUST ser: com nome de usuário informado, o texto "olá, <primeiro nome>" em tinta atenuada e o botão de texto "sair" com hover vermelho; sem nome e com destino de login informado, o link de texto "entrar" sublinhado; sem nenhum dos dois, nada. O cabeçalho MUST ter borda inferior de 2px. Quando o tempo de entrega não estiver disponível, o texto de ETA MUST ser omitido.
-
-#### Scenario: Bairro atendido
-- **WHEN** o cabeçalho recebe bairro "Aldeota", ETA 18 minutos e 0 itens na sacola
-- **THEN** exibe o seletor com "Aldeota", o texto "chega em 18 min" com "18 min" em vermelho e o contador "0"
-
-#### Scenario: Bairro sem ETA
-- **WHEN** o cabeçalho recebe um bairro sem tempo de entrega
-- **THEN** o texto "chega em" não é exibido
-
-#### Scenario: Troca de bairro
-- **WHEN** o visitante escolhe outro bairro no seletor
-- **THEN** o cabeçalho notifica o bairro escolhido para a página que o contém
-
-#### Scenario: Controle de conta
-- **WHEN** o cabeçalho recebe o nome "Ana Souza" e uma ação de sair
-- **THEN** exibe "olá, Ana" e o botão "sair" antes da sacola; sem nome e com destino de login, exibe apenas o link "entrar"
 
 ### Requirement: Filtros de categoria
 Os filtros de categoria reutilizáveis SHALL ser botões de texto sublinhado, dispostos em linha com quebra à esquerda da barra, com borda inferior de 2px; o campo de busca, quando presente, fica à direita. O filtro ativo MUST ter sublinhado de 2px vermelho e peso 600; os demais MUST ter sublinhado de 1px em tinta e ficar vermelhos em hover.
@@ -271,3 +250,29 @@ O frontend SHALL conter o documento de design (`DESIGN.md`) com os tokens, tipog
 #### Scenario: Consulta do documento
 - **WHEN** um desenvolvedor abre as instruções do agente do frontend
 - **THEN** encontra a referência ao `DESIGN.md` e a instrução de que toda tela e componente compartilhado o segue
+
+### Requirement: Cabeçalho da loja com seletor de lojas
+O cabeçalho reutilizável da loja SHALL exibir, da esquerda para a direita: o logo, o seletor de lojas, o campo de busca, o controle de conta e o botão da sacola com ícone de sacola e contador numérico em mono com borda de 2px. O cabeçalho MUST ter borda inferior de 2px.
+
+O seletor de lojas MUST exibir a loja em vigor (nome e, quando disponível, a cidade/UF dela) e abrir a lista das lojas ativas, com a loja em vigor marcada como escolhida e as demais disponíveis para troca; escolher uma loja MUST notificar a escolha para a página que contém o cabeçalho. Com uma única loja ativa, o seletor MUST exibir a loja sem oferecer troca. O rótulo acessível do seletor MUST falar de loja.
+
+O cabeçalho MUST NOT exibir tempo estimado de entrega nem qualquer texto de cobertura: não há cálculo real de tempo nem verificação de área nesta versão.
+
+O controle de conta MUST ser: com nome de usuário informado, o menu da conta descrito em `auth/storefront-access`; sem nome e com destino de login informado, o botão "Entrar"; sem nenhum dos dois, nada.
+
+#### Scenario: Loja escolhida
+- **WHEN** o cabeçalho recebe as lojas ativas, a "Loja Paulista" como escolhida e 0 itens na sacola
+- **THEN** exibe o seletor com "Loja Paulista", sem nenhum texto de tempo de entrega, e o contador "0"
+
+#### Scenario: Troca de loja
+- **WHEN** o visitante escolhe outra loja no seletor
+- **THEN** o cabeçalho notifica a loja escolhida para a página que o contém
+
+#### Scenario: Uma única loja
+- **WHEN** o cabeçalho recebe uma só loja ativa
+- **THEN** exibe o nome dela sem oferecer troca
+
+#### Scenario: Controle de conta
+- **WHEN** o cabeçalho recebe o nome "Ana Souza" e uma ação de sair
+- **THEN** exibe o controle de conta com "Ana" antes da sacola; sem nome e com destino de login, exibe apenas o botão "Entrar"
+

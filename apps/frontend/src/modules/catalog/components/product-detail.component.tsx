@@ -88,9 +88,9 @@ function RelatedProducts({ product }: ProductDetailProps) {
  * Detalhe do produto do catálogo: trilha de categorias (e "← Voltar aos
  * resultados" quando a URL tem busca ou filtros), galeria, selos, marca, nome,
  * unidade, código, preço, quantidade (1 a 99) com "Adicionar" (inclui no
- * carrinho exibido, com o aviso "Ver carrinho", e fica indisponível em bairro
- * não atendido), "Você já tem N no carrinho.", cartão de entrega, descrição,
- * ficha e "Mais de <categoria>".
+ * carrinho exibido, com o aviso "Ver carrinho"), "Você já tem N no carrinho.",
+ * cartão de entrega, descrição, ficha e "Mais de <categoria>". A loja escolhida
+ * não bloqueia a inclusão: não há verificação de área nesta versão.
  */
 export function ProductDetail({ product }: ProductDetailProps) {
   const storefront = useStorefront();
@@ -115,7 +115,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
     setQuantity(1);
   };
 
-  const eta = storefront.etaMinutes;
+  const storeName = storefront.store?.name ?? null;
   const base = storefrontBaseParams(storefront.params);
   const rootSlug = product.categories[0]?.slug ?? '';
   const showBackToResults = Boolean(storefront.params.search) || hasCatalogFilters(storefront.params);
@@ -171,7 +171,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
       </div>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-        <ProductGallery key={product.slug} images={product.images} name={product.name} category={rootSlug} etaMinutes={eta} />
+        <ProductGallery key={product.slug} images={product.images} name={product.name} category={rootSlug} />
 
         <div className="min-w-0">
           {product.isFeatured || hasDiscount ? (
@@ -222,7 +222,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
               max={CART_ITEM_MAX_QUANTITY}
               itemName={product.name}
             />
-            <Button size="xl" onClick={handleAdd} disabled={!storefront.served || isAdding} className="min-w-[200px] flex-1">
+            <Button size="xl" onClick={handleAdd} disabled={isAdding} className="min-w-[200px] flex-1">
               {isAdding ? 'Adicionando…' : `Adicionar · ${formatPrice(product.priceCents * quantity)}`}
             </Button>
           </div>
@@ -236,11 +236,9 @@ export function ProductDetail({ product }: ProductDetailProps) {
             <div className="flex items-center gap-[11px]">
               <BikeIcon className="size-5 shrink-0 text-success" strokeWidth={2} />
               <div>
-                <strong className="text-sm">
-                  {eta !== null ? `Entrega de bike em ~${eta} min` : 'Ainda não entregamos neste bairro'}
-                </strong>
+                <strong className="text-sm">Entrega de bike</strong>
                 <div className="text-[12.5px] text-muted-ink">
-                  {eta !== null ? `Para ${storefront.neighborhood} · direto na sua recepção` : 'Escolha um bairro atendido no cabeçalho'}
+                  {storeName ? `Saindo da ${storeName} · direto na sua recepção` : 'Direto na sua recepção'}
                 </div>
               </div>
             </div>

@@ -98,7 +98,7 @@ export function CustomerForm({ form, name, email, onSubmit, cancelHref }: Custom
                   type="tel"
                   inputMode="tel"
                   autoComplete="off"
-                  placeholder="(85) 99999-9999"
+                  placeholder="(11) 99999-9999"
                   className="tabular-nums"
                   aria-invalid={errors.phone ? true : undefined}
                   disabled={isSubmitting}

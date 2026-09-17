@@ -2,12 +2,12 @@ import { EventEmitter } from 'node:events';
 import { Logger } from '@nestjs/common';
 import { BrokerMessage, Result } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MessagingErrors } from '../messaging-errors.js';
+import { MessagingErrors } from '../../../src/messaging/messaging-errors.js';
 import {
   RabbitMqConsumerConfig,
   RabbitMqMessageConsumer,
   RabbitMqSubscription,
-} from './rabbitmq-message.consumer.js';
+} from '../../../src/messaging/rabbitmq/rabbitmq-message.consumer.js';
 
 const { connectMock } = vi.hoisted(() => ({ connectMock: vi.fn() }));
 

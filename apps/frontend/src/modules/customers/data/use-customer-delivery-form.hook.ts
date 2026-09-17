@@ -2,9 +2,8 @@
 
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { v } from '@/shared/components/form/validator';
 import type { Customer, CustomerInput } from './customer.api';
-import { customerSchema, type CustomerFormData } from './customer.schema';
+import { customerResolver, type CustomerFormData } from './customer.schema';
 import {
   emptyCustomerFormValues,
   reportCustomerSaveError,
@@ -16,7 +15,7 @@ import {
 export type UseCustomerDeliveryFormOptions = {
   /** Cadastro atual; `null` quando o usuário ainda não tem cliente (criação). */
   customer: Customer | null;
-  /** Endereço inicial sem cadastro (ex.: bairro da vitrine, "São Paulo" e "SP"). */
+  /** Endereço inicial sem cadastro (ex.: "São Paulo" e "SP", da loja escolhida na vitrine). */
   defaults?: CustomerAddressDefaults;
   /** Grava os dados (`save` de `useMyCustomer`); lança `ApiError` em falha. */
   save: (input: CustomerInput) => Promise<unknown>;
@@ -27,13 +26,14 @@ export type UseCustomerDeliveryFormOptions = {
 /**
  * Formulário dos dados de entrega do checkout, com o mesmo `customerSchema`
  * da administração (sem `isActive`). Nasce com os dados do cliente ou, sem
- * cadastro, com `defaults`. No envio chama `save` com os dados sem máscara,
+ * cadastro, com `defaults`. Sem mapa: devolve no envio o ponto recebido do
+ * cadastro, sem editá-lo (sem cadastro, não envia ponto). No envio chama `save` com os dados sem máscara,
  * avisa "Dados de entrega salvos" e chama `onSaved`; erros de CPF, telefone,
  * CEP e UF vão para o campo e os demais viram toaster.
  */
 export function useCustomerDeliveryForm({ customer, defaults, save, onSaved }: UseCustomerDeliveryFormOptions) {
   const form = useForm<CustomerFormData>({
-    resolver: v.resolver(customerSchema),
+    resolver: customerResolver,
     defaultValues: customer ? toCustomerFormValues(customer) : emptyCustomerFormValues(defaults),
   });
   const { setError } = form;

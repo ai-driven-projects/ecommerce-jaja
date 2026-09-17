@@ -42,9 +42,15 @@ export type CartItem = {
   isAvailable: boolean;
 };
 
-export type Zone = {
-  neighborhood: string;
-  store: string;
+/** Loja no seletor do cabeçalho e na lista do rodapé. */
+export type StoreOption = {
+  /** Slug da loja, usado na URL da vitrine (`?loja=`). */
+  slug: string;
+  name: string;
+  /** Cidade da loja, quando conhecida (lida do endereço de referência). */
+  city?: string | null;
+  /** UF da loja, quando conhecida. */
+  state?: string | null;
 };
 
 export type CartTotals = {

@@ -8,10 +8,11 @@ import { GoogleGeocodingProvider } from './google-geocoding.provider.js';
 import { MockGeocodingProvider } from './mock-geocoding.provider.js';
 import { StoreController } from './store.controller.js';
 import { StorePrisma } from './store.prisma.js';
+import { StorefrontStoreController } from './storefront-store.controller.js';
 
 @Module({
   imports: [DbModule],
-  controllers: [StoreController, GeocodingController],
+  controllers: [StoreController, GeocodingController, StorefrontStoreController],
   providers: [
     StorePrisma,
     {

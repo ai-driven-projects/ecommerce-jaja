@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 type StorefrontLayoutProps = {
-  /** Cabeçalho da loja, injetado por quem conhece bairro/ETA/carrinho. */
+  /** Cabeçalho da loja, injetado por quem conhece a loja escolhida e o carrinho. */
   header?: ReactNode;
   /** Rodapé da loja. */
   footer?: ReactNode;

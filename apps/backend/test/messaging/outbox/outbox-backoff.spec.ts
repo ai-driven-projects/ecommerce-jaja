@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { nextAttemptAt } from './outbox-backoff.js';
+import { nextAttemptAt } from '../../../src/messaging/outbox/outbox-backoff.js';
 
 const NOW = new Date('2026-09-14T12:00:00.000Z');
 

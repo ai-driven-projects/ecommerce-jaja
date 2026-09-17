@@ -13,11 +13,11 @@ para "entrega / ok". A referência visual está em `openspec/extras/design/*.dc.
 - Marca: `--brand #FF6B00` · hover `--brand-strong #E85F00` · link hover
   `--brand-link #D95B00` · `--brand-light #FF8A3D` (destaque sobre escuro) ·
   `--brand-soft #FFF1E6` (fundo de chip/badge ativo) · `--brand-pale #FFD9BD`.
-- Estados: verde `--success #0E9F5D` / `--success-soft #E7F6EE` (ETA, entrega,
+- Estados: verde `--success #0E9F5D` / `--success-soft #E7F6EE` (entrega,
   em estoque, grátis) · amarelo `--warning #B78A00` / `--warning-soft #FFF7DD`
   (separando, estoque baixo) · vermelho `--danger #C93A31` / `--danger-soft
   #FDEBEA` (atrasado, erro, esgotado).
-- Escuro: `--dark #1E1812` para hero, bloco de ETA e sidebar do admin; texto
+- Escuro: `--dark #1E1812` para hero e sidebar do admin; texto
   secundário sobre escuro em `--dark-muted #B8AFA4`.
 - Tons pastéis das áreas de imagem: `--tint-blue`, `--tint-purple`,
   `--tint-mint`, `--tint-yellow`, `--tint-peach`, `--tint-green`. Cada
@@ -39,8 +39,8 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   600/700 rótulos e nomes, 800 botões, preços e badges.
 - **Bricolage Grotesque** (`font-display`, 700/800, tracking negativo) só para
   display: logo, `h1`/`h2` de página e de seção, títulos de cartão, preço
-  grande do produto, valor dos KPIs e o contador de ETA.
-- Números (preço, ETA, KPI) em `font-extrabold tabular-nums`; preço sempre no
+  grande do produto e valor dos KPIs.
+- Números (preço, KPI) em `font-extrabold tabular-nums`; preço sempre no
   formato `R$ 1.290,90` via `formatPrice`. Em oferta, preço atual em laranja e o
   anterior riscado em `--placeholder`.
 - Sem caixa alta decorativa. A única exceção são cabeçalhos de tabela e
@@ -49,7 +49,7 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
 ## Regras
 - Cor de ação é só o laranja: botão primário, "+" de adicionar, chip ativo,
   link "Ver tudo →", item ativo da sidebar. Verde é informação positiva
-  (ETA, grátis, em estoque), nunca ação.
+  (entrega, grátis, em estoque), nunca ação.
 - Botão primário: pílula laranja com texto branco 800 e `shadow-brand`.
   Secundário/outline: branco ou creme com borda `--line`. Perigo: vermelho.
   Escuro (`variant="dark"`): só em cima de fundos claros muito vazios.
@@ -71,25 +71,41 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   Inputs trocam a borda para laranja no foco e não mostram outline.
 - Carregando: a estrutura da página com blocos creme estáticos
   (`bg-surface`, mesmos raios). Sem shimmer, sem spinner.
-- Texto dependente do relógio (janela de chegada, saudação, horários) só
+- Texto dependente do relógio (saudação, horários) só
   entra depois da hidratação via `useClientMinute`; o servidor renderiza a
   estrutura com "…".
 
 ## Vitrine (`/`)
 - Cabeçalho fixo branco com borda inferior: logo (bloco laranja com a bike +
-  "já já" em Bricolage 800), **pílula de entrega** creme com relógio verde
-  ("Entrega em ~18 min · Aldeota", abre menu de bairros), **busca** em pílula
-  creme, "Entrar" em contorno (ou pílula com o primeiro nome + menu "Sair") e
-  o botão laranja **Carrinho** com o contador em branco.
+  "já já" em Bricolage 800), **seletor de lojas** numa pílula creme com o ícone
+  de loja laranja ("Loja Paulista · São Paulo/SP", abre o menu "Comprar na
+  loja" com as lojas ativas e a atual marcada), **busca** em pílula creme,
+  "Entrar" em contorno (ou pílula com o primeiro nome e o menu da conta) e o
+  botão laranja **Carrinho** com o contador em branco. Sem tempo estimado de
+  entrega e sem texto de cobertura: não há cálculo real de nenhum dos dois.
+- Seletor de lojas: as lojas ativas vêm de `GET /storefront/stores`, e a loja
+  em vigor sai de `loja` na URL, da escolha lembrada no navegador
+  (`jaja:vitrine:loja`, descartada quando a loja não está mais ativa) ou da
+  primeira loja ativa. Escolher grava `loja=<slug>` na URL sem entrada no
+  histórico e lembra a escolha. Enquanto as lojas carregam (e com uma só loja
+  ativa) a pílula fica estática, sem menu — "Escolha a loja" em `--placeholder`
+  no carregamento, o mesmo texto do esqueleto do cabeçalho. A cidade/UF sai do
+  fim do endereço de referência da loja (`…, São Paulo/SP`) e some quando o
+  endereço não tem esse formato.
+- Menu da conta, nesta ordem: nome completo e, abaixo, o email do usuário
+  ("Administrador" para administradores); "Minha conta" (ícone `UserRound`,
+  leva a `/minha-conta` com a query atual da vitrine); "Área administrativa"
+  (`ShieldCheck`, só administradores); "Sair" em vermelho ("Até já já.",
+  continua na mesma página).
 - Busca do cabeçalho: "Buscar papel A4, toner, café…"; a lupa (ou Enter)
-  envia e o "×" limpa o texto. Leva a `/?q=<termo>` mantendo só o bairro
+  envia e o "×" limpa o texto. Leva a `/?q=<termo>` mantendo só a loja
   (também a partir do detalhe); vazio remove a busca. O campo mostra o `q` da
   URL, inclusive depois de recarregar.
 - Chips de categoria em pílulas brancas roláveis: "Tudo" + as raízes do
   catálogo, com o emoji da raiz; a ativa fica laranja sobre pêssego. Categoria
   com filhas abre uma segunda linha de chips menores ("Tudo em <Categoria>" +
   subcategorias com a contagem em cinza); numa neta, as linhas da raiz e do pai
-  continuam visíveis. Estado na URL (`categoria` por slug), junto com `bairro`.
+  continuam visíveis. Estado na URL (`categoria` por slug), junto com `loja`.
 - Página inicial (sem busca, filtros nem categoria), nesta ordem:
   - hero escuro (raio 24): badge translúcido, título em Bricolage com "em
     minutos." em `--brand-light`, CTA "Pedir agora", ponto verde pulsando com
@@ -118,22 +134,21 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
     filtros ou buscar outro termo; erro: mensagem com "Tentar de novo".
 - Card de produto: branco, raio 18, padding 12; área de imagem (120px) com a
   foto sobre branco (ou o emoji pastel de reserva) e um único selo no canto,
-  nesta prioridade: `−N%` laranja, "Destaque" e o ETA branco; nome 700 em até
+  nesta prioridade: `−N%` laranja e "Destaque"; nome 700 em até
   3 linhas (o nome inteiro no `title`), unidade cinza e preço 800. O "+"
   redondo laranja em contorno, que vira o stepper `− n +` (pêssego) quando o
-  item está no carrinho, aparece nas grades da loja (página inicial, listagem e
-  "Mais de <categoria>") só quando o bairro é atendido; o "+" do stepper fica
-  desabilitado em 99 unidades. Fora da área atendida, os cards não têm "+".
-- Rodapé branco: wordmark + horário, "Áreas atendidas" em pílulas creme e o
+  item está no carrinho, aparece em todas as grades da loja (página inicial,
+  listagem e "Mais de <categoria>"), sempre disponível; o "+" do stepper fica
+  desabilitado em 99 unidades.
+- Rodapé branco: wordmark + horário, "Nossas lojas" em pílulas creme e o
   link discreto "Área administrativa".
-- Bairro não atendido: cartão branco com "Ainda não chegamos aí. Já já." em
-  display e os bairros atendidos em pílulas clicáveis, agrupados por loja, em
-  qualquer modo (página inicial ou listagem).
+- A loja escolhida não muda o catálogo, os preços nem a disponibilidade, e não
+  existe estado de área não atendida: a vitrine sempre mostra o catálogo. A
+  verificação de cobertura por raio chega numa entrega seguinte.
 
 ## Carrinho (gaveta)
 - Painel branco de 400px à direita (a largura da tela no mobile), canto
-  interno de 22px, `shadow-drawer`; título "Seu carrinho" em Bricolage; faixa
-  verde "Saindo de bike · chega em ~X min".
+  interno de 22px, `shadow-drawer`; título "Seu carrinho" em Bricolage.
 - Linhas: foto do produto (`ProductArt` `sm`, emoji pastel de reserva), o nome
   em até 2 linhas como link para o produto (preserva a query da vitrine e
   fecha a gaveta), unidade e preço unitário em cinza, stepper pequeno (0
@@ -165,8 +180,8 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   resultados" em laranja quando a URL tem busca ou filtros. Produto
   inexistente ou inativo é 404; o título da aba é "<nome> — já já".
 - Duas colunas (galeria 1.05fr / info 1fr). Galeria: imagem principal
-  quadrada (raio 24, borda `--line`) com a foto grande sobre branco e o selo
-  "Chega em ~X min"; com mais de uma imagem, setas redondas brancas nas
+  quadrada (raio 24, borda `--line`) com a foto grande sobre branco; com mais
+  de uma imagem, setas redondas brancas nas
   laterais, contador "n/total" no canto e miniaturas de 72px de todas as
   imagens, roláveis na horizontal, a ativa com borda laranja 2px (setas do
   teclado navegam entre elas). Com uma imagem, sem setas, contador nem
@@ -175,7 +190,8 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   laranja para a listagem da marca, `h1` em Bricolage 32, unidade e
   "Cód. <sku>" em cinza, preço 34px em Bricolage com o "De:" riscado, stepper
   grande (creme) + botão "Adicionar · R$ total", cartão de entrega (bike verde
-  + caminhão laranja: ETA e a regra do frete grátis), "Sobre o produto"
+  "Entrega de bike · saindo da <loja escolhida>" + caminhão laranja com a regra
+  do frete grátis, sem tempo estimado), "Sobre o produto"
   (quebras de linha preservadas; acima de 600 caracteres, recolhido com "Ler
   mais"/"Ler menos") e a ficha (Marca, Categoria, Código, Unidade) em pares
   `rótulo · valor` sobre blocos creme de raio 10. Nada de estoque ou ficha
@@ -185,18 +201,21 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   ao carrinho" com "<n> un · R$ X" e a ação "Ver carrinho" (abre a gaveta), e a
   quantidade volta a 1; no erro (limite de 99, produto indisponível), toast de
   erro. Abaixo do botão, "Você já tem N no carrinho." quando o produto já está
-  nele. Indisponível em bairro não atendido.
+  nele. Nunca indisponível por causa da loja escolhida.
 - "Mais de <categoria>": até 4 outros produtos da mesma categoria, nos mesmos
-  cards (com o "+" quando o bairro é atendido); a seção some sem itens.
+  cards (com o "+"); a seção some sem itens.
 
 ## Checkout (`/checkout`)
 - Cabeçalho compacto: logo à esquerda, "🔒 Checkout seguro" em verde à direita.
   Container de 1080px. Sem sessão: título "Para fechar o pedido, entre ou crie
   sua conta" e o cartão de autenticação; com sessão, o formulário aparece na
-  mesma URL (nunca redireciona).
+  mesma URL (nunca redireciona). "← Voltar para a loja" acima do título
+  preserva a query da vitrine (`loja` e `categoria`).
 - Duas colunas (1.5fr / 1fr). Passos numerados com um círculo laranja:
-  **1 Endereço** (faixa verde "Dentro da área de cobertura · entrega em ~X
-  min", campos com rótulo 13px/700 em `--ink-soft`; abaixo dos dados de entrega,
+  **1 Endereço** (sem nenhuma faixa de cobertura: não há verificação de área
+  nesta versão; campos com rótulo 13px/700 em `--ink-soft`; sem cadastro de
+  cliente, cidade e UF nascem com as da loja escolhida, quando conhecidas, e o
+  bairro fica vazio; abaixo dos dados de entrega,
   "Quem recebe", iniciado com o nome do usuário, até 100 caracteres, e
   "Instruções para o entregador", até 200, que não vão para o cadastro) e **2
   Pagamento** simulado, sem seletor nem campos: badge creme "Simulado" ao lado
@@ -206,7 +225,7 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   total da linha (indisponível: atenuado, badge "Indisponível" e "Remover");
   blocos creme estáticos na primeira carga (inclusive a mescla logo depois de
   entrar); régua tracejada, subtotal, entrega e total da API (atenuados
-  enquanto sincroniza), faixa verde com a janela de chegada e o botão
+  enquanto sincroniza) e o botão
   "Confirmar pedido", desabilitado enquanto o carrinho carrega ou sincroniza,
   vazio ou com itens indisponíveis ("Remova os itens indisponíveis para
   confirmar o pedido."). "Confirmar pedido" cria o pedido na API ("Confirmando…"
@@ -215,6 +234,78 @@ Tailwind: `bg-paper`, `bg-card`, `bg-surface`, `border-line`, `text-ink`,
   ao acompanhamento; no erro, toast com a mensagem, resumo (e dados de entrega,
   quando a recusa é do cadastro) recarregados e a página continua no checkout.
   O número do pedido são os 8 primeiros caracteres do id em maiúsculas.
+
+## Minha conta (`/minha-conta`)
+- Aberta pelo menu da conta; usa o **cabeçalho completo** da loja (seletor de
+  lojas, busca, conta e carrinho) e leva a query da vitrine. Container de 1080px,
+  `h1` "Minha conta" em Bricolage 30. Nunca redireciona.
+- Sem sessão: título "Entre para ver sua conta" e o cartão de autenticação
+  (abas "Entrar" / "Criar conta") na mesma URL, como no checkout; "Sair" nesta
+  página volta a esse cartão.
+- Carregando (cadastro e lojas da vitrine): os dois cartões com blocos creme
+  estáticos. Sem cadastro de cliente: o apoio "Preencha uma vez e seus pedidos
+  saem mais rápido." e o formulário com a cidade e a UF da loja escolhida na
+  vitrine, quando conhecidas, e o bairro vazio.
+- Cartões brancos (raio 24, os do checkout), título em Bricolage 18:
+  - **Dados pessoais**: nome e email somente leitura (blocos creme), apoio
+    "Nome e email são da sua conta de acesso.", CPF e telefone com máscara,
+    lado a lado a partir de `sm`;
+  - **Endereço de entrega**: o mapa do ponto acima dos campos do checkout
+    (separados por régua `--line`).
+- Mapa do ponto (`CustomerAddressMap`):
+  - acima, "Localizar endereço no mapa" em contorno (habilitado com logradouro
+    e cidade; move marcador e câmera, grava o ponto e mostra "Endereço
+    encontrado: …", sem mudar os campos);
+  - Google Maps de 340px (raio 16, borda `--line`): abre no ponto do cliente
+    (zoom de rua), senão enquadrando a loja da vitrine com todo o círculo de
+    atendimento dela, senão na Avenida Paulista, 1578 — nunca enquadrando todas
+    as lojas de uma vez (as do seed estão a ~360 km uma da outra);
+  - **todas as lojas ativas** aparecem no mapa, cada uma com um marcador fixo
+    (título "`<nome>` · atende até `<raio>`") e um círculo read-only do raio de
+    atendimento: a loja da vitrine em laranja (círculo escuro de 36px com o
+    ícone `Store`, borda branca, `shadow-float`, área laranja 12% com borda
+    85%), as outras discretas (círculo de 28px em `--muted-ink`, área
+    `--muted-ink` 9% com borda 70%). Clicar no marcador ou dentro do círculo de
+    uma loja marca o ponto do cliente ali, como um clique no mapa. Marcador do
+    cliente: pino laranja, arrastável, só quando há ponto, sempre por cima;
+  - abaixo do mapa (também no simulado, que não desenha nada), o bloco creme
+    "Área de atendimento das lojas": uma linha por loja com o ícone `Store`, o
+    nome, "atende até `<raio>`" (`formatRadius`), a badge de contorno "Loja da
+    vitrine" na selecionada, o botão fantasma "Ver no mapa" (ícone `MapPin`,
+    enquadra aquela loja com todo o círculo) e, na linha de baixo, o endereço de
+    referência da loja; no canto do título, "Ver todas as lojas" (fantasma, com
+    duas ou mais lojas, `fitBounds` das lojas e do ponto). As duas ações só
+    aparecem com o mapa real e **não** mexem no ponto nem pedem sugestão.
+    Apoio: "O raio mostra até onde cada loja entrega hoje. É só informação: você
+    pode marcar e salvar o ponto onde quiser." — **nada é bloqueado nem
+    sugerido** pela posição do ponto em relação ao raio;
+  - clique no mapa ou fim do arraste grava o ponto e pede a sugestão (nunca
+    durante o arraste; resposta atrasada é descartada). Cartão creme
+    (`role="status"`): "Buscando endereço…"; "Endereço sugerido: …" com "Usar
+    este endereço" (primário) e "Dispensar" (contorno), "Confira o número
+    depois de usar o endereço." sem número e o aviso amarelo de busca simulada
+    com `source: "mock"`; sem endereço, "Não encontramos um endereço para este
+    ponto. Preencha os campos abaixo."; indisponível, toast;
+  - mudar CEP, logradouro, número, bairro, cidade ou UF depois de uma ação no
+    mapa troca a linha do botão pelo aviso amarelo "O endereço mudou depois de
+    o ponto ser marcado. Confira o ponto no mapa." com o mesmo botão
+    (complemento não conta);
+  - abaixo, o apoio "Clique no mapa ou arraste o marcador até a porta de
+    entrada. Sugerimos o endereço do ponto, e você decide se usa." e "Remover
+    ponto" (fantasma, vermelho) quando há ponto;
+  - sem chave pública ou com a chave recusada: a ilustração do cadastro de loja
+    com o selo "Mapa simulado", o ponto marcado num selo branco e o botão "Usar
+    ponto de exemplo" (ponto da loja da vitrine ou da Paulista), com a lista das
+    lojas e os raios logo abaixo; com a chave recusada, também o aviso amarelo
+    de falha do Google Maps;
+  - `CUSTOMER_LOCATION_INVALID` aparece como erro geral acima do mapa.
+- Rodapé à direita (em coluna no celular): "Salvar dados" (primário grande,
+  desabilitado sem alterações, "Salvando…" enquanto envia) e "Descartar
+  alterações" em contorno, só com alterações. Salvar: toast "Dados salvos" e
+  o formulário volta a ficar sem alterações; os dados são os mesmos do passo
+  de entrega do checkout.
+- Checkout e edição administrativa de clientes continuam sem mapa e devolvem o
+  ponto recebido do cadastro.
 
 ## Acompanhamento (`/pedidos/:id/acompanhar`)
 - O pedido real do cliente autenticado, lido da API. Cabeçalho compacto com

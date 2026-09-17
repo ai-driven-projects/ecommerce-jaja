@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 660" width="960" height="660" role="img" aria-label="Transactional outbox: o evento é gravado na mesma transação do pedido e publicado depois pelo relay" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m08" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="660" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Transactional outbox</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">como o evento nunca se perde entre o banco e o broker — o coração da arquitetura</text>
+
+  <!-- left: transaction -->
+  <rect x="40" y="100" width="400" height="340" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="130" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">1 · UMA TRANSAÇÃO SÓ</text>
+  <text x="62" y="156" font-size="14" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">PlaceOrder.execute()</text>
+  <rect x="62" y="178" width="356" height="222" rx="12" fill="#F6F1EA"/>
+  <text x="78" y="199" font-size="10.5" font-weight="700" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">BEGIN</text>
+  <rect x="78" y="208" width="324" height="52" rx="10" fill="#FFFFFF"/>
+  <text x="94" y="230" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">INSERT orders</text>
+  <text x="94" y="248" font-size="10.3" fill="#8A8177">o pedido, com os itens e preços congelados</text>
+  <rect x="78" y="266" width="324" height="52" rx="10" fill="#FFFFFF"/>
+  <text x="94" y="288" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">UPDATE carts</text>
+  <text x="94" y="306" font-size="10.3" fill="#8A8177">o carrinho da conta fica vazio</text>
+  <rect x="78" y="324" width="324" height="52" rx="10" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="94" y="346" font-size="11.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">INSERT outbox_events</text>
+  <text x="94" y="364" font-size="10.3" fill="#8A8177">status PENDING · o evento <tspan font-family="'JetBrains Mono', Menlo, monospace">order.placed</tspan></text>
+  <text x="78" y="392" font-size="10.5" font-weight="700" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">COMMIT</text>
+  <text x="62" y="424" font-size="12" font-weight="700" fill="#1E1812">Os três gravam juntos — ou nenhum grava.</text>
+
+  <!-- arrow -->
+  <text x="479" y="248" font-size="10" font-weight="700" fill="#FF6B00" text-anchor="middle">depois,</text>
+  <text x="479" y="260" font-size="10" font-weight="700" fill="#FF6B00" text-anchor="middle">fora da tx</text>
+  <line x1="446" y1="276" x2="512" y2="276" stroke="#FF6B00" stroke-width="2" marker-end="url(#m08)"/>
+
+  <!-- right: relay -->
+  <rect x="520" y="100" width="400" height="340" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="542" y="130" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">2 · O RELAY PUBLICA DEPOIS</text>
+  <text x="542" y="156" font-size="14" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">OutboxRelay</text>
+  <rect x="542" y="178" width="356" height="48" rx="10" fill="#F6F1EA"/>
+  <text x="558" y="200" font-size="11.5" font-weight="700" fill="#1E1812">a cada 1 segundo, dentro do backend</text>
+  <text x="558" y="217" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">OUTBOX_POLL_INTERVAL_MS · não é uma rota HTTP</text>
+  <rect x="542" y="234" width="356" height="62" rx="10" fill="#F6F1EA"/>
+  <text x="558" y="256" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">SELECT … FOR UPDATE SKIP LOCKED</text>
+  <text x="558" y="273" font-size="10.3" fill="#8A8177">até 50 pendentes, do mais antigo para o mais novo</text>
+  <text x="558" y="288" font-size="10.3" fill="#8A8177">outra instância pula as linhas travadas: nunca publicam o mesmo</text>
+  <rect x="542" y="304" width="356" height="48" rx="10" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="558" y="326" font-size="11.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">publish() com confirm</text>
+  <text x="558" y="343" font-size="10.3" fill="#8A8177">só segue quando o RabbitMQ confirma a mensagem</text>
+  <rect x="542" y="360" width="356" height="48" rx="10" fill="#E7F6EE"/>
+  <text x="558" y="382" font-size="11.5" font-weight="700" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">UPDATE status = PUBLISHED</text>
+  <text x="558" y="399" font-size="10.3" fill="#5C544B">com <tspan font-family="'JetBrains Mono', Menlo, monospace">published_at</tspan> — a linha fica no banco como histórico</text>
+  <text x="542" y="428" font-size="12" font-weight="700" fill="#1E1812">Depende só da porta <tspan font-family="'JetBrains Mono', Menlo, monospace">MessagePublisher</tspan>.</text>
+
+  <!-- bottom cards -->
+  <rect x="40" y="470" width="400" height="130" rx="18" fill="#FFF7DD" stroke="#EFDFA8"/>
+  <text x="62" y="500" font-size="10" font-weight="800" fill="#B78A00" letter-spacing="0.6">SE A PUBLICAÇÃO FALHAR</text>
+  <text x="62" y="524" font-size="12" fill="#1E1812">O evento continua <tspan font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">PENDING</tspan>: <tspan font-family="'JetBrains Mono', Menlo, monospace">attempts + 1</tspan>,</text>
+  <text x="62" y="543" font-size="12" fill="#1E1812"><tspan font-family="'JetBrains Mono', Menlo, monospace">last_error</tspan> gravado e <tspan font-family="'JetBrains Mono', Menlo, monospace">available_at</tspan> empurrado</text>
+  <text x="62" y="562" font-size="12" fill="#1E1812">para o futuro (backoff).</text>
+  <text x="62" y="584" font-size="11" fill="#5C544B">Broker fora do ar não derruba o backend nem o checkout.</text>
+
+  <rect x="520" y="470" width="400" height="130" rx="18" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="542" y="500" font-size="10" font-weight="800" fill="#FF6B00" letter-spacing="0.6">ENTREGA AO MENOS UMA VEZ</text>
+  <text x="542" y="524" font-size="12" fill="#1E1812">Se o processo cair entre o confirm e o commit, o</text>
+  <text x="542" y="543" font-size="12" fill="#1E1812">evento segue pendente e é publicado <tspan font-weight="700">de novo</tspan> —</text>
+  <text x="542" y="562" font-size="12" fill="#1E1812">com o <tspan font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">mesmo messageId</tspan>.</text>
+  <text x="542" y="584" font-size="11" fill="#5C544B">É por isso que todo consumidor precisa ser idempotente.</text>
+
+  <text x="40" y="636" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/outbox/ · outbox-relay.ts · outbox.prisma.ts · domain-event.prisma.ts</text>
+</svg>

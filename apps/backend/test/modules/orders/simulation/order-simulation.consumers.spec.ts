@@ -9,11 +9,11 @@ import {
   TransactionManager,
 } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { TransactionalEventConsumer } from '../../../messaging/consumer/event-consumer.js';
-import type { EventConsumerRegistry } from '../../../messaging/consumer/event-consumer.registry.js';
-import type { DomainEventPrisma } from '../../../messaging/outbox/domain-event.prisma.js';
-import type { OrderPrisma } from '../order.prisma.js';
-import { OrderSimulationConsumers } from './order-simulation.consumers.js';
+import type { TransactionalEventConsumer } from '../../../../src/messaging/consumer/event-consumer.js';
+import type { EventConsumerRegistry } from '../../../../src/messaging/consumer/event-consumer.registry.js';
+import type { DomainEventPrisma } from '../../../../src/messaging/outbox/domain-event.prisma.js';
+import type { OrderPrisma } from '../../../../src/modules/orders/order.prisma.js';
+import { OrderSimulationConsumers } from '../../../../src/modules/orders/simulation/order-simulation.consumers.js';
 
 const ORDER_ID = 'c7b8a3d2-5e4f-4a1b-8c9d-0e1f2a3b4c5d';
 const PLACED_AT = new Date('2026-09-17T12:00:00.000Z');

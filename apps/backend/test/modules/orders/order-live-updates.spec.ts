@@ -2,8 +2,8 @@ import { MessageEvent } from '@nestjs/common';
 import { BrokerMessage } from '@mentoria-360/shared';
 import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LiveEventFeed } from '../../messaging/live/live-event-feed.js';
-import { ORDER_STREAM_HEARTBEAT_MS, OrderLiveUpdates } from './order-live-updates.js';
+import type { LiveEventFeed } from '../../../src/messaging/live/live-event-feed.js';
+import { ORDER_STREAM_HEARTBEAT_MS, OrderLiveUpdates } from '../../../src/modules/orders/order-live-updates.js';
 
 const ORDER_ID = 'c7b8a3d2-5e4f-4a1b-8c9d-0e1f2a3b4c5d';
 const OTHER_ORDER_ID = '3f1c9a52-7b1e-4d2a-9c4f-8e6b2a1d0c55';

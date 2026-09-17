@@ -39,8 +39,9 @@ type StorefrontProductGridProps = {
 
 /**
  * Grade de produtos da loja ligada ao carrinho: cada card mostra a quantidade
- * no carrinho e, só quando o bairro é atendido, o "+" (que vira o stepper, até
- * 99). O link de cada card leva ao detalhe preservando a query da vitrine.
+ * no carrinho e o "+" (que vira o stepper, até 99), sempre disponível — a loja
+ * escolhida não bloqueia a inclusão. O link de cada card leva ao detalhe
+ * preservando a query da vitrine.
  */
 export function StorefrontProductGrid({ products, minCardWidth, cardSize, className }: StorefrontProductGridProps) {
   const storefront = useStorefront();
@@ -49,13 +50,12 @@ export function StorefrontProductGrid({ products, minCardWidth, cardSize, classN
   return (
     <ProductGrid
       products={products.map(toStoreProduct)}
-      etaMinutes={storefront.etaMinutes}
       minCardWidth={minCardWidth}
       cardSize={cardSize}
       className={className}
       getHref={(product) => productRoute(product.slug, storefront.query)}
       getQuantity={(product) => cart.getQuantity(product.id)}
-      onChangeQuantity={storefront.served ? (product, quantity) => cart.setQuantity(product.id, quantity) : undefined}
+      onChangeQuantity={(product, quantity) => cart.setQuantity(product.id, quantity)}
       max={CART_ITEM_MAX_QUANTITY}
     />
   );

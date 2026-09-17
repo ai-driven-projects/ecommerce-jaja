@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: ProductRouteProps): Promise<M
 }
 
 // Detalhe do produto: o servidor busca o produto visível pelo slug (404 quando
-// não existe ou está inativo) e o cliente cuida de bairro, ETA, galeria e
+// não existe ou está inativo) e o cliente cuida da loja escolhida, galeria e
 // quantidade a partir da query string.
 export default async function ProductRoute({ params }: ProductRouteProps) {
   const { slug } = await params;

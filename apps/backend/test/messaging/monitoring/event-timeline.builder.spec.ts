@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildEventTimeline } from './event-timeline.builder.js';
+import { buildEventTimeline } from '../../../src/messaging/monitoring/event-timeline.builder.js';
 import type {
   EventTimelineEventRow,
   EventTimelineMarkRow,
   EventTimelineRegisteredConsumer,
-} from './event-timeline.types.js';
+} from '../../../src/messaging/monitoring/event-timeline.types.js';
 
 const PLACED_ID = '0a4ca9ca-80d0-4b6d-9dac-0e5874dc8ec4';
 const APPROVED_ID = '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11';

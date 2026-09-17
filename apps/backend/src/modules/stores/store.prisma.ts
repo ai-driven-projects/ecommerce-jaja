@@ -5,8 +5,10 @@ import {
   FindStoresQuery,
   Store,
   StoreDTO,
+  FindStorefrontStoresQuery,
   StoreErrors,
   StoreRepository,
+  StorefrontStoreDTO,
 } from '@jaja/stores';
 import { Prisma, Store as StoreRow } from '@prisma/client';
 import {
@@ -64,6 +66,23 @@ function searchRowToDTO(row: StoreSearchRow): StoreDTO {
     isActive: row.is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+type StorefrontStoreRow = Pick<
+  StoreSearchRow,
+  'id' | 'name' | 'slug' | 'address' | 'latitude' | 'longitude' | 'delivery_radius_meters'
+>;
+
+function storefrontRowToDTO(row: StorefrontStoreRow): StorefrontStoreDTO {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    address: row.address,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    deliveryRadiusMeters: row.delivery_radius_meters,
   };
 }
 
@@ -128,6 +147,20 @@ export class StorePrisma implements StoreRepository {
           where: { id, deletedAt: null },
         });
         return row ? this.toDTO(row) : null;
+      }),
+  };
+
+  // Public read of the storefront: an explicit `SELECT` of the public fields
+  // only (never phone, status or dates), active and non-deleted stores, by name.
+  readonly findStorefrontStores: FindStorefrontStoresQuery = {
+    execute: () =>
+      Result.tryAsync(async () => {
+        const rows = await this.prisma.client.$queryRaw<StorefrontStoreRow[]>`
+          SELECT id, name, slug, address, latitude, longitude, delivery_radius_meters
+          FROM stores
+          WHERE is_active AND deleted_at IS NULL
+          ORDER BY ${NAME_ORDER}`;
+        return rows.map(storefrontRowToDTO);
       }),
   };
 

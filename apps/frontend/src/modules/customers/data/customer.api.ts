@@ -7,7 +7,20 @@ import { ApiError, apiRequest } from '@/shared/util/api-client.util';
  * resposta com erro.
  */
 
-/** Endereço de entrega como devolvido pela API: CEP só com dígitos e UF em maiúsculas. */
+/**
+ * Ponto do endereço no mapa (`CustomerLocationDTO`), em graus decimais com 6
+ * casas. O texto do endereço é para o entregador; o ponto é o que as regras de
+ * cobertura por loja vão usar.
+ */
+export type CustomerLocation = {
+  latitude: number;
+  longitude: number;
+};
+
+/**
+ * Endereço de entrega como devolvido pela API: CEP só com dígitos, UF em
+ * maiúsculas e `location` `null` quando o cliente não marcou o ponto.
+ */
 export type CustomerAddress = {
   zipCode: string;
   street: string;
@@ -16,6 +29,7 @@ export type CustomerAddress = {
   neighborhood: string;
   city: string;
   state: string;
+  location: CustomerLocation | null;
 };
 
 /** Cliente devolvido pelo `PUT` (`CustomerDTO`): sem nome e email; CPF e telefone só com dígitos; datas em ISO. */
@@ -62,11 +76,17 @@ export type CustomerPage = {
  * Corpo de `PUT /me/customer` e `PUT /customers/:id`. O endereço é sempre
  * substituído inteiro; `complement` vazio vai como `null`. `isActive` só vale
  * na alteração administrativa (a API o ignora em `/me/customer`).
+ *
+ * `address.location` segue a regra de preservação da API: ausente mantém o
+ * ponto atual do cliente (ou cria sem ponto), `null` remove e um objeto grava.
  */
 export type CustomerInput = {
   cpf: string;
   phone: string;
-  address: Omit<CustomerAddress, 'complement'> & { complement?: string | null };
+  address: Omit<CustomerAddress, 'complement' | 'location'> & {
+    complement?: string | null;
+    location?: CustomerLocation | null;
+  };
   isActive?: boolean;
 };
 

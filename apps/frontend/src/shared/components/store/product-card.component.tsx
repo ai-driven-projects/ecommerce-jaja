@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { Badge } from '@/shared/components/ui/badge';
-import { EtaBadge } from '@/shared/components/store/eta-badge.component';
 import { Price } from '@/shared/components/store/price.component';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { AddToCartControl } from '@/shared/components/store/quantity-stepper.component';
@@ -12,8 +11,6 @@ import { cn } from '@/shared/lib/class-name.util';
 type ProductCardProps = {
   product: StoreProduct;
   href: string;
-  /** ETA do bairro atual; sem valor o selo não aparece. */
-  etaMinutes?: number | null;
   quantity?: number;
   /** Sem esta ação o card não exibe o "+". */
   onChangeQuantity?: (quantity: number) => void;
@@ -33,11 +30,10 @@ function discountOf(product: StoreProduct): number | null {
 
 // Cartão branco com raio 18: em hover sobe 2px e ganha sombra. A área de
 // imagem e o nome levam ao produto; o "+" (quando há ação) adiciona ao
-// carrinho. Um único selo na imagem: desconto > Destaque > ETA.
+// carrinho. Um único selo na imagem: desconto ou "Destaque".
 export function ProductCard({
   product,
   href,
-  etaMinutes,
   quantity = 0,
   onChangeQuantity,
   max,
@@ -69,8 +65,6 @@ export function ProductCard({
             <Badge variant="brand" className="absolute left-2 top-2 bg-card px-2.5 py-[3px] text-[11.5px] shadow-badge">
               Destaque
             </Badge>
-          ) : typeof etaMinutes === 'number' ? (
-            <EtaBadge minutes={etaMinutes} className="absolute left-2 top-2" />
           ) : null}
         </ProductArt>
       </Link>

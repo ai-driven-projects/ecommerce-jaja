@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-label="Campos de um evento de domínio order.placed, as classes que o criam e como ele vira uma mensagem no broker" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+    <marker id="m05b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8177"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="620" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Anatomia de um evento de domínio</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">sete campos, sempre os mesmos — aqui com os valores de um <tspan font-family="'JetBrains Mono', Menlo, monospace" fill="#FF6B00" font-weight="700">order.placed</tspan></text>
+
+  <!-- left: fields -->
+  <rect x="40" y="100" width="470" height="440" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="132" font-size="11" font-weight="800" fill="#8A8177" letter-spacing="0.6">O QUE É GRAVADO</text>
+  <line x1="62" y1="146" x2="488" y2="146" stroke="#EFE9E2"/>
+
+  <text x="62" y="176" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">id</text>
+  <text x="182" y="176" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">9f3c…a1 (uuid)</text>
+  <text x="182" y="193" font-size="10.3" fill="#8A8177">o mesmo valor vira o messageId no broker</text>
+
+  <text x="62" y="229" font-size="12" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">type</text>
+  <text x="182" y="229" font-size="11.5" fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">"order.placed"</text>
+  <text x="182" y="246" font-size="10.3" fill="#8A8177">é também a routing key da publicação</text>
+
+  <text x="62" y="282" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">aggregateType</text>
+  <text x="182" y="282" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">"Order"</text>
+  <text x="182" y="299" font-size="10.3" fill="#8A8177">de que tipo é o dono do fato</text>
+
+  <text x="62" y="335" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">aggregateId</text>
+  <text x="182" y="335" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">id do pedido</text>
+  <text x="182" y="352" font-size="10.3" fill="#8A8177">é daqui que o consumidor sabe qual pedido avançar</text>
+
+  <text x="62" y="388" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">payload</text>
+  <text x="182" y="388" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">cliente, itens congelados, totais</text>
+  <text x="182" y="405" font-size="10.3" fill="#8A8177">o bastante para o consumidor não precisar ler o pedido</text>
+
+  <text x="62" y="441" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">metadata</text>
+  <text x="182" y="441" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">{ } na origem</text>
+  <text x="182" y="458" font-size="10.3" fill="#8A8177">ganha causationId e correlationId dentro de um consumidor</text>
+
+  <text x="62" y="494" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">occurredAt</text>
+  <text x="182" y="494" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">instante do fato</text>
+  <text x="182" y="511" font-size="10.3" fill="#8A8177">é o placedAt do pedido, não a hora em que foi publicado</text>
+
+  <!-- right top: classes -->
+  <rect x="540" y="100" width="380" height="176" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="562" y="128" font-size="11" font-weight="800" fill="#8A8177" letter-spacing="0.6">QUEM CONSTRÓI</text>
+  <rect x="562" y="140" width="336" height="42" rx="11" fill="#F6F1EA"/>
+  <text x="730" y="158" font-size="12" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">AbstractDomainEvent</text>
+  <text x="730" y="174" font-size="10.3" fill="#8A8177" text-anchor="middle">packages/shared — valida id, type e aggregateId</text>
+  <path d="M730 182 L730 194 M642 194 L818 194 M642 194 L642 204 M818 194 L818 204" fill="none" stroke="#8A8177" stroke-width="1.4"/>
+  <rect x="562" y="206" width="160" height="54" rx="11" fill="#FFF1E6"/>
+  <text x="642" y="228" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">OrderPlacedEvent</text>
+  <text x="642" y="246" font-size="10.3" fill="#8A8177" text-anchor="middle">1 tipo de evento</text>
+  <rect x="738" y="206" width="160" height="54" rx="11" fill="#FFF1E6"/>
+  <text x="818" y="224" font-size="11" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">OrderStatusChanged</text>
+  <text x="818" y="238" font-size="11" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">Event</text>
+  <text x="818" y="252" font-size="10.3" fill="#8A8177" text-anchor="middle">4 tipos, um por status</text>
+
+  <!-- right bottom: broker message -->
+  <rect x="540" y="296" width="380" height="244" rx="18" fill="#1E1812"/>
+  <text x="562" y="324" font-size="11" font-weight="800" fill="#B8AFA4" letter-spacing="0.6">NO BROKER — BrokerMessage</text>
+  <line x1="562" y1="338" x2="898" y2="338" stroke="#3A322A"/>
+
+  <text x="562" y="368" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">id</text>
+  <line x1="640" y1="364" x2="676" y2="364" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="368" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">messageId</text>
+
+  <text x="562" y="400" font-size="11" fill="#FF8A3D" font-family="'JetBrains Mono', Menlo, monospace">type</text>
+  <line x1="640" y1="396" x2="676" y2="396" stroke="#FF6B00" stroke-width="1.4" marker-end="url(#m05)"/>
+  <text x="688" y="400" font-size="11" fill="#FF8A3D" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">routing key</text>
+
+  <text x="562" y="432" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">payload</text>
+  <line x1="640" y1="428" x2="676" y2="428" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="432" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">payload + aggregateId</text>
+
+  <text x="562" y="464" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">metadata</text>
+  <line x1="640" y1="460" x2="676" y2="460" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="464" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">metadata</text>
+
+  <text x="562" y="496" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">occurredAt</text>
+  <line x1="640" y1="492" x2="676" y2="492" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="496" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">occurredAt</text>
+
+  <text x="562" y="524" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">domainEventToBrokerMessage() · shared/src/messaging</text>
+
+  <text x="40" y="582" font-size="12" fill="#5C544B">Evento é fato consumado: nome no passado, dados congelados no instante em que aconteceu. Ninguém "desfaz" um evento — registra-se outro.</text>
+</svg>

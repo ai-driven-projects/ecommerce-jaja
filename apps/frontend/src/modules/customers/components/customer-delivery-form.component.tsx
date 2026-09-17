@@ -74,7 +74,7 @@ export function CustomerDeliveryForm({ onCancel, ...options }: CustomerDeliveryF
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel-national"
-                placeholder="(85) 99999-9999"
+                placeholder="(11) 99999-9999"
                 className="tabular-nums"
                 aria-invalid={errors.phone ? true : undefined}
                 disabled={isSubmitting}

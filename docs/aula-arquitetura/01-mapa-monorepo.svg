@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="Mapa do monorepo: apps importa modules, que importa packages/shared" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Mapa do monorepo</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">onde mora cada coisa — e para que lado as dependências apontam</text>
+
+  <!-- apps -->
+  <rect x="40" y="104" width="250" height="382" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="60" y="124" width="28" height="5" rx="2.5" fill="#1E1812"/>
+  <text x="60" y="152" font-size="15" font-weight="800" fill="#1E1812">Aplicações</text>
+  <text x="60" y="172" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/</text>
+  <line x1="60" y1="186" x2="270" y2="186" stroke="#EFE9E2"/>
+  <rect x="60" y="202" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="74" y="221" font-size="12.5" font-weight="700" fill="#1E1812">backend</text>
+  <text x="74" y="238" font-size="11" fill="#8A8177">NestJS · HTTP, Prisma, RabbitMQ</text>
+  <rect x="60" y="259" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="74" y="278" font-size="12.5" font-weight="700" fill="#1E1812">frontend</text>
+  <text x="74" y="295" font-size="11" fill="#8A8177">Next.js · App Router, SSE</text>
+  <rect x="60" y="316" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="74" y="335" font-size="12.5" font-weight="700" fill="#1E1812">cli</text>
+  <text x="74" y="352" font-size="11" fill="#8A8177">setup, docker, db, broker, doctor</text>
+  <text x="60" y="398" font-size="11.5" font-weight="700" fill="#5C544B">Aqui mora o framework:</text>
+  <text x="60" y="416" font-size="11.5" fill="#8A8177">controllers, módulos Nest, Prisma,</text>
+  <text x="60" y="432" font-size="11.5" fill="#8A8177">amqplib, React. Tudo que é</text>
+  <text x="60" y="448" font-size="11.5" fill="#8A8177">substituível.</text>
+
+  <!-- modules -->
+  <rect x="355" y="104" width="250" height="382" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="375" y="124" width="28" height="5" rx="2.5" fill="#FF6B00"/>
+  <text x="375" y="152" font-size="15" font-weight="800" fill="#1E1812">Negócio</text>
+  <text x="375" y="172" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">modules/</text>
+  <line x1="375" y1="186" x2="585" y2="186" stroke="#EFE9E2"/>
+  <rect x="375" y="202" width="210" height="46" rx="12" fill="#FFF1E6"/>
+  <text x="389" y="221" font-size="12.5" font-weight="700" fill="#1E1812">orders</text>
+  <text x="389" y="238" font-size="11" fill="#8A8177">carrinho, pedido, eventos</text>
+  <rect x="375" y="259" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="278" font-size="12.5" font-weight="700" fill="#1E1812">catalog</text>
+  <text x="389" y="295" font-size="11" fill="#8A8177">produto, marca, categoria</text>
+  <rect x="375" y="316" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="335" font-size="12.5" font-weight="700" fill="#1E1812">customers</text>
+  <text x="389" y="352" font-size="11" fill="#8A8177">cliente, endereço de entrega</text>
+  <rect x="375" y="373" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="392" font-size="12.5" font-weight="700" fill="#1E1812">stores</text>
+  <text x="389" y="409" font-size="11" fill="#8A8177">loja, raio de entrega, geocoding</text>
+  <rect x="375" y="430" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="449" font-size="12.5" font-weight="700" fill="#1E1812">auth</text>
+  <text x="389" y="466" font-size="11" fill="#8A8177">usuário, senha, permissões</text>
+
+  <!-- shared -->
+  <rect x="670" y="104" width="250" height="382" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="690" y="124" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="690" y="152" font-size="15" font-weight="800" fill="#1E1812">Base comum</text>
+  <text x="690" y="172" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">packages/shared/src/</text>
+  <line x1="690" y1="186" x2="900" y2="186" stroke="#EFE9E2"/>
+  <rect x="690" y="202" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="704" y="221" font-size="12.5" font-weight="700" fill="#1E1812">base/</text>
+  <text x="704" y="238" font-size="11" fill="#8A8177">Entity, AggregateRoot, Result</text>
+  <rect x="690" y="259" width="210" height="46" rx="12" fill="#FFF1E6"/>
+  <text x="704" y="278" font-size="12.5" font-weight="700" fill="#1E1812">events/</text>
+  <text x="704" y="295" font-size="11" fill="#8A8177">DomainEvent, OutboxEvent</text>
+  <rect x="690" y="316" width="210" height="46" rx="12" fill="#FFF1E6"/>
+  <text x="704" y="335" font-size="12.5" font-weight="700" fill="#1E1812">messaging/</text>
+  <text x="704" y="352" font-size="11" fill="#8A8177">MessagePublisher, ...Consumer</text>
+  <rect x="690" y="373" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="704" y="392" font-size="12.5" font-weight="700" fill="#1E1812">db/</text>
+  <text x="704" y="409" font-size="11" fill="#8A8177">Repository, TransactionManager</text>
+  <rect x="690" y="430" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="704" y="449" font-size="12.5" font-weight="700" fill="#1E1812">vo/ · dto/ · errors/</text>
+  <text x="704" y="466" font-size="11" fill="#8A8177">Id, Email, Phone, Name...</text>
+
+  <!-- arrows -->
+  <text x="322" y="288" font-size="10.5" font-weight="700" fill="#FF6B00" text-anchor="middle">importa</text>
+  <line x1="296" y1="302" x2="347" y2="302" stroke="#FF6B00" stroke-width="2" marker-end="url(#m01)"/>
+  <text x="637" y="288" font-size="10.5" font-weight="700" fill="#FF6B00" text-anchor="middle">importa</text>
+  <line x1="611" y1="302" x2="662" y2="302" stroke="#FF6B00" stroke-width="2" marker-end="url(#m01)"/>
+
+  <text x="40" y="518" font-size="12" fill="#5C544B">A seta nunca volta: <tspan font-weight="700" fill="#1E1812">modules/</tspan> não conhece Nest nem Prisma, e <tspan font-weight="700" fill="#1E1812">packages/shared</tspan> não conhece ninguém.</text>
+</svg>

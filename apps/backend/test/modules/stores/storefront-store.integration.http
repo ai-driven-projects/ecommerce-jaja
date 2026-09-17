@@ -1,0 +1,20 @@
+# Testes de integração das lojas da vitrine (VS Code Rest Client)
+# Pré-requisitos: banco no ar (npm run db:start), migrations aplicadas
+# (npm run prisma:migrate:deploy), seed `stores` aplicado
+# (npm run prisma:seed -- --only=stores) e backend rodando em
+# http://localhost:4000 (npm run dev --workspace=@jaja/backend).
+#
+# `GET /storefront/stores` é público: só lojas ativas e não excluídas, ordenadas pelo nome,
+# com id, name, slug, address, latitude, longitude e deliveryRadiusMeters. Nenhum item traz
+# phone, isActive, createdAt, updatedAt nem deletedAt.
+
+@baseUrl = http://localhost:4000
+
+### 1. Sem token -> 200 com as lojas do seed "Loja Paulista" (slug "loja-paulista") e
+### "Loja Rio Branco" (slug "loja-rio-branco"), nessa ordem, cada uma só com id, name, slug,
+### address, latitude, longitude e deliveryRadiusMeters (sem phone, isActive nem datas)
+GET {{baseUrl}}/storefront/stores
+
+### 2. Token adulterado no cabeçalho Authorization -> 200 com a mesma lista, sem 401
+GET {{baseUrl}}/storefront/stores
+Authorization: Bearer token.adulterado.invalido

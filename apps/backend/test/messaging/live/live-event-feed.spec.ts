@@ -2,8 +2,8 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BrokerMessage, ConsumeMessageIn, MessageConsumer, Result } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RabbitMqSubscription } from '../rabbitmq/rabbitmq-message.consumer.js';
-import { LiveEventFeed, liveQueueName } from './live-event-feed.js';
+import type { RabbitMqSubscription } from '../../../src/messaging/rabbitmq/rabbitmq-message.consumer.js';
+import { LiveEventFeed, liveQueueName } from '../../../src/messaging/live/live-event-feed.js';
 
 const MESSAGE: BrokerMessage = {
   messageId: '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11',

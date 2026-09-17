@@ -1,6 +1,6 @@
 import { DomainEvent, domainEventToBrokerMessage } from '@mentoria-360/shared';
 import { describe, expect, it } from 'vitest';
-import { toDomainEvent, toOutboxEventRow } from './outbox-event.mapper.js';
+import { toDomainEvent, toOutboxEventRow } from '../../../src/messaging/outbox/outbox-event.mapper.js';
 
 const EVENT: DomainEvent = {
   id: '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11',

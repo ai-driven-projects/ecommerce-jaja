@@ -11,11 +11,8 @@ import { storesRoute } from '@/shared/navigation/stores-routes';
 import { ApiError, toErrorMessage } from '@/shared/util/api-client.util';
 import { formatPhone, onlyDigits } from '@/shared/util/phone.util';
 import { createStore, getStore, updateStore, type Store, type StoreInput } from './store.api';
-import {
-  isGoogleMapsConfigured,
-  STORE_DEFAULT_DELIVERY_RADIUS_METERS,
-  STORE_MOCK_LOCATION,
-} from './store-location.util';
+import { isGoogleMapsConfigured } from '@/shared/maps/google-maps.config';
+import { STORE_DEFAULT_DELIVERY_RADIUS_METERS, STORE_MOCK_LOCATION } from './store-location.util';
 import { storeSchema, type StoreFormData } from './store.schema';
 
 type StoreFormField = 'name' | 'slug' | 'phone' | 'latitude' | 'longitude' | 'deliveryRadiusMeters';

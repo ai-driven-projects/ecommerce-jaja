@@ -3,9 +3,7 @@
 ## Purpose
 
 Define como a API do Jaja protege endpoints administrativos: a exigência combinada de token válido e da flag `admin`, as respostas `401` e `403`, o alcance da proteção (controller inteiro ou endpoint) e a garantia de que endpoints não administrativos seguem como estão.
-
 ## Requirements
-
 ### Requirement: Endpoints administrativos exigem token válido de administrador
 Um endpoint marcado como administrativo SHALL exigir um token Bearer válido cujo usuário tenha `admin = true`. Sem token, com token expirado ou com assinatura inválida, o sistema MUST responder `401` sem executar o endpoint. Com token válido de usuário com `admin = false`, o sistema MUST responder `403` com o código `ADMIN_REQUIRED` no corpo de erro padrão da API, sem executar o endpoint. A verificação de token MUST acontecer antes da verificação de administrador, de modo que uma requisição sem token válido nunca receba `403`. A decisão MUST usar a flag `admin` carregada no token: uma mudança da flag no cadastro só vale após um novo login.
 
@@ -42,7 +40,7 @@ A introdução da proteção administrativa MUST NOT alterar o acesso aos endpoi
 - `GET /auth/me` continua exigindo apenas token válido, de qualquer usuário;
 - `GET /` continua acessível sem token.
 
-Os endpoints de lojas seguem `stores/store-registration` e `stores/address-geocoding`: `/stores` e `/geocoding` são administrativos. Os endpoints de clientes seguem `customers/customer-registration`: `/customers` é administrativo, e `/me/customer` exige apenas token válido, de qualquer usuário. Os endpoints do carrinho seguem `orders/cart`: `/me/cart` exige apenas token válido, de qualquer usuário, e `POST /cart/preview` é público. Os endpoints do pedido do próprio cliente seguem `orders/order-placement`: `/me/orders` exige apenas token válido, de qualquer usuário. Os endpoints da administração de pedidos seguem `orders/order-admin` e `orders/order-monitor`: `/orders` é administrativo.
+Os endpoints de lojas seguem `stores/store-registration`: `/stores` é administrativo. A geocodificação segue `stores/address-geocoding`: `/geocoding` exige apenas token válido, de qualquer usuário. As lojas da vitrine seguem `stores/storefront-stores`: `GET /storefront/stores` é público. Os endpoints de clientes seguem `customers/customer-registration`: `/customers` é administrativo, e `/me/customer` exige apenas token válido, de qualquer usuário. Os endpoints do carrinho seguem `orders/cart`: `/me/cart` exige apenas token válido, de qualquer usuário, e `POST /cart/preview` é público. Os endpoints do pedido do próprio cliente seguem `orders/order-placement`: `/me/orders` exige apenas token válido, de qualquer usuário. Os endpoints da administração de pedidos seguem `orders/order-admin` e `orders/order-monitor`: `/orders` é administrativo.
 
 #### Scenario: Usuário comum no /auth/me
 - **WHEN** um usuário com `admin = false` chama `GET /auth/me` com seu token
@@ -56,9 +54,17 @@ Os endpoints de lojas seguem `stores/store-registration` e `stores/address-geoco
 - **WHEN** um cliente sem token chama `GET /stores`
 - **THEN** o sistema responde `401`
 
+#### Scenario: Lojas da vitrine sem token
+- **WHEN** um cliente sem token chama `GET /storefront/stores`
+- **THEN** o sistema responde `200`, sem `401` nem `403`
+
 #### Scenario: Geocodificação com token comum
 - **WHEN** um usuário com `admin = false` chama `GET /geocoding?address=Avenida Paulista` com seu token
-- **THEN** o sistema responde `403` com `ADMIN_REQUIRED`
+- **THEN** o sistema responde `200`, sem `403`
+
+#### Scenario: Geocodificação sem token
+- **WHEN** um cliente sem token chama `GET /geocoding?address=Avenida Paulista`
+- **THEN** o sistema responde `401`
 
 #### Scenario: Clientes deixam de ser públicos
 - **WHEN** um cliente sem token chama `GET /customers`
@@ -95,3 +101,4 @@ Os endpoints de lojas seguem `stores/store-registration` e `stores/address-geoco
 #### Scenario: Pedidos administrativos com token comum
 - **WHEN** um usuário com `admin = false` chama `GET /orders` com seu token
 - **THEN** o sistema responde `403` com `ADMIN_REQUIRED`
+

@@ -28,10 +28,13 @@ export const CUSTOMER_FIELD_BY_CODE: Readonly<Record<string, CustomerFormField>>
   CUSTOMER_STATE_INVALID: 'address.state',
 };
 
-/** Endereço inicial de um formulário sem cadastro (ex.: bairro da vitrine, São Paulo e SP). */
-export type CustomerAddressDefaults = Partial<Record<keyof CustomerFormData['address'], string>>;
+/** Endereço inicial de um formulário sem cadastro (ex.: a cidade e a UF da loja escolhida na vitrine). */
+export type CustomerAddressDefaults = Partial<Record<Exclude<keyof CustomerFormData['address'], 'location'>, string>>;
 
-/** Formulário vazio (sem `isActive`, que só o formulário administrativo usa). */
+/**
+ * Formulário vazio (sem `isActive`, que só o formulário administrativo usa) e
+ * sem ponto: `location` ausente não vai no `PUT`, e a API cria o cadastro sem ponto.
+ */
 export function emptyCustomerFormValues(defaults: CustomerAddressDefaults = {}): CustomerFormData {
   return {
     cpf: '',
@@ -49,7 +52,11 @@ export function emptyCustomerFormValues(defaults: CustomerAddressDefaults = {}):
   };
 }
 
-/** Cliente da API → valores do formulário, com CPF, telefone e CEP já mascarados (sem `isActive`). */
+/**
+ * Cliente da API → valores do formulário, com CPF, telefone e CEP já mascarados
+ * (sem `isActive`). O ponto do cadastro (`null` quando não há) vai junto, para
+ * as telas sem mapa (checkout e administração) o devolverem sem editá-lo.
+ */
 export function toCustomerFormValues(customer: Customer): CustomerFormData {
   return {
     cpf: formatCpf(customer.cpf),
@@ -62,6 +69,7 @@ export function toCustomerFormValues(customer: Customer): CustomerFormData {
       neighborhood: customer.address.neighborhood,
       city: customer.address.city,
       state: customer.address.state,
+      location: customer.address.location,
     },
     isActive: undefined,
   };
@@ -70,6 +78,9 @@ export function toCustomerFormValues(customer: Customer): CustomerFormData {
 /**
  * Valores validados → corpo do `PUT`: CPF, telefone e CEP sem máscara,
  * complemento vazio como `null` e `isActive` só quando o formulário o tem.
+ * `address.location` vai como está no formulário (regra de preservação da
+ * API): ausente não é enviado e mantém o ponto atual, `null` remove e um objeto
+ * grava. Nunca trocar `undefined` por `null` aqui.
  */
 export function toCustomerInput(data: CustomerFormData): CustomerInput {
   return {
@@ -83,21 +94,46 @@ export function toCustomerInput(data: CustomerFormData): CustomerInput {
       neighborhood: data.address.neighborhood,
       city: data.address.city,
       state: data.address.state,
+      ...(data.address.location !== undefined ? { location: data.address.location } : {}),
     },
     ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
   };
 }
 
+/** Ponto do endereço inválido: não é de nenhum campo, vira erro geral acima do mapa. */
+export const CUSTOMER_LOCATION_INVALID = 'CUSTOMER_LOCATION_INVALID';
+
+/** Erro geral do ponto no formulário (`formState.errors.root.location`). */
+export const CUSTOMER_LOCATION_ERROR_FIELD = 'root.location';
+
+export type ReportCustomerSaveErrorOptions = {
+  /**
+   * Formulário com mapa ("Minha conta"): `CUSTOMER_LOCATION_INVALID` vira o
+   * erro geral `root.location` em vez de toaster.
+   */
+  locationError?: boolean;
+};
+
 /**
  * Trata a falha ao salvar um cliente: os códigos de `CUSTOMER_FIELD_BY_CODE`
- * viram erro no campo (foco no primeiro, uma mensagem por campo) e os demais
- * códigos, ou qualquer outro erro, viram toaster.
+ * viram erro no campo (foco no primeiro, uma mensagem por campo), com
+ * `locationError` o `CUSTOMER_LOCATION_INVALID` vira o erro geral do ponto, e
+ * os demais códigos, ou qualquer outro erro, viram toaster.
  */
-export function reportCustomerSaveError(error: unknown, setError: UseFormSetError<CustomerFormData>): void {
+export function reportCustomerSaveError(
+  error: unknown,
+  setError: UseFormSetError<CustomerFormData>,
+  { locationError = false }: ReportCustomerSaveErrorOptions = {},
+): void {
   if (error instanceof ApiError) {
     const fieldCodes = error.codes.filter((code) => CUSTOMER_FIELD_BY_CODE[code]);
+    const locationReported = locationError && error.codes.includes(CUSTOMER_LOCATION_INVALID);
 
-    if (fieldCodes.length > 0) {
+    if (locationReported) {
+      setError(CUSTOMER_LOCATION_ERROR_FIELD, { type: 'server', message: getMessage(CUSTOMER_LOCATION_INVALID) });
+    }
+
+    if (fieldCodes.length > 0 || locationReported) {
       const reported = new Set<CustomerFormField>();
 
       fieldCodes.forEach((code) => {
@@ -109,7 +145,9 @@ export function reportCustomerSaveError(error: unknown, setError: UseFormSetErro
       });
 
       const otherMessages = new Set(
-        error.codes.filter((code) => !CUSTOMER_FIELD_BY_CODE[code]).map((code) => getMessage(code)),
+        error.codes
+          .filter((code) => !CUSTOMER_FIELD_BY_CODE[code] && !(locationReported && code === CUSTOMER_LOCATION_INVALID))
+          .map((code) => getMessage(code)),
       );
       if (otherMessages.size > 0) toast.error([...otherMessages].join(' '));
       return;

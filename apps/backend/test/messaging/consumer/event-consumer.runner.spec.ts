@@ -8,14 +8,14 @@ import {
   TransactionManager,
 } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ActiveTransactionManager } from '../../db/active-transaction.manager.js';
-import { PrismaService, PrismaTransactionContext } from '../../db/prisma.service.js';
-import type { RabbitMqSubscription } from '../rabbitmq/rabbitmq-message.consumer.js';
-import type { TransactionalEventConsumer } from './event-consumer.js';
-import { EventConsumerRegistry } from './event-consumer.registry.js';
-import { EventConsumerRunner } from './event-consumer.runner.js';
-import { ConsumerTransactionContext } from './message-causation.js';
-import { ProcessedMessagePrisma } from './processed-message.prisma.js';
+import { ActiveTransactionManager } from '../../../src/db/active-transaction.manager.js';
+import { PrismaService, PrismaTransactionContext } from '../../../src/db/prisma.service.js';
+import type { RabbitMqSubscription } from '../../../src/messaging/rabbitmq/rabbitmq-message.consumer.js';
+import type { TransactionalEventConsumer } from '../../../src/messaging/consumer/event-consumer.js';
+import { EventConsumerRegistry } from '../../../src/messaging/consumer/event-consumer.registry.js';
+import { EventConsumerRunner } from '../../../src/messaging/consumer/event-consumer.runner.js';
+import { ConsumerTransactionContext } from '../../../src/messaging/consumer/message-causation.js';
+import { ProcessedMessagePrisma } from '../../../src/messaging/consumer/processed-message.prisma.js';
 
 const LOG_LEVELS = ['log', 'error', 'warn', 'debug', 'verbose', 'fatal'] as const;
 const PERSONAL_EMAIL = 'cliente@exemplo.com';

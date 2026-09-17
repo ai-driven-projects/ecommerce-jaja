@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backoffDelayMs } from './backoff.js';
+import { backoffDelayMs } from '../../src/messaging/backoff.js';
 
 describe('backoffDelayMs', () => {
   it('waits 1 s, 2 s and 4 s after the 1st, 2nd and 3rd failures', () => {

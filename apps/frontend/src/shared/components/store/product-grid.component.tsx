@@ -8,7 +8,6 @@ type ProductGridProps = {
   products: StoreProduct[];
   /** Monta o link de cada card. Padrão: `/p/<slug>`. */
   getHref?: (product: StoreProduct) => string;
-  etaMinutes?: number | null;
   getQuantity?: (product: StoreProduct) => number;
   /** Sem esta ação os cards não exibem o "+". */
   onChangeQuantity?: (product: StoreProduct, quantity: number) => void;
@@ -28,7 +27,6 @@ function defaultHref(product: StoreProduct) {
 export function ProductGrid({
   products,
   getHref = defaultHref,
-  etaMinutes,
   getQuantity,
   onChangeQuantity,
   max,
@@ -51,7 +49,6 @@ export function ProductGrid({
           key={product.id}
           product={product}
           href={getHref(product)}
-          etaMinutes={etaMinutes}
           size={cardSize}
           quantity={getQuantity?.(product) ?? 0}
           onChangeQuantity={onChangeQuantity ? (quantity) => onChangeQuantity(product, quantity) : undefined}

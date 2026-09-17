@@ -1,5 +1,12 @@
-// Delivery address as stored: `zipCode` with 8 digits, `state` uppercase and
-// `complement` as `null` when absent.
+// Point of the address on the map, in decimal degrees rounded to 6 places.
+export interface CustomerLocationDTO {
+  latitude: number
+  longitude: number
+}
+
+// Delivery address as stored: `zipCode` with 8 digits, `state` uppercase,
+// `complement` as `null` when absent and `location` as `null` when the customer
+// has not marked a point on the map.
 export interface CustomerAddressDTO {
   zipCode: string
   street: string
@@ -8,6 +15,7 @@ export interface CustomerAddressDTO {
   neighborhood: string
   city: string
   state: string
+  location: CustomerLocationDTO | null
 }
 
 // Returned by `Customer.toDTO()` and `SaveCustomer`. The domain only knows the

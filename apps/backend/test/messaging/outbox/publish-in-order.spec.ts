@@ -5,7 +5,7 @@ import {
   Result,
 } from '@mentoria-360/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { publishInOrder } from './publish-in-order.js';
+import { publishInOrder } from '../../../src/messaging/outbox/publish-in-order.js';
 
 function event(id: string, type: string): DomainEvent {
   return {

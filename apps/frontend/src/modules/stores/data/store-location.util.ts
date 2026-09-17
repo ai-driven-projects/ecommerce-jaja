@@ -1,18 +1,10 @@
 /**
- * Localização da loja no frontend: configuração do Google Maps, o ponto
- * simulado e os limites do raio. Os valores repetem os do domínio
- * (`@jaja/stores`) e do `MockGeocodingProvider` do backend, porque o frontend
- * não importa pacotes `@jaja/*`.
+ * Localização da loja no frontend: o ponto simulado e os limites do raio. Os
+ * valores repetem os do domínio (`@jaja/stores`) e do `MockGeocodingProvider`
+ * do backend, porque o frontend não importa pacotes `@jaja/*`. A configuração
+ * do Google Maps e o arredondamento das coordenadas ficam em
+ * `@/shared/maps/google-maps.config`.
  */
-
-/** Chave pública do Maps JavaScript API; vazia liga o mapa simulado. */
-export const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.trim() ?? '';
-
-/** Map ID dos marcadores avançados; sem valor usa o `DEMO_MAP_ID` do Google. */
-export const GOOGLE_MAPS_MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID?.trim() || 'DEMO_MAP_ID';
-
-/** Há chave pública: o formulário tenta carregar o Google Maps. */
-export const isGoogleMapsConfigured = GOOGLE_MAPS_API_KEY !== '';
 
 export const STORE_MIN_DELIVERY_RADIUS_METERS = 300;
 export const STORE_MAX_DELIVERY_RADIUS_METERS = 10000;
@@ -21,9 +13,6 @@ export const STORE_DEFAULT_DELIVERY_RADIUS_METERS = 1000;
 /** Passo do raio gravado a partir do círculo do mapa. */
 export const STORE_RADIUS_STEP_METERS = 50;
 
-/** Casas decimais das coordenadas (≈ 11 cm), as mesmas do `GeoPoint` do domínio. */
-export const STORE_COORDINATE_DECIMALS = 6;
-
 /** Ponto e raio simulados: Avenida Paulista, 1578 (em frente ao MASP), raio de 1 km. */
 export const STORE_MOCK_LOCATION = {
   latitude: -23.561414,
@@ -31,12 +20,6 @@ export const STORE_MOCK_LOCATION = {
   deliveryRadiusMeters: 1000,
   label: 'Avenida Paulista, 1578 – Bela Vista, São Paulo/SP',
 } as const;
-
-/** Coordenada arredondada para 6 casas (`-3.73561234` → `-3.735612`). */
-export function roundCoordinate(value: number): number {
-  const factor = 10 ** STORE_COORDINATE_DECIMALS;
-  return Math.round(value * factor) / factor;
-}
 
 /**
  * Raio vindo do mapa: múltiplo de 50 m, limitado a 300–10.000 m

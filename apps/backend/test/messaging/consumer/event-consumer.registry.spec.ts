@@ -1,8 +1,8 @@
 import { Result } from '@mentoria-360/shared';
 import { describe, expect, it } from 'vitest';
-import { MessagingErrors } from '../messaging-errors.js';
-import type { TransactionalEventConsumer } from './event-consumer.js';
-import { EventConsumerRegistry } from './event-consumer.registry.js';
+import { MessagingErrors } from '../../../src/messaging/messaging-errors.js';
+import type { TransactionalEventConsumer } from '../../../src/messaging/consumer/event-consumer.js';
+import { EventConsumerRegistry } from '../../../src/messaging/consumer/event-consumer.registry.js';
 
 function consumer(overrides: Partial<TransactionalEventConsumer> = {}): TransactionalEventConsumer {
   return {

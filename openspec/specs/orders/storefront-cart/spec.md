@@ -3,9 +3,7 @@
 ## Purpose
 
 Define como o carrinho funciona na loja pública do Jaja: o carrinho do visitante guardado no navegador, o carrinho da conta e a mescla ao entrar, o contador do cabeçalho, a gaveta do carrinho, o botão "+" nos cards e o "Adicionar" no detalhe do produto.
-
 ## Requirements
-
 ### Requirement: Carrinho do visitante no navegador
 Sem sessão, a loja SHALL guardar no navegador os produtos e as quantidades do carrinho, na ordem de inclusão. O carrinho do visitante MUST continuar igual depois de recarregar a página e MUST refletir, em outra aba do mesmo navegador, as mudanças feitas numa aba. Os dados exibidos das linhas (nome, foto, unidade, preço atual e disponibilidade) e os totais MUST vir da prévia do carrinho da API (`orders/cart`), e um produto que não existe mais MUST ser retirado do carrinho do visitante. As regras de quantidade valem também para o visitante: passar de 99 unidades num produto MUST exibir "Limite de 99 unidades por produto." e passar de 50 produtos diferentes MUST exibir "O carrinho aceita até 50 produtos diferentes.", sem alterar o carrinho. Um carrinho salvo por versões anteriores da loja, com os produtos fictícios, MUST ser descartado.
 
@@ -66,27 +64,29 @@ O botão do carrinho SHALL abrir a gaveta com o carrinho exibido. Cada linha MUS
 - **WHEN** o subtotal dos itens disponíveis chega a R$ 79,00
 - **THEN** a entrega aparece como "Grátis" e o aviso de quanto falta deixa de aparecer
 
-### Requirement: Adicionar pelos cards da loja
-Os cards de produto das grades da loja (seções da página inicial, listagem e "Mais de <categoria>" no detalhe) SHALL exibir o botão "+" quando o bairro selecionado é atendido. Clicar em "+" num produto que não está no carrinho MUST incluir 1 unidade, e o botão MUST virar o controle de quantidade com a quantidade no carrinho. No controle, "+" e "−" MUST alterar a quantidade do produto no carrinho, 0 MUST remover o item e o "+" MUST ficar indisponível em 99. Quando o bairro selecionado não é atendido, os cards MUST NOT exibir o "+".
+### Requirement: Adicionar produtos pelos cards
+Os cards de produto das grades da loja (seções da página inicial, listagem e "Mais de <categoria>" no detalhe) SHALL exibir o botão "+". Clicar em "+" num produto que não está no carrinho MUST incluir 1 unidade, e o botão MUST virar o controle de quantidade com a quantidade no carrinho. No controle, "+" e "−" MUST alterar a quantidade do produto no carrinho, 0 MUST remover o item e o "+" MUST ficar indisponível em 99.
+
+O "+" MUST NOT ser bloqueado pela loja escolhida nem por qualquer verificação de área de entrega: a cobertura passa a ser decidida pelo raio da loja contra o endereço do cliente, no fluxo de pedido, e não na navegação da vitrine.
 
 #### Scenario: Primeiro clique no card
-- **WHEN** na página inicial, com o bairro Aldeota, o visitante clica em "+" num card de "Em destaque"
+- **WHEN** na página inicial o visitante clica em "+" num card de "Em destaque"
 - **THEN** o card passa a mostrar o controle com 1, e o contador do cabeçalho aumenta em 1
 
 #### Scenario: Produto já no carrinho
 - **WHEN** a listagem exibe um produto que já está no carrinho com quantidade 4
 - **THEN** o card desse produto mostra o controle de quantidade com 4
 
-#### Scenario: Bairro não atendido
-- **WHEN** o visitante abre o detalhe de um produto com `bairro=Papicu`
-- **THEN** os cards de "Mais de <categoria>" não exibem o "+"
+#### Scenario: Qualquer loja escolhida
+- **WHEN** o visitante abre o detalhe de um produto com `loja=loja-rio-branco`
+- **THEN** os cards de "Mais de <categoria>" exibem o "+"
 
-### Requirement: Adicionar no detalhe do produto
+### Requirement: Adicionar produtos no detalhe
 O detalhe do produto SHALL exibir o controle de quantidade (de 1 a 99) e o botão "Adicionar · <total>", com o total calculado pela quantidade escolhida. Clicar no botão MUST incluir a quantidade escolhida no carrinho exibido, somando à quantidade que já estiver nele. Enquanto a inclusão não termina, o botão MUST mostrar "Adicionando…" e ficar indisponível. Em caso de sucesso:
 - a loja MUST exibir "Adicionado ao carrinho" com "<quantidade> un · <total>" e a ação "Ver carrinho", que abre a gaveta;
 - a quantidade escolhida MUST voltar a 1.
 
-Em caso de falha (limite de 99 unidades ou produto indisponível), a loja MUST exibir a mensagem correspondente e o carrinho MUST NOT mudar. Quando o produto já está no carrinho, o detalhe MUST exibir "Você já tem <quantidade> no carrinho.". O botão MUST ficar indisponível quando o bairro selecionado não é atendido.
+Em caso de falha (limite de 99 unidades ou produto indisponível), a loja MUST exibir a mensagem correspondente e o carrinho MUST NOT mudar. Quando o produto já está no carrinho, o detalhe MUST exibir "Você já tem <quantidade> no carrinho.". O botão MUST NOT ficar indisponível por causa da loja escolhida nem de verificação de área de entrega.
 
 #### Scenario: Adicionar três unidades
 - **WHEN** o visitante escolhe quantidade 3 num produto de R$ 12,90 e clica em "Adicionar · R$ 38,70"
@@ -100,6 +100,7 @@ Em caso de falha (limite de 99 unidades ou produto indisponível), a loja MUST e
 - **WHEN** o produto já está no carrinho com quantidade 98 e o cliente tenta adicionar 3
 - **THEN** aparece "Limite de 99 unidades por produto." e o produto continua com quantidade 98
 
-#### Scenario: Bairro não atendido
-- **WHEN** o visitante abre o detalhe de um produto com `bairro=Papicu`
-- **THEN** o botão "Adicionar" fica indisponível
+#### Scenario: Adicionar com outra loja escolhida
+- **WHEN** o visitante abre o detalhe de um produto com `loja=loja-rio-branco`
+- **THEN** o botão "Adicionar" fica disponível
+

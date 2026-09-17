@@ -7,12 +7,10 @@ import { useWatch, type UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/shared/components/ui/button';
 import { toErrorMessage } from '@/shared/util/api-client.util';
-import { geocodeAddress, type GeocodingResult } from '../data/geocoding.api';
+import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_MAP_ID, roundCoordinate } from '@/shared/maps/google-maps.config';
+import { geocodeAddress, MOCK_GEOCODING_WARNING, type GeocodingResult } from '../data/geocoding.api';
 import {
-  GOOGLE_MAPS_API_KEY,
-  GOOGLE_MAPS_MAP_ID,
   normalizeRadius,
-  roundCoordinate,
   STORE_DEFAULT_DELIVERY_RADIUS_METERS,
   STORE_MAX_DELIVERY_RADIUS_METERS,
   STORE_MIN_DELIVERY_RADIUS_METERS,
@@ -28,7 +26,7 @@ const CITY_ZOOM = 12;
 const GEOCODE_MIN_LENGTH = 3;
 
 /** Aviso exibido quando o backend responde a busca com o ponto simulado. */
-export const STORE_MOCK_GEOCODING_WARNING = 'Busca de endereço simulada: o backend está sem GOOGLE_MAPS_API_KEY';
+export const STORE_MOCK_GEOCODING_WARNING = MOCK_GEOCODING_WARNING;
 
 const BRAND_COLOR = '#FF6B00';
 

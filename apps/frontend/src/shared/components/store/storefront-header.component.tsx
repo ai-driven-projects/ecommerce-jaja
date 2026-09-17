@@ -4,7 +4,8 @@ import type { ReactNode, Ref } from 'react';
 import Link from 'next/link';
 import { ChevronDown, LogOut, ShieldCheck, ShoppingCart, UserRound } from 'lucide-react';
 import { AppLogo } from '@/shared/components/branding/app-logo.component';
-import { DeliveryPill } from '@/shared/components/store/delivery-pill.component';
+import { StorePicker } from '@/shared/components/store/store-picker.component';
+import type { StoreOption } from '@/shared/components/store/store.types';
 import { StorefrontSearch } from '@/shared/components/store/storefront-search.component';
 import { Button } from '@/shared/components/ui/button';
 import {
@@ -17,15 +18,20 @@ import {
 import { cn } from '@/shared/lib/class-name.util';
 
 type StorefrontHeaderProps = {
-  neighborhood: string;
-  neighborhoods: string[];
-  etaMinutes: number | null;
+  /** Loja em vigor no seletor; `null` enquanto as lojas carregam. */
+  store: StoreOption | null;
+  /** Lojas ativas disponíveis para troca. */
+  stores: StoreOption[];
   cartCount: number;
-  onNeighborhoodChange: (neighborhood: string) => void;
+  onStoreChange: (slug: string) => void;
   onOpenCart: () => void;
   cartButtonRef?: Ref<HTMLButtonElement>;
-  /** Nome do cliente autenticado; com ele o cabeçalho mostra o primeiro nome e "Sair". */
+  /** Nome do cliente autenticado; com ele o cabeçalho mostra o primeiro nome e o menu da conta. */
   userName?: string | null;
+  /** Email do usuário autenticado, abaixo do nome no menu (administradores veem "Administrador"). */
+  userEmail?: string | null;
+  /** Destino de "Minha conta" no menu, com a query atual da vitrine. */
+  myAccountHref?: string;
   /** Destino do botão "Entrar", exibido só quando não há `userName`. */
   signInHref?: string;
   onSignOut?: () => void;
@@ -45,15 +51,21 @@ function firstNameOf(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] || fullName;
 }
 
-// Controle de conta: com sessão → pílula com o primeiro nome e menu (área
-// administrativa para admins, "Sair"); sem sessão → botão "Entrar" em contorno.
+// Controle de conta: com sessão → pílula com o primeiro nome e menu (nome e
+// email ou "Administrador", "Minha conta", área administrativa para admins e
+// "Sair"); sem sessão → botão "Entrar" em contorno.
 function AccountControl({
   userName,
+  userEmail,
+  myAccountHref,
   signInHref,
   onSignOut,
   isAdmin,
   adminHref,
-}: Pick<StorefrontHeaderProps, 'userName' | 'signInHref' | 'onSignOut' | 'isAdmin' | 'adminHref'>) {
+}: Pick<
+  StorefrontHeaderProps,
+  'userName' | 'userEmail' | 'myAccountHref' | 'signInHref' | 'onSignOut' | 'isAdmin' | 'adminHref'
+>) {
   if (userName) {
     return (
       <DropdownMenu>
@@ -66,12 +78,20 @@ function AccountControl({
             <ChevronDown className="size-3.5 text-muted-ink" strokeWidth={2.5} aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuContent align="end" className="w-60">
           <div className="px-3 py-2">
             <p className="truncate text-sm font-extrabold">{userName}</p>
-            <p className="text-xs text-muted-ink">{isAdmin ? 'Administrador' : 'Conta do escritório'}</p>
+            <p className="truncate text-xs text-muted-ink">{isAdmin ? 'Administrador' : userEmail}</p>
           </div>
           <DropdownMenuSeparator />
+          {myAccountHref ? (
+            <DropdownMenuItem asChild>
+              <Link href={myAccountHref}>
+                <UserRound className="size-4" strokeWidth={2.2} aria-hidden="true" />
+                Minha conta
+              </Link>
+            </DropdownMenuItem>
+          ) : null}
           {isAdmin && adminHref ? (
             <DropdownMenuItem asChild>
               <Link href={adminHref}>
@@ -101,18 +121,20 @@ function AccountControl({
 }
 
 /**
- * Cabeçalho da loja: fixo no topo, branco, com logo, pílula de entrega,
- * busca, conta e o botão laranja do carrinho.
+ * Cabeçalho da loja: fixo no topo, branco, com logo, seletor de lojas, busca,
+ * conta e o botão laranja do carrinho. Sem tempo estimado de entrega e sem
+ * texto de cobertura: não há cálculo real de nenhum dos dois nesta versão.
  */
 export function StorefrontHeader({
-  neighborhood,
-  neighborhoods,
-  etaMinutes,
+  store,
+  stores,
   cartCount,
-  onNeighborhoodChange,
+  onStoreChange,
   onOpenCart,
   cartButtonRef,
   userName,
+  userEmail,
+  myAccountHref,
   signInHref,
   onSignOut,
   isAdmin,
@@ -129,13 +151,7 @@ export function StorefrontHeader({
           <AppLogo size="lg" />
         </Link>
 
-        <DeliveryPill
-          neighborhood={neighborhood}
-          neighborhoods={neighborhoods}
-          etaMinutes={etaMinutes}
-          onNeighborhoodChange={onNeighborhoodChange}
-          className="max-w-full"
-        />
+        <StorePicker store={store} stores={stores} onStoreChange={onStoreChange} className="max-w-full" />
 
         <StorefrontSearch
           key={searchValue}
@@ -147,6 +163,8 @@ export function StorefrontHeader({
         <div className="ml-auto flex items-center gap-2.5">
           <AccountControl
             userName={userName}
+            userEmail={userEmail}
+            myAccountHref={myAccountHref}
             signInHref={signInHref}
             onSignOut={onSignOut}
             isAdmin={isAdmin}

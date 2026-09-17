@@ -1,6 +1,6 @@
 import { BrokerMessage, TransactionContext } from '@mentoria-360/shared';
 import { describe, expect, it } from 'vitest';
-import { causationOf, readCausation } from './message-causation.js';
+import { causationOf, readCausation } from '../../../src/messaging/consumer/message-causation.js';
 
 const MESSAGE_ID = '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11';
 

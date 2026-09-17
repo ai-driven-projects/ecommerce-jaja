@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-label="As seis pastas de um agregado de negócio e o que entra em cada uma" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="620" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Anatomia de um agregado</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">seis pastas, sempre as mesmas — este é o esqueleto de todo módulo de negócio</text>
+  <rect x="40" y="92" width="340" height="30" rx="15" fill="#1E1812"/>
+  <text x="60" y="112" font-size="12.5" font-weight="700" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">modules/orders/src/order/</text>
+
+  <text x="60" y="154" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">PASTA</text>
+  <text x="250" y="154" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">O QUE ENTRA</text>
+  <text x="640" y="154" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">NO PEDIDO</text>
+  <line x1="40" y1="164" x2="920" y2="164" stroke="#E0D5C9"/>
+
+  <rect x="40" y="172" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="198" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">model/</text>
+  <text x="60" y="218" font-size="10.5" fill="#8A8177">entidades e VOs</text>
+  <text x="250" y="200" font-size="12" fill="#1E1812">A regra de negócio de verdade: o que pode existir, o que pode mudar e quando.</text>
+  <text x="250" y="219" font-size="11" fill="#8A8177">Nada de banco, nada de HTTP. Só estado válido e comportamento.</text>
+  <text x="640" y="200" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order.entity.ts</text>
+  <text x="640" y="219" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">order-item.vo.ts</text>
+
+  <rect x="40" y="242" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="268" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">use-case/</text>
+  <text x="60" y="288" font-size="10.5" fill="#8A8177">um arquivo por ação</text>
+  <text x="250" y="270" font-size="12" fill="#1E1812">A história de uma ação, do começo ao fim: busca, valida, decide, grava.</text>
+  <text x="250" y="289" font-size="11" fill="#8A8177">É quem abre a transação e quem devolve o <tspan font-family="'JetBrains Mono', Menlo, monospace">Result</tspan> para o controller.</text>
+  <text x="640" y="270" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">place-order.use-case.ts</text>
+  <text x="640" y="289" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">advance-order-status.use-case.ts</text>
+
+  <rect x="40" y="312" width="880" height="62" rx="14" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="60" y="338" font-size="13" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">event/</text>
+  <text x="60" y="358" font-size="10.5" fill="#B87A3D">o assunto da aula</text>
+  <text x="250" y="340" font-size="12" fill="#1E1812">Os fatos que o agregado registra quando algo já aconteceu. Nome no passado.</text>
+  <text x="250" y="359" font-size="11" fill="#8A8177">Quem grava é a entidade; quem publica é a infraestrutura, mais tarde.</text>
+  <text x="640" y="340" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order-placed.event.ts</text>
+  <text x="640" y="359" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">order-status-changed.event.ts</text>
+
+  <rect x="40" y="382" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="408" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">provider/</text>
+  <text x="60" y="428" font-size="10.5" fill="#8A8177">interfaces, sem código</text>
+  <text x="250" y="410" font-size="12" fill="#1E1812">O que o módulo precisa do mundo externo: gravar (repository) e ler (query).</text>
+  <text x="250" y="429" font-size="11" fill="#8A8177">Quem implementa é o backend, com Prisma — o módulo só declara o contrato.</text>
+  <text x="640" y="410" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order.repository.ts</text>
+  <text x="640" y="429" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">find-orders.query.ts</text>
+
+  <rect x="40" y="452" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="478" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">dto/</text>
+  <text x="60" y="498" font-size="10.5" fill="#8A8177">entrada e saída</text>
+  <text x="250" y="480" font-size="12" fill="#1E1812">A forma dos dados na fronteira: o que o caso de uso recebe e o que devolve.</text>
+  <text x="250" y="499" font-size="11" fill="#8A8177">Impede que a entidade vaze inteira para a API e para a tela.</text>
+  <text x="640" y="480" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order.dto.ts</text>
+  <text x="640" y="499" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">PlaceOrderInputDTO</text>
+
+  <rect x="40" y="522" width="880" height="52" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="548" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">errors.ts</text>
+  <text x="60" y="566" font-size="10.5" fill="#8A8177">códigos do módulo</text>
+  <text x="250" y="554" font-size="12" fill="#1E1812">Os motivos de falha, com nome: <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">ORDER_CART_EMPTY</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">ORDER_STATUS_TRANSITION_INVALID</tspan>.</text>
+
+  <text x="40" y="602" font-size="12" fill="#5C544B">Mesmo esqueleto em <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">cart/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">product/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">customer/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">store/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">user/</tspan> — só <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#FF6B00">event/</tspan> ainda é exclusividade do pedido.</text>
+</svg>

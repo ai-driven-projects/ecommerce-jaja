@@ -8,6 +8,9 @@ const missingId = '550e8400-e29b-41d4-a716-446655440000'
 const cpf = '52998224725'
 const otherCpf = '11144477735'
 
+const paulista = { latitude: -23.561414, longitude: -46.655881 }
+const rioBranco = { latitude: -22.906847, longitude: -43.172897 }
+
 const address = {
   zipCode: '60150-160',
   street: 'Av. Santos Dumont',
@@ -124,6 +127,169 @@ describe('SaveCustomer', () => {
       expect(repository.size).toBe(1)
       expect((await repository.findById(created.id)).instance.phone).toBe(
         '85912345678',
+      )
+    })
+
+    describe('location (preservation rule)', () => {
+      test('creates with a point, rounded to 6 decimal places', async () => {
+        const { repository, useCase } = setup()
+
+        const result = await useCase.execute(
+          input({
+            address: {
+              ...address,
+              location: { latitude: -23.5614141234, longitude: -46.6558809876 },
+            },
+          }),
+        )
+
+        expect(result.isOk).toBe(true)
+        expect(result.instance.address.location).toEqual(paulista)
+        expect(
+          (await repository.findByUserId(userId)).instance?.address.location,
+        ).toEqual(paulista)
+      })
+
+      test.each([undefined, null])(
+        'creates without a point for location %p',
+        async (location) => {
+          const { repository, useCase } = setup()
+
+          const result = await useCase.execute(
+            input({ address: { ...address, location } }),
+          )
+
+          expect(result.isOk).toBe(true)
+          expect(result.instance.address.location).toBeNull()
+          expect(
+            (await repository.findByUserId(userId)).instance?.address.location,
+          ).toBeNull()
+        },
+      )
+
+      test('keeps the point when location is not sent, even with another address', async () => {
+        const { repository, useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+
+        const result = await useCase.execute(
+          input({ address: { ...address, number: '1600' } }),
+        )
+
+        expect(result.isOk).toBe(true)
+        expect(result.instance).toMatchObject({
+          id: created.id,
+          address: { number: '1600', location: paulista },
+        })
+        expect(
+          (await repository.findById(created.id)).instance.address.location,
+        ).toEqual(paulista)
+      })
+
+      test('keeps no point when the customer has none and location is not sent', async () => {
+        const { useCase } = setup()
+        await createCustomer(useCase)
+
+        const result = await useCase.execute(
+          input({ address: { ...address, number: '1600' } }),
+        )
+
+        expect(result.instance.address.location).toBeNull()
+      })
+
+      test('removes the point with null', async () => {
+        const { repository, useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+
+        const result = await useCase.execute(
+          input({ address: { ...address, location: null } }),
+        )
+
+        expect(result.isOk).toBe(true)
+        expect(result.instance.address.location).toBeNull()
+        expect(
+          (await repository.findById(created.id)).instance.address.location,
+        ).toBeNull()
+      })
+
+      test('replaces the point with another one', async () => {
+        const { repository, useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+
+        const result = await useCase.execute(
+          input({ address: { ...address, location: rioBranco } }),
+        )
+
+        expect(result.instance.address.location).toEqual(rioBranco)
+        expect(
+          (await repository.findById(created.id)).instance.address.location,
+        ).toEqual(rioBranco)
+      })
+
+      test('adds a point to a customer without one', async () => {
+        const { useCase } = setup()
+        await createCustomer(useCase)
+
+        const result = await useCase.execute(
+          input({ address: { ...address, location: rioBranco } }),
+        )
+
+        expect(result.instance.address.location).toEqual(rioBranco)
+      })
+
+      test.each([
+        { latitude: 91, longitude: -46.65 },
+        { latitude: -23.56 },
+        { latitude: '-23.56', longitude: -46.65 },
+      ])(
+        'fails with CUSTOMER_LOCATION_INVALID on creation for %p without creating',
+        async (location) => {
+          const { repository, useCase } = setup()
+          const create = jest.spyOn(repository, 'create')
+
+          const result = await useCase.execute(
+            input({
+              address: { ...address, location: location as typeof paulista },
+            }),
+          )
+
+          expect(result.errors).toEqual(['CUSTOMER_LOCATION_INVALID'])
+          expect(create).not.toHaveBeenCalled()
+          expect(repository.size).toBe(0)
+        },
+      )
+
+      test.each([
+        { latitude: 91, longitude: -46.65 },
+        { latitude: -23.56 },
+        { longitude: -43.172897 },
+      ])(
+        'fails with CUSTOMER_LOCATION_INVALID on update for %p without updating',
+        async (location) => {
+          const { repository, useCase } = setup()
+          const created = await createCustomer(useCase, {
+            address: { ...address, location: paulista },
+          })
+          const update = jest.spyOn(repository, 'update')
+
+          const result = await useCase.execute(
+            input({
+              phone: '85912345678',
+              address: { ...address, location: location as typeof paulista },
+            }),
+          )
+
+          expect(result.errors).toEqual(['CUSTOMER_LOCATION_INVALID'])
+          expect(update).not.toHaveBeenCalled()
+          const stored = (await repository.findById(created.id)).instance
+          expect(stored.phone).toBe('85998765432')
+          expect(stored.address.location).toEqual(paulista)
+        },
       )
     })
 
@@ -353,6 +519,7 @@ describe('SaveCustomer', () => {
         neighborhood: 'Meireles',
         city: 'Fortaleza',
         state: 'CE',
+        location: null,
       })
     })
 
@@ -450,6 +617,82 @@ describe('SaveCustomer', () => {
       )
 
       expect(result.isOk).toBe(true)
+    })
+
+    describe('location (preservation rule)', () => {
+      test('keeps the point when location is not sent, even with another neighborhood', async () => {
+        const { repository, useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+
+        const result = await useCase.execute({
+          id: created.id,
+          cpf,
+          phone: '85998765432',
+          address: { ...address, neighborhood: 'Meireles' },
+        })
+
+        expect(result.isOk).toBe(true)
+        expect(result.instance.address).toMatchObject({
+          neighborhood: 'Meireles',
+          location: paulista,
+        })
+        expect(
+          (await repository.findById(created.id)).instance.address.location,
+        ).toEqual(paulista)
+      })
+
+      test('removes the point with null', async () => {
+        const { repository, useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+
+        const result = await useCase.execute(
+          input({ id: created.id, address: { ...address, location: null } }),
+        )
+
+        expect(result.instance.address.location).toBeNull()
+        expect(
+          (await repository.findById(created.id)).instance.address.location,
+        ).toBeNull()
+      })
+
+      test('replaces the point with another one', async () => {
+        const { useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+
+        const result = await useCase.execute(
+          input({ id: created.id, address: { ...address, location: rioBranco } }),
+        )
+
+        expect(result.instance.address.location).toEqual(rioBranco)
+      })
+
+      test('fails with CUSTOMER_LOCATION_INVALID without updating', async () => {
+        const { repository, useCase } = setup()
+        const created = await createCustomer(useCase, {
+          address: { ...address, location: paulista },
+        })
+        const update = jest.spyOn(repository, 'update')
+
+        const result = await useCase.execute(
+          input({
+            id: created.id,
+            phone: '85912345678',
+            address: { ...address, location: { latitude: 91, longitude: -46.65 } },
+          }),
+        )
+
+        expect(result.errors).toEqual(['CUSTOMER_LOCATION_INVALID'])
+        expect(update).not.toHaveBeenCalled()
+        const stored = (await repository.findById(created.id)).instance
+        expect(stored.phone).toBe('85998765432')
+        expect(stored.address.location).toEqual(paulista)
+      })
     })
 
     test('propagates a findById failure other than CUSTOMER_NOT_FOUND', async () => {

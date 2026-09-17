@@ -122,7 +122,7 @@ export function StorefrontHome() {
 
   return (
     <>
-      <StorefrontHero neighborhood={storefront.neighborhood} couriersOnline={COURIERS_ONLINE} ctaHref={`#${FEATURED_ANCHOR}`} />
+      <StorefrontHero storeName={storefront.store?.name ?? null} couriersOnline={COURIERS_ONLINE} ctaHref={`#${FEATURED_ANCHOR}`} />
       <ProductSection
         id={FEATURED_ANCHOR}
         title="Em destaque"

@@ -4,10 +4,14 @@
 # (npm run prisma:seed -- --only=auth) e backend rodando em
 # http://localhost:4000 (npm run dev --workspace=@jaja/backend).
 #
+# A geocodificação exige apenas um token válido, de qualquer usuário (administrador ou não).
+#
 # Sem GOOGLE_MAPS_API_KEY no apps/backend/.env, o backend registra na inicialização
-# que a geocodificação está simulada e responde a qualquer endereço com o ponto da
-# Avenida Paulista (source "mock"). Com a chave, o passo 8 consulta o Google
-# (source "google") e devolve um ponto em Fortaleza. Nenhuma resposta contém a chave.
+# que a geocodificação está simulada: responde a qualquer endereço com o ponto da
+# Avenida Paulista (source "mock") e a qualquer ponto válido com o endereço da Avenida
+# Paulista, 1578 e o ponto consultado. Com a chave, os passos 8 e 10 consultam o Google
+# (source "google"): o passo 8 devolve um ponto em Fortaleza e o passo 10 um endereço no
+# Rio de Janeiro. Nenhuma resposta contém a chave.
 
 @baseUrl = http://localhost:4000
 @adminEmail = usuario@formacao.dev
@@ -37,7 +41,7 @@ Content-Type: application/json
 ### 3. Sem token -> 401
 GET {{baseUrl}}/geocoding?address=Avenida%20Paulista
 
-### 4. Token de não administrador -> 403 ADMIN_REQUIRED
+### 4. Token de não administrador -> 200 com { latitude, longitude, formattedAddress, source }
 GET {{baseUrl}}/geocoding?address=Avenida%20Paulista
 Authorization: Bearer {{loginUser.response.body.token}}
 
@@ -59,3 +63,36 @@ Authorization: Bearer {{loginAdmin.response.body.token}}
 # Com chave: source = "google" e um ponto em Fortaleza (latitude perto de -3.73).
 GET {{baseUrl}}/geocoding?address=Rua%20Silva%20Paulet%2C%201100%2C%20Fortaleza
 Authorization: Bearer {{loginAdmin.response.body.token}}
+
+# ---------------------------------------------------------------------------
+# GET /geocoding/reverse: endereço sugerido para um ponto do mapa
+# ---------------------------------------------------------------------------
+
+### 9. Sem token -> 401
+GET {{baseUrl}}/geocoding/reverse?latitude=-23.56&longitude=-46.65
+
+### 10. Usuário não administrador, ponto no Rio de Janeiro -> 200 com o ponto consultado arredondado
+### (latitude = -22.906847, longitude = -43.172897) e zipCode, street, number, neighborhood, city e
+### state (cada um texto ou null).
+# Sem chave: source = "mock", formattedAddress = "Avenida Paulista, 1578 - Bela Vista, São Paulo - SP, 01310-200",
+# zipCode = "01310200", street = "Avenida Paulista", number = "1578", neighborhood = "Bela Vista",
+# city = "São Paulo" e state = "SP".
+# Com chave: source = "google" e um endereço no Rio de Janeiro (state = "RJ").
+GET {{baseUrl}}/geocoding/reverse?latitude=-22.9068471&longitude=-43.1728969
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 11. Sem longitude -> 400 GEOCODING_LOCATION_INVALID
+GET {{baseUrl}}/geocoding/reverse?latitude=-23.56
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 12. Longitude vazia (não vira 0) -> 400 GEOCODING_LOCATION_INVALID
+GET {{baseUrl}}/geocoding/reverse?latitude=-23.56&longitude=
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 13. latitude não numérica -> 400 GEOCODING_LOCATION_INVALID
+GET {{baseUrl}}/geocoding/reverse?latitude=abc&longitude=-46.65
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 14. latitude fora dos limites -> 400 GEOCODING_LOCATION_INVALID
+GET {{baseUrl}}/geocoding/reverse?latitude=95&longitude=-46.65
+Authorization: Bearer {{loginUser.response.body.token}}

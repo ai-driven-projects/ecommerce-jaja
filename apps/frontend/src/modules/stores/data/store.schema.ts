@@ -1,11 +1,8 @@
 import { Alias, Flag, Name, Phone, Text } from '@mentoria-360/shared';
 import { v } from '@/shared/components/form/validator';
 import type { ValueObjectClass, VOResult } from '@/shared/components/form/validator/types';
-import {
-  roundCoordinate,
-  STORE_MAX_DELIVERY_RADIUS_METERS,
-  STORE_MIN_DELIVERY_RADIUS_METERS,
-} from './store-location.util';
+import { roundCoordinate } from '@/shared/maps/google-maps.config';
+import { STORE_MAX_DELIVERY_RADIUS_METERS, STORE_MIN_DELIVERY_RADIUS_METERS } from './store-location.util';
 
 /** Endereço de referência: texto livre opcional, até 200 caracteres (como na entidade `Store`). */
 export const STORE_ADDRESS_MAX_LENGTH = 200;

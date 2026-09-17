@@ -2,561 +2,561 @@
   {
     "userEmail": "ana.pereira.carvalho@jaja.dev",
     "cpf": "53617473270",
-    "phone": "85996104850",
+    "phone": "11996104850",
     "address": {
-      "zipCode": "60135026",
-      "street": "Av. Padre Antônio Tomás",
+      "zipCode": "01310100",
+      "street": "Avenida Paulista",
       "number": "492",
       "complement": "Torre B · 12º andar · sala 1204",
-      "neighborhood": "Cocó",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "bruno.martins@jaja.dev",
     "cpf": "29643537196",
-    "phone": "85909288287",
+    "phone": "21909288287",
     "address": {
-      "zipCode": "60160455",
-      "street": "Rua Tibúrcio Cavalcante",
-      "number": "1746",
+      "zipCode": "20090003",
+      "street": "Avenida Rio Branco",
+      "number": "136",
       "complement": null,
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Centro",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "carla.gomes@jaja.dev",
     "cpf": "98324409980",
-    "phone": "85978280551",
+    "phone": "11978280551",
     "address": {
-      "zipCode": "60170443",
-      "street": "Rua Canuto de Aguiar",
-      "number": "2498",
+      "zipCode": "01305000",
+      "street": "Rua Augusta",
+      "number": "528",
       "complement": "Apto 302",
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Consolação",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "diego.silva.moura@jaja.dev",
     "cpf": "56978672807",
-    "phone": "85976478980",
+    "phone": "21976478980",
     "address": {
-      "zipCode": "60055503",
-      "street": "Rua Guilherme Rocha",
-      "number": "218",
+      "zipCode": "20230070",
+      "street": "Rua do Lavradio",
+      "number": "28",
       "complement": null,
-      "neighborhood": "Centro",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Lapa",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "eduarda.cavalcanti@jaja.dev",
     "cpf": "30432616586",
-    "phone": "85989154301",
+    "phone": "11989154301",
     "address": {
-      "zipCode": "60192674",
-      "street": "Av. Engenheiro Santana Júnior",
+      "zipCode": "01419002",
+      "street": "Alameda Santos",
       "number": "698",
       "complement": "Apto 1801",
-      "neighborhood": "Cocó",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Jardim Paulista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "felipe.moura@jaja.dev",
     "cpf": "68099398068",
-    "phone": "85944694619",
+    "phone": "21944694619",
     "address": {
-      "zipCode": "60140691",
-      "street": "Rua Tibúrcio Cavalcante",
-      "number": "3387",
+      "zipCode": "20241180",
+      "street": "Rua da Glória",
+      "number": "277",
       "complement": null,
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Glória",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "gabriela.borges.garcia@jaja.dev",
     "cpf": "40064124525",
-    "phone": "85979696887",
+    "phone": "11979696887",
     "address": {
-      "zipCode": "60176348",
-      "street": "Av. Engenheiro Alberto Sá",
-      "number": "2726",
+      "zipCode": "05422001",
+      "street": "Rua dos Pinheiros",
+      "number": "1346",
       "complement": "Sala 510",
-      "neighborhood": "Papicu",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Pinheiros",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "henrique.lins@jaja.dev",
     "cpf": "64176209488",
-    "phone": "85900499334",
+    "phone": "11900499334",
     "address": {
-      "zipCode": "60135288",
-      "street": "Av. Padre Antônio Tomás",
-      "number": "2976",
+      "zipCode": "01327000",
+      "street": "Rua Treze de Maio",
+      "number": "1196",
       "complement": null,
-      "neighborhood": "Cocó",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "isabela.rezende@jaja.dev",
     "cpf": "32356534733",
-    "phone": "85953716385",
+    "phone": "21953716385",
     "address": {
-      "zipCode": "60871085",
-      "street": "Rua Coronel Guilherme Alencar",
-      "number": "328",
+      "zipCode": "20011000",
+      "street": "Rua da Assembleia",
+      "number": "58",
       "complement": "Sala 510",
-      "neighborhood": "Messejana",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Centro",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "joao.bezerra.silva@jaja.dev",
     "cpf": "07177842829",
-    "phone": "85920014696",
+    "phone": "11920014696",
     "address": {
-      "zipCode": "60060682",
-      "street": "Rua Major Facundo",
-      "number": "3909",
+      "zipCode": "01302000",
+      "street": "Rua da Consolação",
+      "number": "939",
       "complement": null,
-      "neighborhood": "Centro",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Consolação",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "juliana.jesus@jaja.dev",
     "cpf": "50763520691",
-    "phone": "85988466950",
+    "phone": "21988466950",
     "address": {
-      "zipCode": "60060907",
-      "street": "Rua Barão do Rio Branco",
-      "number": "3535",
+      "zipCode": "20230011",
+      "street": "Rua Riachuelo",
+      "number": "35",
       "complement": "Loja 3",
-      "neighborhood": "Centro",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Lapa",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "lucas.souza@jaja.dev",
     "cpf": "77049977500",
-    "phone": "85966704934",
+    "phone": "11966704934",
     "address": {
-      "zipCode": "60130451",
-      "street": "Av. Antônio Sales",
+      "zipCode": "01424000",
+      "street": "Alameda Lorena",
       "number": "295",
       "complement": null,
-      "neighborhood": "Dionísio Torres",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Jardim Paulista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "mariana.almeida.paiva@jaja.dev",
     "cpf": "26443738403",
-    "phone": "85972880104",
+    "phone": "21972880104",
     "address": {
-      "zipCode": "60160880",
-      "street": "Rua Silva Paulet",
+      "zipCode": "20241150",
+      "street": "Rua Benjamin Constant",
       "number": "26",
       "complement": "Loja 3",
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Glória",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "matheus.castro@jaja.dev",
     "cpf": "02872597492",
-    "phone": "85940038981",
+    "phone": "21940038981",
     "address": {
-      "zipCode": "60840689",
-      "street": "Av. Frei Cirilo",
-      "number": "3755",
+      "zipCode": "22020001",
+      "street": "Avenida Nossa Senhora de Copacabana",
+      "number": "985",
       "complement": null,
-      "neighborhood": "Messejana",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Copacabana",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "natalia.rocha@jaja.dev",
     "cpf": "07249433903",
-    "phone": "85925035134",
+    "phone": "11925035134",
     "address": {
-      "zipCode": "60192009",
-      "street": "Av. Engenheiro Santana Júnior",
-      "number": "1090",
+      "zipCode": "01326010",
+      "street": "Rua Rui Barbosa",
+      "number": "310",
       "complement": "Fundos",
-      "neighborhood": "Cocó",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "otavio.monteiro.martins@jaja.dev",
     "cpf": "77001008702",
-    "phone": "85959085592",
+    "phone": "21959085592",
     "address": {
-      "zipCode": "60160504",
-      "street": "Rua Silva Paulet",
-      "number": "3187",
+      "zipCode": "20010000",
+      "street": "Rua Primeiro de Março",
+      "number": "117",
       "complement": null,
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Centro",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "paula.machado@jaja.dev",
     "cpf": "10549349839",
-    "phone": "85949660668",
+    "phone": "11949660668",
     "address": {
-      "zipCode": "60420456",
-      "street": "Av. Gomes de Matos",
-      "number": "1539",
+      "zipCode": "01307001",
+      "street": "Rua Frei Caneca",
+      "number": "359",
       "complement": "Apto 302",
-      "neighborhood": "Montese",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Consolação",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "rafael.sales@jaja.dev",
     "cpf": "37427465610",
-    "phone": "85952311135",
+    "phone": "21952311135",
     "address": {
-      "zipCode": "60115155",
-      "street": "Av. Santos Dumont",
+      "zipCode": "20230150",
+      "street": "Avenida Mem de Sá",
       "number": "186",
       "complement": null,
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Lapa",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "renata.farias.xavier@jaja.dev",
     "cpf": "94139003375",
-    "phone": "85994380594",
+    "phone": "11994380594",
     "address": {
-      "zipCode": "60165299",
-      "street": "Rua Canuto de Aguiar",
+      "zipCode": "01426001",
+      "street": "Rua Oscar Freire",
       "number": "21",
       "complement": "Apto 302",
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Jardim Paulista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "rodrigo.pacheco@jaja.dev",
     "cpf": "81635601509",
-    "phone": "85917904135",
+    "phone": "21917904135",
     "address": {
-      "zipCode": "60140333",
-      "street": "Av. Dom Luís",
+      "zipCode": "20241220",
+      "street": "Rua Cândido Mendes",
       "number": "219",
       "complement": null,
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Glória",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "sofia.vasconcelos@jaja.dev",
     "cpf": "55926956919",
-    "phone": "85916776868",
+    "phone": "11916776868",
     "address": {
-      "zipCode": "60030339",
-      "street": "Rua Barão do Rio Branco",
+      "zipCode": "04029200",
+      "street": "Avenida Ibirapuera",
       "number": "642",
       "complement": "Casa 2",
-      "neighborhood": "Centro",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Moema",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "thiago.fernandes.nogueira@jaja.dev",
     "cpf": "16047105947",
-    "phone": "85933639345",
+    "phone": "11933639345",
     "address": {
-      "zipCode": "60160610",
-      "street": "Av. da Abolição",
-      "number": "3003",
+      "zipCode": "01317000",
+      "street": "Avenida Brigadeiro Luís Antônio",
+      "number": "33",
       "complement": null,
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "vanessa.peixoto@jaja.dev",
     "cpf": "93595521510",
-    "phone": "85925200747",
+    "phone": "21925200747",
     "address": {
-      "zipCode": "60135452",
-      "street": "Av. Antônio Sales",
-      "number": "3724",
+      "zipCode": "20071000",
+      "street": "Avenida Presidente Vargas",
+      "number": "744",
       "complement": "Fundos",
-      "neighborhood": "Dionísio Torres",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Centro",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "vinicius.lima@jaja.dev",
     "cpf": "62449891200",
-    "phone": "85985822297",
+    "phone": "11985822297",
     "address": {
-      "zipCode": "60425317",
-      "street": "Rua Professor Costa Mendes",
+      "zipCode": "01303001",
+      "street": "Rua Caio Prado",
       "number": "89",
       "complement": null,
-      "neighborhood": "Montese",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Consolação",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "yasmin.araujo.batista@jaja.dev",
     "cpf": "43312230519",
-    "phone": "85927112942",
+    "phone": "21927112942",
     "address": {
-      "zipCode": "60130671",
-      "street": "Av. Antônio Sales",
-      "number": "281",
+      "zipCode": "20230070",
+      "street": "Rua do Lavradio",
+      "number": "91",
       "complement": "Fundos",
-      "neighborhood": "Dionísio Torres",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Lapa",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "caio.moreira@jaja.dev",
     "cpf": "96267115232",
-    "phone": "85933531513",
+    "phone": "11933531513",
     "address": {
-      "zipCode": "60420885",
-      "street": "Rua Professor Costa Mendes",
-      "number": "2250",
+      "zipCode": "01404000",
+      "street": "Alameda Campinas",
+      "number": "770",
       "complement": null,
-      "neighborhood": "Montese",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Jardim Paulista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "beatriz.mendes@jaja.dev",
     "cpf": "15945357103",
-    "phone": "85956326275",
+    "phone": "21956326275",
     "address": {
-      "zipCode": "60176258",
-      "street": "Av. Engenheiro Alberto Sá",
-      "number": "998",
+      "zipCode": "20241180",
+      "street": "Rua da Glória",
+      "number": "228",
       "complement": "Torre B · 12º andar · sala 1204",
-      "neighborhood": "Papicu",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Glória",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "leonardo.duarte.tavares@jaja.dev",
     "cpf": "47796947950",
-    "phone": "85934325873",
+    "phone": "11934325873",
     "address": {
-      "zipCode": "60170285",
-      "street": "Rua Carlos Vasconcelos",
+      "zipCode": "05405000",
+      "street": "Rua Teodoro Sampaio",
       "number": "1313",
       "complement": null,
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Pinheiros",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "larissa.pinto@jaja.dev",
     "cpf": "02718269162",
-    "phone": "85931612097",
+    "phone": "11931612097",
     "address": {
-      "zipCode": "60135026",
-      "street": "Av. Padre Antônio Tomás",
+      "zipCode": "01310100",
+      "street": "Avenida Paulista",
       "number": "2225",
       "complement": "Apto 1801",
-      "neighborhood": "Cocó",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "gustavo.braga@jaja.dev",
     "cpf": "76078968807",
-    "phone": "85943820926",
+    "phone": "21943820926",
     "address": {
-      "zipCode": "60030855",
-      "street": "Rua Barão do Rio Branco",
-      "number": "2496",
+      "zipCode": "20090003",
+      "street": "Avenida Rio Branco",
+      "number": "76",
       "complement": null,
       "neighborhood": "Centro",
-      "city": "Fortaleza",
-      "state": "CE"
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "camila.marques.dias@jaja.dev",
     "cpf": "98374082518",
-    "phone": "85941514884",
+    "phone": "11941514884",
     "address": {
-      "zipCode": "60055503",
-      "street": "Rua Guilherme Rocha",
+      "zipCode": "01305000",
+      "street": "Rua Augusta",
       "number": "139",
       "complement": "Casa 2",
-      "neighborhood": "Centro",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Consolação",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "pedro.sampaio@jaja.dev",
     "cpf": "03814212282",
-    "phone": "85968944325",
+    "phone": "21968944325",
     "address": {
-      "zipCode": "60165637",
-      "street": "Rua Carlos Vasconcelos",
-      "number": "3169",
+      "zipCode": "20230011",
+      "street": "Rua Riachuelo",
+      "number": "59",
       "complement": null,
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Lapa",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "fernanda.coelho@jaja.dev",
     "cpf": "50350613451",
-    "phone": "85995136423",
+    "phone": "11995136423",
     "address": {
-      "zipCode": "60170149",
-      "street": "Av. Beira Mar",
-      "number": "3410",
+      "zipCode": "01419002",
+      "street": "Alameda Santos",
+      "number": "930",
       "complement": "Casa 2",
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Jardim Paulista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "andre.lacerda.cunha@jaja.dev",
     "cpf": "29835501769",
-    "phone": "85972569984",
+    "phone": "21972569984",
     "address": {
-      "zipCode": "60130910",
-      "street": "Rua Nunes Valente",
-      "number": "2016",
+      "zipCode": "20241150",
+      "street": "Rua Benjamin Constant",
+      "number": "66",
       "complement": null,
-      "neighborhood": "Dionísio Torres",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Glória",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "leticia.oliveira@jaja.dev",
     "cpf": "63781367509",
-    "phone": "85927272253",
+    "phone": "21927272253",
     "address": {
-      "zipCode": "60135360",
-      "street": "Rua Nunes Valente",
-      "number": "3521",
+      "zipCode": "22011001",
+      "street": "Rua Barata Ribeiro",
+      "number": "371",
       "complement": "Apto 1801",
-      "neighborhood": "Dionísio Torres",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Copacabana",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "marcelo.costa@jaja.dev",
     "cpf": "62212842449",
-    "phone": "85919701543",
+    "phone": "11919701543",
     "address": {
-      "zipCode": "60176890",
-      "street": "Rua Frederico Borges",
-      "number": "1906",
+      "zipCode": "01327000",
+      "street": "Rua Treze de Maio",
+      "number": "126",
       "complement": null,
-      "neighborhood": "Papicu",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Bela Vista",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "bianca.dias.oliveira@jaja.dev",
     "cpf": "71954147953",
-    "phone": "85910439755",
+    "phone": "21910439755",
     "address": {
-      "zipCode": "60150598",
-      "street": "Av. Santos Dumont",
-      "number": "2238",
+      "zipCode": "20011000",
+      "street": "Rua da Assembleia",
+      "number": "148",
       "complement": "Torre B · 12º andar · sala 1204",
-      "neighborhood": "Aldeota",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Centro",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "ricardo.teixeira@jaja.dev",
     "cpf": "97771838790",
-    "phone": "85910749770",
+    "phone": "11910749770",
     "address": {
-      "zipCode": "60170353",
-      "street": "Rua Canuto de Aguiar",
+      "zipCode": "01302000",
+      "street": "Rua da Consolação",
       "number": "643",
       "complement": null,
-      "neighborhood": "Meireles",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Consolação",
+      "city": "São Paulo",
+      "state": "SP"
     }
   },
   {
     "userEmail": "amanda.batista@jaja.dev",
     "cpf": "58825683740",
-    "phone": "85958371673",
+    "phone": "21958371673",
     "address": {
-      "zipCode": "60871882",
-      "street": "Rua Coronel Guilherme Alencar",
-      "number": "1581",
+      "zipCode": "20230150",
+      "street": "Avenida Mem de Sá",
+      "number": "141",
       "complement": "Fundos",
-      "neighborhood": "Messejana",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Lapa",
+      "city": "Rio de Janeiro",
+      "state": "RJ"
     }
   },
   {
     "userEmail": "daniel.macedo.lopes@jaja.dev",
     "cpf": "77633417340",
-    "phone": "85933267009",
+    "phone": "11933267009",
     "address": {
-      "zipCode": "60135604",
-      "street": "Av. Engenheiro Santana Júnior",
+      "zipCode": "04089001",
+      "street": "Alameda dos Maracatins",
       "number": "641",
       "complement": null,
-      "neighborhood": "Cocó",
-      "city": "Fortaleza",
-      "state": "CE"
+      "neighborhood": "Moema",
+      "city": "São Paulo",
+      "state": "SP"
     }
   }
 ]

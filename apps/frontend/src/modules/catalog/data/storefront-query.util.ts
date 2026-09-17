@@ -5,14 +5,15 @@ import type { StorefrontProductFilter, StorefrontProductSort } from './storefron
 import { CATEGORY_ALL } from './storefront.types';
 
 /**
- * Estado da vitrine na URL, com parâmetros em português: `bairro`, `categoria`
- * (slug; padrão `todas`), `q`, `marca` (slugs separados por vírgula),
- * `precoMin`/`precoMax` (reais, aceitando vírgula), `ofertas=1`, `destaques=1`,
- * `ordem` e `pagina`. Funções puras: ler, converter para o filtro da API e
- * montar links. Valores padrão ficam fora da URL.
+ * Estado da vitrine na URL, com parâmetros em português: `loja` (slug da loja),
+ * `categoria` (slug; padrão `todas`), `q`, `marca` (slugs separados por
+ * vírgula), `precoMin`/`precoMax` (reais, aceitando vírgula), `ofertas=1`,
+ * `destaques=1`, `ordem` e `pagina`. Funções puras: ler, converter para o
+ * filtro da API e montar links. Valores padrão ficam fora da URL.
+ *
+ * Um `bairro` na URL é ignorado: o seletor da vitrine passou a ser de lojas, e
+ * links antigos continuam abrindo a vitrine na loja padrão ou na lembrada.
  */
-
-export const DEFAULT_NEIGHBORHOOD = 'Bela Vista';
 
 export const STOREFRONT_ORDERS = ['relevancia', 'destaques', 'menor-preco', 'maior-preco', 'nome', 'desconto'] as const;
 
@@ -33,8 +34,8 @@ const MAX_BRANDS = 20;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type StorefrontParams = {
-  /** `bairro` como veio na URL; `null` quando ausente (vale o padrão). */
-  neighborhood: string | null;
+  /** `loja` como veio na URL; `null` quando ausente (vale a loja lembrada ou a padrão). */
+  storeSlug: string | null;
   /** Slug da categoria; `todas` quando ausente. */
   category: string;
   /** Termo de busca já sem espaços nas pontas; `null` sem busca. */
@@ -52,7 +53,7 @@ export type StorefrontParams = {
 export type StorefrontParamChanges = Partial<StorefrontParams>;
 
 export const EMPTY_STOREFRONT_PARAMS: StorefrontParams = {
-  neighborhood: null,
+  storeSlug: null,
   category: CATEGORY_ALL,
   search: null,
   brands: [],
@@ -105,12 +106,12 @@ function parseBrands(value: string | null): string[] {
 
 /** Lê a URL da vitrine descartando valores inválidos. */
 export function parseStorefrontParams(searchParams: SearchParamsReader): StorefrontParams {
-  const neighborhood = searchParams.get('bairro')?.trim() || null;
+  const storeSlug = searchParams.get('loja')?.trim() || null;
   const category = searchParams.get('categoria')?.trim() || CATEGORY_ALL;
   const search = searchParams.get('q')?.trim() || null;
 
   return {
-    neighborhood,
+    storeSlug,
     category,
     search,
     brands: parseBrands(searchParams.get('marca')),
@@ -161,11 +162,11 @@ export function toStorefrontProductFilter(params: StorefrontParams, pageSize: nu
 }
 
 /**
- * Aplica as mudanças: trocar qualquer coisa além de `bairro` e `pagina` volta à
+ * Aplica as mudanças: trocar qualquer coisa além de `loja` e `pagina` volta à
  * página 1, e `relevancia` sem busca vira a ordem padrão.
  */
 export function applyStorefrontChanges(params: StorefrontParams, changes: StorefrontParamChanges): StorefrontParams {
-  const resetsPage = Object.keys(changes).some((key) => key !== 'neighborhood' && key !== 'page');
+  const resetsPage = Object.keys(changes).some((key) => key !== 'storeSlug' && key !== 'page');
   const next: StorefrontParams = { ...params, ...(resetsPage ? { page: 1 } : {}), ...changes };
   next.search = next.search?.trim() || null;
   if (next.order === 'relevancia' && !next.search) next.order = null;
@@ -180,7 +181,7 @@ export function buildStorefrontQuery(params: StorefrontParams): string {
   const query = new URLSearchParams();
   const home = isStorefrontHome(params);
 
-  if (params.neighborhood) query.set('bairro', params.neighborhood);
+  if (params.storeSlug) query.set('loja', params.storeSlug);
   if (params.category !== CATEGORY_ALL) query.set('categoria', params.category);
   if (params.search) query.set('q', params.search);
   if (params.brands.length > 0) query.set('marca', params.brands.join(','));
@@ -200,7 +201,7 @@ export function buildStorefrontHref(params: StorefrontParams, changes: Storefron
   return withQuery(STOREFRONT_ROUTE, buildStorefrontQuery(applyStorefrontChanges(params, changes)));
 }
 
-/** Só o bairro atual: base dos links que recomeçam a navegação (busca, seções, trilha). */
+/** Só a loja atual: base dos links que recomeçam a navegação (busca, seções, trilha). */
 export function storefrontBaseParams(params: StorefrontParams): StorefrontParams {
-  return { ...EMPTY_STOREFRONT_PARAMS, neighborhood: params.neighborhood };
+  return { ...EMPTY_STOREFRONT_PARAMS, storeSlug: params.storeSlug };
 }

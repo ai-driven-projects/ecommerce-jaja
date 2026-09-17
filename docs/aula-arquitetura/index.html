@@ -1,0 +1,1121 @@
+<title>A arquitetura do já já</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Manrope:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+:root{
+  --paper:#FAF8F5; --card:#FFFFFF; --surface:#F6F1EA; --line:#EFE9E2; --line-strong:#E0D5C9;
+  --ink:#1E1812; --ink-soft:#5C544B; --muted:#8A8177;
+  --brand:#FF6B00; --brand-ink:#FF6B00; --brand-soft:#FFF1E6; --brand-pale:#FFD9BD;
+  --mat:#FAF8F5; --mat-line:#E0D5C9;
+  --display:"Bricolage Grotesque","Manrope",system-ui,sans-serif;
+  --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17120E; --card:#211A15; --surface:#2A221C; --line:#362C24; --line-strong:#43372D;
+    --ink:#F7F3EE; --ink-soft:#CDC3B7; --muted:#9A8F84;
+    --brand:#FF8A3D; --brand-ink:#FF8A3D; --brand-soft:#3A2314; --brand-pale:#6B3E14;
+    --mat:#0F0B08; --mat-line:#43372D;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17120E; --card:#211A15; --surface:#2A221C; --line:#362C24; --line-strong:#43372D;
+  --ink:#F7F3EE; --ink-soft:#CDC3B7; --muted:#9A8F84;
+  --brand:#FF8A3D; --brand-ink:#FF8A3D; --brand-soft:#3A2314; --brand-pale:#6B3E14;
+  --mat:#0F0B08; --mat-line:#43372D;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding-inline:20px;padding-block:0 72px}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface);padding:.1em .35em;border-radius:5px;color:var(--ink)}
+a{color:var(--brand-ink)}
+
+.masthead{padding-block:64px 40px;border-bottom:1px solid var(--line)}
+.kicker{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-ink);margin:0 0 14px}
+h1{font-family:var(--display);font-size:clamp(34px,6vw,54px);line-height:1.02;letter-spacing:-.025em;font-weight:800;margin:0 0 18px;text-wrap:balance}
+.lede{font-size:17px;color:var(--ink-soft);max-width:62ch;margin:0 0 26px}
+.stats{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--line-strong);border-radius:16px;overflow:hidden;background:var(--card)}
+.stat{flex:1 1 150px;padding:16px 18px;border-right:1px solid var(--line)}
+.stat:last-child{border-right:0}
+.stat b{display:block;font-family:var(--display);font-size:26px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat span{font-size:11.5px;color:var(--muted);font-weight:500}
+
+.how{margin-block:36px;padding:22px 24px;border-radius:18px;background:var(--brand-soft);border:1px solid var(--brand-pale)}
+.how h2{font-family:var(--display);font-size:17px;margin:0 0 10px;font-weight:800}
+.how p{margin:0 0 8px;font-size:13.5px;color:var(--ink-soft)}
+.how p:last-child{margin-bottom:0}
+
+.toc{margin-block:40px}
+.toc h2{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.toc ol{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 28px}
+.toc a{display:flex;gap:12px;align-items:baseline;padding:7px 0;text-decoration:none;color:var(--ink);border-bottom:1px solid var(--line)}
+.toc a:hover .tt{color:var(--brand-ink)}
+.tn{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:700}
+.tt{font-size:13.5px;font-weight:600}
+
+.part{margin-block:56px 28px;padding-top:26px;border-top:2px solid var(--ink)}
+.part-kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand-ink);margin:0 0 6px}
+.part-title{font-family:var(--display);font-size:32px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px}
+.part-desc{margin:0;color:var(--ink-soft);font-size:14px;max-width:64ch}
+
+.fig{margin-block:48px}
+.fig-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+.num{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--brand-ink);border:1px solid var(--brand-pale);background:var(--brand-soft);border-radius:999px;padding:3px 10px;flex:none;margin-top:4px}
+.fig-titles h3{font-family:var(--display);font-size:24px;font-weight:800;letter-spacing:-.02em;margin:0 0 4px;text-wrap:balance}
+.claim{margin:0;color:var(--ink-soft);font-size:14px}
+figure{margin:0}
+.mat{background:var(--mat);border:1px solid var(--mat-line);border-radius:16px;overflow-x:auto;padding:0}
+.mat svg{display:block;width:100%;min-width:760px;height:auto}
+figcaption{font-size:12px;color:var(--muted);margin-top:10px;padding-inline:2px}
+.notes{margin-top:18px;background:var(--card);border:1px solid var(--line-strong);border-radius:16px;padding:20px 22px}
+.notes h4{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.notes ul{margin:0;padding-left:18px}
+.notes li{font-size:13.5px;color:var(--ink-soft);margin-bottom:7px}
+.notes li:last-child{margin-bottom:0}
+.notes b{color:var(--ink)}
+.file{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)}
+.file code{background:transparent;padding:0}
+
+footer{margin-top:64px;padding-top:28px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+footer b{color:var(--ink)}
+footer p{margin:0 0 8px;max-width:70ch}
+
+@media (max-width:720px){
+  .toc ol{grid-template-columns:1fr}
+  .masthead{padding-block:44px 30px}
+}
+</style>
+<div class="wrap">
+<header class="masthead">
+  <p class="kicker">Revisão de arquitetura · roteiro de aula</p>
+  <h1>A arquitetura do já já</h1>
+  <p class="lede">Quatorze diagramas para revisar o projeto com a turma: o terreno (monorepo, camadas, domínio) e, principalmente, como a arquitetura orientada a eventos está montada — do <code>addEvent</code> na entidade até a fila no RabbitMQ e o pedido se mexendo na tela.</p>
+  <div class="stats">
+    <div class="stat"><b>14</b><span>diagramas, em SVG</span></div>
+    <div class="stat"><b>5</b><span>tipos de evento</span></div>
+    <div class="stat"><b>4</b><span>consumidores</span></div>
+    <div class="stat"><b>19 s</b><span>do checkout à entrega</span></div>
+  </div>
+</header>
+
+<section class="how">
+  <h2>Como usar</h2>
+  <p>Os arquivos estão em <code>docs/aula-arquitetura/</code>, um <code>.svg</code> por diagrama — Keynote, PowerPoint, Google Slides e Figma importam direto, e como é vetor dá para projetar em qualquer tamanho sem perder nitidez.</p>
+  <p>Cada figura aqui vem com a frase que ela defende e três notas de condução. Se o tempo for curto: <b>02, 08, 10 e 11</b> sustentam a aula sozinhos.</p>
+</section>
+
+<nav class="toc">
+  <h2>Os diagramas</h2>
+  <ol><li><a href="#f01"><span class="tn">01</span><span class="tt">Mapa do monorepo</span></a></li><li><a href="#f02"><span class="tn">02</span><span class="tt">As camadas de um POST /me/orders</span></a></li><li><a href="#f03"><span class="tn">03</span><span class="tt">Anatomia de um agregado</span></a></li><li><a href="#f04"><span class="tn">04</span><span class="tt">Os blocos do domínio</span></a></li><li><a href="#f05"><span class="tn">05</span><span class="tt">Anatomia de um evento de domínio</span></a></li><li><a href="#f06"><span class="tn">06</span><span class="tt">Os cinco eventos do pedido</span></a></li><li><a href="#f07"><span class="tn">07</span><span class="tt">Onde mora o código de eventos</span></a></li><li><a href="#f08"><span class="tn">08</span><span class="tt">Transactional outbox</span></a></li><li><a href="#f09"><span class="tn">09</span><span class="tt">A topologia no RabbitMQ</span></a></li><li><a href="#f10"><span class="tn">10</span><span class="tt">A vida de uma mensagem no consumidor</span></a></li><li><a href="#f11"><span class="tn">11</span><span class="tt">O pedido, do checkout à entrega</span></a></li><li><a href="#f12"><span class="tn">12</span><span class="tt">Como a tela fica viva</span></a></li><li><a href="#f13"><span class="tn">13</span><span class="tt">O monitor de eventos do admin</span></a></li><li><a href="#f14"><span class="tn">14</span><span class="tt">Seis perguntas para fechar a revisão</span></a></li></ol>
+</nav>
+
+<main><section class="part"><p class="part-kicker">Parte 1</p><h2 class="part-title">O terreno</h2><p class="part-desc">Quatro slides para situar quem abre o repositório pela primeira vez. Se a turma já conhece a estrutura, dá para passar rápido — mas não pule o 02.</p></section><article class="fig" id="f01"><div class="fig-head"><span class="num">01</span><div class="fig-titles"><h3>Mapa do monorepo</h3><p class="claim">Três pastas, uma regra: a dependência só anda para a direita.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="960" height="540" role="img" aria-label="Mapa do monorepo: apps importa modules, que importa packages/shared" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="540" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Mapa do monorepo</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">onde mora cada coisa — e para que lado as dependências apontam</text>
+
+  <!-- apps -->
+  <rect x="40" y="104" width="250" height="382" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="60" y="124" width="28" height="5" rx="2.5" fill="#1E1812"/>
+  <text x="60" y="152" font-size="15" font-weight="800" fill="#1E1812">Aplicações</text>
+  <text x="60" y="172" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/</text>
+  <line x1="60" y1="186" x2="270" y2="186" stroke="#EFE9E2"/>
+  <rect x="60" y="202" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="74" y="221" font-size="12.5" font-weight="700" fill="#1E1812">backend</text>
+  <text x="74" y="238" font-size="11" fill="#8A8177">NestJS · HTTP, Prisma, RabbitMQ</text>
+  <rect x="60" y="259" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="74" y="278" font-size="12.5" font-weight="700" fill="#1E1812">frontend</text>
+  <text x="74" y="295" font-size="11" fill="#8A8177">Next.js · App Router, SSE</text>
+  <rect x="60" y="316" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="74" y="335" font-size="12.5" font-weight="700" fill="#1E1812">cli</text>
+  <text x="74" y="352" font-size="11" fill="#8A8177">setup, docker, db, broker, doctor</text>
+  <text x="60" y="398" font-size="11.5" font-weight="700" fill="#5C544B">Aqui mora o framework:</text>
+  <text x="60" y="416" font-size="11.5" fill="#8A8177">controllers, módulos Nest, Prisma,</text>
+  <text x="60" y="432" font-size="11.5" fill="#8A8177">amqplib, React. Tudo que é</text>
+  <text x="60" y="448" font-size="11.5" fill="#8A8177">substituível.</text>
+
+  <!-- modules -->
+  <rect x="355" y="104" width="250" height="382" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="375" y="124" width="28" height="5" rx="2.5" fill="#FF6B00"/>
+  <text x="375" y="152" font-size="15" font-weight="800" fill="#1E1812">Negócio</text>
+  <text x="375" y="172" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">modules/</text>
+  <line x1="375" y1="186" x2="585" y2="186" stroke="#EFE9E2"/>
+  <rect x="375" y="202" width="210" height="46" rx="12" fill="#FFF1E6"/>
+  <text x="389" y="221" font-size="12.5" font-weight="700" fill="#1E1812">orders</text>
+  <text x="389" y="238" font-size="11" fill="#8A8177">carrinho, pedido, eventos</text>
+  <rect x="375" y="259" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="278" font-size="12.5" font-weight="700" fill="#1E1812">catalog</text>
+  <text x="389" y="295" font-size="11" fill="#8A8177">produto, marca, categoria</text>
+  <rect x="375" y="316" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="335" font-size="12.5" font-weight="700" fill="#1E1812">customers</text>
+  <text x="389" y="352" font-size="11" fill="#8A8177">cliente, endereço de entrega</text>
+  <rect x="375" y="373" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="392" font-size="12.5" font-weight="700" fill="#1E1812">stores</text>
+  <text x="389" y="409" font-size="11" fill="#8A8177">loja, raio de entrega, geocoding</text>
+  <rect x="375" y="430" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="389" y="449" font-size="12.5" font-weight="700" fill="#1E1812">auth</text>
+  <text x="389" y="466" font-size="11" fill="#8A8177">usuário, senha, permissões</text>
+
+  <!-- shared -->
+  <rect x="670" y="104" width="250" height="382" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="690" y="124" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="690" y="152" font-size="15" font-weight="800" fill="#1E1812">Base comum</text>
+  <text x="690" y="172" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">packages/shared/src/</text>
+  <line x1="690" y1="186" x2="900" y2="186" stroke="#EFE9E2"/>
+  <rect x="690" y="202" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="704" y="221" font-size="12.5" font-weight="700" fill="#1E1812">base/</text>
+  <text x="704" y="238" font-size="11" fill="#8A8177">Entity, AggregateRoot, Result</text>
+  <rect x="690" y="259" width="210" height="46" rx="12" fill="#FFF1E6"/>
+  <text x="704" y="278" font-size="12.5" font-weight="700" fill="#1E1812">events/</text>
+  <text x="704" y="295" font-size="11" fill="#8A8177">DomainEvent, OutboxEvent</text>
+  <rect x="690" y="316" width="210" height="46" rx="12" fill="#FFF1E6"/>
+  <text x="704" y="335" font-size="12.5" font-weight="700" fill="#1E1812">messaging/</text>
+  <text x="704" y="352" font-size="11" fill="#8A8177">MessagePublisher, ...Consumer</text>
+  <rect x="690" y="373" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="704" y="392" font-size="12.5" font-weight="700" fill="#1E1812">db/</text>
+  <text x="704" y="409" font-size="11" fill="#8A8177">Repository, TransactionManager</text>
+  <rect x="690" y="430" width="210" height="46" rx="12" fill="#F6F1EA"/>
+  <text x="704" y="449" font-size="12.5" font-weight="700" fill="#1E1812">vo/ · dto/ · errors/</text>
+  <text x="704" y="466" font-size="11" fill="#8A8177">Id, Email, Phone, Name...</text>
+
+  <!-- arrows -->
+  <text x="322" y="288" font-size="10.5" font-weight="700" fill="#FF6B00" text-anchor="middle">importa</text>
+  <line x1="296" y1="302" x2="347" y2="302" stroke="#FF6B00" stroke-width="2" marker-end="url(#m01)"/>
+  <text x="637" y="288" font-size="10.5" font-weight="700" fill="#FF6B00" text-anchor="middle">importa</text>
+  <line x1="611" y1="302" x2="662" y2="302" stroke="#FF6B00" stroke-width="2" marker-end="url(#m01)"/>
+
+  <text x="40" y="518" font-size="12" fill="#5C544B">A seta nunca volta: <tspan font-weight="700" fill="#1E1812">modules/</tspan> não conhece Nest nem Prisma, e <tspan font-weight="700" fill="#1E1812">packages/shared</tspan> não conhece ninguém.</text>
+</svg>
+</div><figcaption>Três pastas, uma regra: a dependência só anda para a direita.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Comece por aqui. Quem nunca viu o projeto precisa de uma frase: <b>modules/ é o negócio, apps/ é o encanamento</b>.</li><li><code>packages/shared</code> é um submódulo git — a mesma base serve outros projetos.</li><li>Pergunta para a turma: “onde eu colocaria a regra de frete grátis?” A resposta certa é <code>modules/</code>, nunca o controller.</li></ul><p class="file"><code>docs/aula-arquitetura/01-mapa-monorepo.svg</code></p></div></article><article class="fig" id="f02"><div class="fig-head"><span class="num">02</span><div class="fig-titles"><h3>As camadas de um POST /me/orders</h3><p class="claim">O caso de uso depende de interfaces; quem depende de Prisma é o adaptador.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700" role="img" aria-label="Camadas do POST /me/orders: controller chama o caso de uso, que depende de interfaces implementadas pelos adaptadores Prisma e RabbitMQ" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m02" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+    <marker id="m02b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5C544B"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="700" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">As camadas de um <tspan font-family="'JetBrains Mono', Menlo, monospace" font-size="22">POST /me/orders</tspan></text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">o caminho real de um pedido — e por que a dependência se inverte no meio</text>
+
+  <!-- R1 navegador -->
+  <text x="196" y="126" font-size="12.5" font-weight="800" fill="#1E1812" text-anchor="end">Navegador</text>
+  <text x="196" y="144" font-size="10.5" fill="#8A8177" text-anchor="end">apps/frontend</text>
+  <rect x="216" y="100" width="704" height="58" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="236" y="125" font-size="13" font-weight="700" fill="#1E1812">Tela de checkout</text>
+  <text x="236" y="144" font-size="11.5" fill="#8A8177">envia <tspan font-family="'JetBrains Mono', Menlo, monospace">{ recipientName, deliveryInstructions }</tspan> — itens e preços nunca vêm do cliente</text>
+
+  <line x1="568" y1="158" x2="568" y2="182" stroke="#FF6B00" stroke-width="2" marker-end="url(#m02)"/>
+  <text x="580" y="175" font-size="10.5" fill="#8A8177">HTTP + JWT</text>
+
+  <!-- R2 controller -->
+  <text x="196" y="212" font-size="12.5" font-weight="800" fill="#1E1812" text-anchor="end">Camada HTTP</text>
+  <text x="196" y="230" font-size="10.5" fill="#8A8177" text-anchor="end">apps/backend</text>
+  <rect x="216" y="184" width="704" height="68" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="236" y="211" font-size="13" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">MyOrderController</text>
+  <text x="236" y="233" font-size="11.5" fill="#8A8177">lê o <tspan font-weight="700" fill="#5C544B">userId</tspan> do token, monta o caso de uso com os adaptadores e traduz falha em erro HTTP</text>
+
+  <line x1="568" y1="252" x2="568" y2="276" stroke="#FF6B00" stroke-width="2" marker-end="url(#m02)"/>
+  <text x="580" y="269" font-size="10.5" fill="#8A8177">chama</text>
+
+  <!-- R3 negocio -->
+  <text x="196" y="306" font-size="12.5" font-weight="800" fill="#1E1812" text-anchor="end">Negócio</text>
+  <text x="196" y="324" font-size="10.5" fill="#8A8177" text-anchor="end">modules/orders</text>
+  <rect x="216" y="278" width="704" height="108" rx="14" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="236" y="302" font-size="11" font-weight="800" fill="#FF6B00" letter-spacing="0.4">TYPESCRIPT PURO — SEM NEST, SEM PRISMA, SEM AMQP</text>
+  <rect x="232" y="312" width="214" height="60" rx="11" fill="#FFFFFF"/>
+  <text x="246" y="334" font-size="12" font-weight="700" fill="#1E1812">PlaceOrder</text>
+  <text x="246" y="352" font-size="10.5" fill="#8A8177">caso de uso: orquestra</text>
+  <text x="246" y="366" font-size="10.5" fill="#8A8177">as regras, na ordem</text>
+  <rect x="460" y="312" width="214" height="60" rx="11" fill="#FFFFFF"/>
+  <text x="474" y="334" font-size="12" font-weight="700" fill="#1E1812">Order.place()</text>
+  <text x="474" y="352" font-size="10.5" fill="#8A8177">agregado: congela itens,</text>
+  <text x="474" y="366" font-size="10.5" fill="#8A8177">soma totais, valida</text>
+  <rect x="688" y="312" width="214" height="60" rx="11" fill="#FFFFFF"/>
+  <text x="702" y="334" font-size="12" font-weight="700" fill="#FF6B00">OrderPlacedEvent</text>
+  <text x="702" y="352" font-size="10.5" fill="#8A8177">fica pendente no agregado</text>
+  <text x="702" y="366" font-size="10.5" fill="#8A8177">até o caso de uso pegá-lo</text>
+
+  <line x1="568" y1="386" x2="568" y2="410" stroke="#FF6B00" stroke-width="2" marker-end="url(#m02)"/>
+  <text x="580" y="403" font-size="10.5" fill="#8A8177">depende de</text>
+
+  <!-- R4 portas -->
+  <text x="196" y="440" font-size="12.5" font-weight="800" fill="#1E1812" text-anchor="end">Portas</text>
+  <text x="196" y="458" font-size="10.5" fill="#8A8177" text-anchor="end">interfaces</text>
+  <rect x="216" y="412" width="704" height="68" rx="14" fill="#FFFFFF" stroke="#E0D5C9" stroke-dasharray="6 4"/>
+  <rect x="232" y="430" width="214" height="34" rx="17" fill="#F6F1EA"/>
+  <text x="339" y="452" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">OrderRepository</text>
+  <rect x="460" y="430" width="214" height="34" rx="17" fill="#F6F1EA"/>
+  <text x="567" y="452" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">DomainEventRepository</text>
+  <rect x="688" y="430" width="214" height="34" rx="17" fill="#F6F1EA"/>
+  <text x="795" y="452" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">TransactionManager</text>
+
+  <line x1="339" y1="516" x2="339" y2="484" stroke="#5C544B" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#m02b)"/>
+  <line x1="567" y1="516" x2="567" y2="484" stroke="#5C544B" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#m02b)"/>
+  <line x1="795" y1="516" x2="795" y2="484" stroke="#5C544B" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#m02b)"/>
+  <text x="608" y="504" font-size="10.5" font-weight="700" fill="#5C544B">implementa</text>
+
+  <!-- R5 adaptadores -->
+  <text x="196" y="544" font-size="12.5" font-weight="800" fill="#1E1812" text-anchor="end">Adaptadores</text>
+  <text x="196" y="562" font-size="10.5" fill="#8A8177" text-anchor="end">apps/backend</text>
+  <rect x="216" y="516" width="704" height="68" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="232" y="534" width="214" height="34" rx="11" fill="#F6F1EA"/>
+  <text x="339" y="556" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">OrderPrisma</text>
+  <rect x="460" y="534" width="214" height="34" rx="11" fill="#F6F1EA"/>
+  <text x="567" y="556" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">DomainEventPrisma</text>
+  <rect x="688" y="534" width="214" height="34" rx="11" fill="#F6F1EA"/>
+  <text x="795" y="556" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">PrismaService</text>
+
+  <line x1="568" y1="584" x2="568" y2="608" stroke="#FF6B00" stroke-width="2" marker-end="url(#m02)"/>
+  <text x="580" y="601" font-size="10.5" fill="#8A8177">SQL</text>
+
+  <!-- R6 infra -->
+  <text x="196" y="644" font-size="12.5" font-weight="800" fill="#1E1812" text-anchor="end">Infra</text>
+  <rect x="216" y="610" width="704" height="52" rx="14" fill="#1E1812"/>
+  <text x="339" y="642" font-size="12.5" font-weight="700" fill="#FAF8F5" text-anchor="middle">PostgreSQL</text>
+  <text x="567" y="642" font-size="12.5" font-weight="700" fill="#FAF8F5" text-anchor="middle">tabela orders + carts</text>
+  <text x="795" y="642" font-size="12.5" font-weight="700" fill="#FF8A3D" text-anchor="middle">tabela outbox_events</text>
+
+  <text x="40" y="686" font-size="12" fill="#5C544B">A inversão é o ponto: o caso de uso <tspan font-weight="700" fill="#1E1812">nunca importa Prisma</tspan>. Trocar o banco ou o broker mexe só na faixa dos adaptadores.</text>
+</svg>
+</div><figcaption>O caso de uso depende de interfaces; quem depende de Prisma é o adaptador.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Abra <code>place-order.use-case.ts</code> junto com o slide: não existe um único <code>import</code> de Nest ou de Prisma ali.</li><li>A seta tracejada para cima é a inversão de dependência — é ela que permite testar o caso de uso sem banco.</li><li>Guarde este desenho: a publicação de evento usa exatamente a mesma forma, trocando repositório por <code>MessagePublisher</code>.</li></ul><p class="file"><code>docs/aula-arquitetura/02-camadas-dependencias.svg</code></p></div></article><article class="fig" id="f03"><div class="fig-head"><span class="num">03</span><div class="fig-titles"><h3>Anatomia de um agregado</h3><p class="claim">Seis pastas que se repetem em todo agregado — e a sexta, event/, é o assunto da aula.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-label="As seis pastas de um agregado de negócio e o que entra em cada uma" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="620" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Anatomia de um agregado</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">seis pastas, sempre as mesmas — este é o esqueleto de todo módulo de negócio</text>
+  <rect x="40" y="92" width="340" height="30" rx="15" fill="#1E1812"/>
+  <text x="60" y="112" font-size="12.5" font-weight="700" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">modules/orders/src/order/</text>
+
+  <text x="60" y="154" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">PASTA</text>
+  <text x="250" y="154" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">O QUE ENTRA</text>
+  <text x="640" y="154" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">NO PEDIDO</text>
+  <line x1="40" y1="164" x2="920" y2="164" stroke="#E0D5C9"/>
+
+  <rect x="40" y="172" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="198" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">model/</text>
+  <text x="60" y="218" font-size="10.5" fill="#8A8177">entidades e VOs</text>
+  <text x="250" y="200" font-size="12" fill="#1E1812">A regra de negócio de verdade: o que pode existir, o que pode mudar e quando.</text>
+  <text x="250" y="219" font-size="11" fill="#8A8177">Nada de banco, nada de HTTP. Só estado válido e comportamento.</text>
+  <text x="640" y="200" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order.entity.ts</text>
+  <text x="640" y="219" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">order-item.vo.ts</text>
+
+  <rect x="40" y="242" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="268" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">use-case/</text>
+  <text x="60" y="288" font-size="10.5" fill="#8A8177">um arquivo por ação</text>
+  <text x="250" y="270" font-size="12" fill="#1E1812">A história de uma ação, do começo ao fim: busca, valida, decide, grava.</text>
+  <text x="250" y="289" font-size="11" fill="#8A8177">É quem abre a transação e quem devolve o <tspan font-family="'JetBrains Mono', Menlo, monospace">Result</tspan> para o controller.</text>
+  <text x="640" y="270" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">place-order.use-case.ts</text>
+  <text x="640" y="289" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">advance-order-status.use-case.ts</text>
+
+  <rect x="40" y="312" width="880" height="62" rx="14" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="60" y="338" font-size="13" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">event/</text>
+  <text x="60" y="358" font-size="10.5" fill="#B87A3D">o assunto da aula</text>
+  <text x="250" y="340" font-size="12" fill="#1E1812">Os fatos que o agregado registra quando algo já aconteceu. Nome no passado.</text>
+  <text x="250" y="359" font-size="11" fill="#8A8177">Quem grava é a entidade; quem publica é a infraestrutura, mais tarde.</text>
+  <text x="640" y="340" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order-placed.event.ts</text>
+  <text x="640" y="359" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">order-status-changed.event.ts</text>
+
+  <rect x="40" y="382" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="408" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">provider/</text>
+  <text x="60" y="428" font-size="10.5" fill="#8A8177">interfaces, sem código</text>
+  <text x="250" y="410" font-size="12" fill="#1E1812">O que o módulo precisa do mundo externo: gravar (repository) e ler (query).</text>
+  <text x="250" y="429" font-size="11" fill="#8A8177">Quem implementa é o backend, com Prisma — o módulo só declara o contrato.</text>
+  <text x="640" y="410" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order.repository.ts</text>
+  <text x="640" y="429" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">find-orders.query.ts</text>
+
+  <rect x="40" y="452" width="880" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="478" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">dto/</text>
+  <text x="60" y="498" font-size="10.5" fill="#8A8177">entrada e saída</text>
+  <text x="250" y="480" font-size="12" fill="#1E1812">A forma dos dados na fronteira: o que o caso de uso recebe e o que devolve.</text>
+  <text x="250" y="499" font-size="11" fill="#8A8177">Impede que a entidade vaze inteira para a API e para a tela.</text>
+  <text x="640" y="480" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">order.dto.ts</text>
+  <text x="640" y="499" font-size="11" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">PlaceOrderInputDTO</text>
+
+  <rect x="40" y="522" width="880" height="52" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="548" font-size="13" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">errors.ts</text>
+  <text x="60" y="566" font-size="10.5" fill="#8A8177">códigos do módulo</text>
+  <text x="250" y="554" font-size="12" fill="#1E1812">Os motivos de falha, com nome: <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">ORDER_CART_EMPTY</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">ORDER_STATUS_TRANSITION_INVALID</tspan>.</text>
+
+  <text x="40" y="602" font-size="12" fill="#5C544B">Mesmo esqueleto em <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">cart/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">product/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">customer/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">store/</tspan>, <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">user/</tspan> — só <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#FF6B00">event/</tspan> ainda é exclusividade do pedido.</text>
+</svg>
+</div><figcaption>Seis pastas que se repetem em todo agregado — e a sexta, event/, é o assunto da aula.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Mostre <code>modules/orders/src/order/</code> no editor, pasta por pasta, na ordem do slide.</li><li>Repare que <code>provider/</code> só tem interface: o módulo <i>pede</i> persistência, não implementa.</li><li>Compare com <code>modules/catalog/src/product/</code> — mesmo esqueleto, sem <code>event/</code>. Só o pedido publica eventos hoje.</li></ul><p class="file"><code>docs/aula-arquitetura/03-anatomia-modulo.svg</code></p></div></article><article class="fig" id="f04"><div class="fig-head"><span class="num">04</span><div class="fig-titles"><h3>Os blocos do domínio</h3><p class="claim">Seis peças, seis responsabilidades — e todas devolvem o mesmo Result.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" role="img" aria-label="Os seis blocos do domínio: value object, entidade, agregado, caso de uso, repositório e query, todos devolvendo Result" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="640" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Os blocos do domínio</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">seis peças, seis responsabilidades — cada exemplo é código que existe no projeto</text>
+
+  <!-- 1 VO -->
+  <rect x="40" y="110" width="250" height="190" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="60" y="130" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="60" y="154" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">OBJETO DE VALOR</text>
+  <text x="60" y="178" font-size="16" font-weight="800" fill="#1E1812">Vale pelo conteúdo</text>
+  <text x="60" y="198" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">OrderItem · ZipCode · Id</text>
+  <line x1="60" y1="212" x2="270" y2="212" stroke="#EFE9E2"/>
+  <text x="60" y="234" font-size="11.3" fill="#5C544B">Não tem identidade: dois CEPs</text>
+  <text x="60" y="251" font-size="11.3" fill="#5C544B">iguais são o mesmo CEP.</text>
+  <text x="60" y="272" font-size="11.3" fill="#5C544B">Nasce validado e normalizado —</text>
+  <text x="60" y="289" font-size="11.3" fill="#5C544B">ou não nasce.</text>
+
+  <!-- 2 Entidade -->
+  <rect x="355" y="110" width="250" height="190" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="375" y="130" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="375" y="154" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">ENTIDADE</text>
+  <text x="375" y="178" font-size="16" font-weight="800" fill="#1E1812">Vale pelo id</text>
+  <text x="375" y="198" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">Order · Customer · Product</text>
+  <line x1="375" y1="212" x2="585" y2="212" stroke="#EFE9E2"/>
+  <text x="375" y="234" font-size="11.3" fill="#5C544B">Muda com o tempo e continua</text>
+  <text x="375" y="251" font-size="11.3" fill="#5C544B">sendo a mesma coisa.</text>
+  <text x="375" y="272" font-size="11.3" fill="#5C544B">Guarda as invariantes: nenhum</text>
+  <text x="375" y="289" font-size="11.3" fill="#5C544B">método deixa estado inválido.</text>
+
+  <!-- 3 Agregado -->
+  <rect x="670" y="110" width="250" height="190" rx="18" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <rect x="690" y="130" width="28" height="5" rx="2.5" fill="#FF6B00"/>
+  <text x="690" y="154" font-size="10" font-weight="800" fill="#FF6B00" letter-spacing="0.6">AGREGADO</text>
+  <text x="690" y="178" font-size="16" font-weight="800" fill="#1E1812">Fala pelo grupo</text>
+  <text x="690" y="198" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">Order extends AggregateRoot</text>
+  <line x1="690" y1="212" x2="900" y2="212" stroke="#FFD9BD"/>
+  <text x="690" y="234" font-size="11.3" fill="#5C544B">Pedido + itens + endereço são</text>
+  <text x="690" y="251" font-size="11.3" fill="#5C544B">uma unidade: gravam juntos.</text>
+  <text x="690" y="272" font-size="11.3" fill="#1E1812" font-weight="700">É o único lugar que registra</text>
+  <text x="690" y="289" font-size="11.3" fill="#1E1812" font-weight="700">eventos (pendingEvents).</text>
+
+  <!-- 4 Caso de uso -->
+  <rect x="40" y="320" width="250" height="190" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="60" y="340" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="60" y="364" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">CASO DE USO</text>
+  <text x="60" y="388" font-size="16" font-weight="800" fill="#1E1812">Uma ação inteira</text>
+  <text x="60" y="408" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">PlaceOrder · AdvanceOrderStatus</text>
+  <line x1="60" y1="422" x2="270" y2="422" stroke="#EFE9E2"/>
+  <text x="60" y="444" font-size="11.3" fill="#5C544B">Busca, valida, chama o agregado</text>
+  <text x="60" y="461" font-size="11.3" fill="#5C544B">e grava — nessa ordem.</text>
+  <text x="60" y="482" font-size="11.3" fill="#5C544B">É quem abre a transação e quem</text>
+  <text x="60" y="499" font-size="11.3" fill="#5C544B">salva os eventos pendentes.</text>
+
+  <!-- 5 Repositorio -->
+  <rect x="355" y="320" width="250" height="190" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="375" y="340" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="375" y="364" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">REPOSITÓRIO — ESCRITA</text>
+  <text x="375" y="388" font-size="16" font-weight="800" fill="#1E1812">Guarda o agregado</text>
+  <text x="375" y="408" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">OrderRepository</text>
+  <line x1="375" y1="422" x2="585" y2="422" stroke="#EFE9E2"/>
+  <text x="375" y="444" font-size="11.3" fill="#5C544B">Fala em agregado inteiro:</text>
+  <text x="375" y="461" font-size="11.3" fill="#5C544B">create, update, findById.</text>
+  <text x="375" y="482" font-size="11.3" fill="#5C544B">Recebe a transação, para gravar</text>
+  <text x="375" y="499" font-size="11.3" fill="#5C544B">junto com o evento.</text>
+
+  <!-- 6 Query -->
+  <rect x="670" y="320" width="250" height="190" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <rect x="690" y="340" width="28" height="5" rx="2.5" fill="#5C544B"/>
+  <text x="690" y="364" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">QUERY — LEITURA (CQRS)</text>
+  <text x="690" y="388" font-size="16" font-weight="800" fill="#1E1812">Serve a tela</text>
+  <text x="690" y="408" font-size="11.5" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">FindOrdersQuery · ...Summary</text>
+  <line x1="690" y1="422" x2="900" y2="422" stroke="#EFE9E2"/>
+  <text x="690" y="444" font-size="11.3" fill="#5C544B">SQL direto para um DTO, sem</text>
+  <text x="690" y="461" font-size="11.3" fill="#5C544B">montar o agregado.</text>
+  <text x="690" y="482" font-size="11.3" fill="#5C544B">Listagem, filtro e paginação não</text>
+  <text x="690" y="499" font-size="11.3" fill="#5C544B">precisam de regra de negócio.</text>
+
+  <rect x="40" y="536" width="880" height="56" rx="18" fill="#1E1812"/>
+  <text x="64" y="562" font-size="13.5" font-weight="800" fill="#FF8A3D" font-family="'JetBrains Mono', Menlo, monospace">Result&lt;T&gt;</text>
+  <text x="64" y="581" font-size="11" fill="#B8AFA4">packages/shared/src/base</text>
+  <text x="240" y="562" font-size="12.5" fill="#FAF8F5">Todos os seis devolvem a mesma coisa: <tspan font-weight="700">sucesso com valor</tspan> ou <tspan font-weight="700">falha com códigos</tspan>.</text>
+  <text x="240" y="581" font-size="11.5" fill="#B8AFA4">Erro é valor de retorno, não exceção — o controller só traduz o código para HTTP no fim.</text>
+
+  <text x="40" y="622" font-size="12" fill="#5C544B">Regra prática: se a decisão precisa de dados de fora, é <tspan font-weight="700" fill="#1E1812">caso de uso</tspan>; se cabe dentro do agregado, é <tspan font-weight="700" fill="#1E1812">método da entidade</tspan>.</text>
+</svg>
+</div><figcaption>Seis peças, seis responsabilidades — e todas devolvem o mesmo Result.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>É o slide de vocabulário: VO, entidade, agregado, caso de uso, repositório e query.</li><li>O ponto que mais confunde: <b>só o agregado registra evento</b>. O caso de uso apenas recolhe o que o agregado registrou.</li><li>Feche com a regra prática do rodapé — ela resolve 90% das dúvidas de “onde eu ponho essa regra?”.</li></ul><p class="file"><code>docs/aula-arquitetura/04-blocos-do-dominio.svg</code></p></div></article><section class="part"><p class="part-kicker">Parte 2</p><h2 class="part-title">Os eventos</h2><p class="part-desc">O núcleo da aula. Os slides 08, 10 e 11 são os indispensáveis; os outros sustentam a explicação.</p></section><article class="fig" id="f05"><div class="fig-head"><span class="num">05</span><div class="fig-titles"><h3>Anatomia de um evento de domínio</h3><p class="claim">Sete campos, um contrato — e o type é também a routing key.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-label="Campos de um evento de domínio order.placed, as classes que o criam e como ele vira uma mensagem no broker" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+    <marker id="m05b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8177"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="620" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Anatomia de um evento de domínio</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">sete campos, sempre os mesmos — aqui com os valores de um <tspan font-family="'JetBrains Mono', Menlo, monospace" fill="#FF6B00" font-weight="700">order.placed</tspan></text>
+
+  <!-- left: fields -->
+  <rect x="40" y="100" width="470" height="440" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="132" font-size="11" font-weight="800" fill="#8A8177" letter-spacing="0.6">O QUE É GRAVADO</text>
+  <line x1="62" y1="146" x2="488" y2="146" stroke="#EFE9E2"/>
+
+  <text x="62" y="176" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">id</text>
+  <text x="182" y="176" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">9f3c…a1 (uuid)</text>
+  <text x="182" y="193" font-size="10.3" fill="#8A8177">o mesmo valor vira o messageId no broker</text>
+
+  <text x="62" y="229" font-size="12" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">type</text>
+  <text x="182" y="229" font-size="11.5" fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">"order.placed"</text>
+  <text x="182" y="246" font-size="10.3" fill="#8A8177">é também a routing key da publicação</text>
+
+  <text x="62" y="282" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">aggregateType</text>
+  <text x="182" y="282" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">"Order"</text>
+  <text x="182" y="299" font-size="10.3" fill="#8A8177">de que tipo é o dono do fato</text>
+
+  <text x="62" y="335" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">aggregateId</text>
+  <text x="182" y="335" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">id do pedido</text>
+  <text x="182" y="352" font-size="10.3" fill="#8A8177">é daqui que o consumidor sabe qual pedido avançar</text>
+
+  <text x="62" y="388" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">payload</text>
+  <text x="182" y="388" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">cliente, itens congelados, totais</text>
+  <text x="182" y="405" font-size="10.3" fill="#8A8177">o bastante para o consumidor não precisar ler o pedido</text>
+
+  <text x="62" y="441" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">metadata</text>
+  <text x="182" y="441" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">{ } na origem</text>
+  <text x="182" y="458" font-size="10.3" fill="#8A8177">ganha causationId e correlationId dentro de um consumidor</text>
+
+  <text x="62" y="494" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">occurredAt</text>
+  <text x="182" y="494" font-size="11.5" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">instante do fato</text>
+  <text x="182" y="511" font-size="10.3" fill="#8A8177">é o placedAt do pedido, não a hora em que foi publicado</text>
+
+  <!-- right top: classes -->
+  <rect x="540" y="100" width="380" height="176" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="562" y="128" font-size="11" font-weight="800" fill="#8A8177" letter-spacing="0.6">QUEM CONSTRÓI</text>
+  <rect x="562" y="140" width="336" height="42" rx="11" fill="#F6F1EA"/>
+  <text x="730" y="158" font-size="12" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">AbstractDomainEvent</text>
+  <text x="730" y="174" font-size="10.3" fill="#8A8177" text-anchor="middle">packages/shared — valida id, type e aggregateId</text>
+  <path d="M730 182 L730 194 M642 194 L818 194 M642 194 L642 204 M818 194 L818 204" fill="none" stroke="#8A8177" stroke-width="1.4"/>
+  <rect x="562" y="206" width="160" height="54" rx="11" fill="#FFF1E6"/>
+  <text x="642" y="228" font-size="11.5" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">OrderPlacedEvent</text>
+  <text x="642" y="246" font-size="10.3" fill="#8A8177" text-anchor="middle">1 tipo de evento</text>
+  <rect x="738" y="206" width="160" height="54" rx="11" fill="#FFF1E6"/>
+  <text x="818" y="224" font-size="11" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">OrderStatusChanged</text>
+  <text x="818" y="238" font-size="11" font-weight="700" fill="#1E1812" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">Event</text>
+  <text x="818" y="252" font-size="10.3" fill="#8A8177" text-anchor="middle">4 tipos, um por status</text>
+
+  <!-- right bottom: broker message -->
+  <rect x="540" y="296" width="380" height="244" rx="18" fill="#1E1812"/>
+  <text x="562" y="324" font-size="11" font-weight="800" fill="#B8AFA4" letter-spacing="0.6">NO BROKER — BrokerMessage</text>
+  <line x1="562" y1="338" x2="898" y2="338" stroke="#3A322A"/>
+
+  <text x="562" y="368" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">id</text>
+  <line x1="640" y1="364" x2="676" y2="364" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="368" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">messageId</text>
+
+  <text x="562" y="400" font-size="11" fill="#FF8A3D" font-family="'JetBrains Mono', Menlo, monospace">type</text>
+  <line x1="640" y1="396" x2="676" y2="396" stroke="#FF6B00" stroke-width="1.4" marker-end="url(#m05)"/>
+  <text x="688" y="400" font-size="11" fill="#FF8A3D" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">routing key</text>
+
+  <text x="562" y="432" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">payload</text>
+  <line x1="640" y1="428" x2="676" y2="428" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="432" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">payload + aggregateId</text>
+
+  <text x="562" y="464" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">metadata</text>
+  <line x1="640" y1="460" x2="676" y2="460" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="464" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">metadata</text>
+
+  <text x="562" y="496" font-size="11" fill="#B8AFA4" font-family="'JetBrains Mono', Menlo, monospace">occurredAt</text>
+  <line x1="640" y1="492" x2="676" y2="492" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m05b)"/>
+  <text x="688" y="496" font-size="11" fill="#FAF8F5" font-family="'JetBrains Mono', Menlo, monospace">occurredAt</text>
+
+  <text x="562" y="524" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">domainEventToBrokerMessage() · shared/src/messaging</text>
+
+  <text x="40" y="582" font-size="12" fill="#5C544B">Evento é fato consumado: nome no passado, dados congelados no instante em que aconteceu. Ninguém "desfaz" um evento — registra-se outro.</text>
+</svg>
+</div><figcaption>Sete campos, um contrato — e o type é também a routing key.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Abra <code>order-placed.event.ts</code> e leia o payload junto: cliente, itens congelados, totais.</li><li>Insista no <b>congelado</b>: o evento carrega o preço da hora da compra, não o preço de hoje.</li><li>O mapeamento da direita explica por que o <code>messageId</code> nunca muda entre uma republicação e outra.</li></ul><p class="file"><code>docs/aula-arquitetura/05-anatomia-evento.svg</code></p></div></article><article class="fig" id="f06"><div class="fig-head"><span class="num">06</span><div class="fig-titles"><h3>Os cinco eventos do pedido</h3><p class="claim">A cadeia inteira em uma tabela: quem publica, quem reage, o que muda.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-label="Catálogo dos cinco eventos do pedido, quem reage a cada um e qual o efeito" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="620" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Os cinco eventos do pedido</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">cada evento é o gatilho do próximo passo — a cadeia inteira em uma tabela</text>
+
+  <text x="62" y="128" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">EVENTO PUBLICADO</text>
+  <text x="352" y="128" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">QUEM REAGE</text>
+  <text x="642" y="128" font-size="10.5" font-weight="800" fill="#8A8177" letter-spacing="0.6">O QUE ACONTECE</text>
+  <line x1="40" y1="140" x2="920" y2="140" stroke="#E0D5C9"/>
+
+  <rect x="40" y="150" width="880" height="72" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="180" font-size="13.5" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.placed</text>
+  <text x="62" y="200" font-size="10.5" fill="#8A8177">gravado por <tspan font-family="'JetBrains Mono', Menlo, monospace">Order.place()</tspan> no checkout</text>
+  <text x="352" y="180" font-size="12" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">payment.approve-order</text>
+  <text x="352" y="200" font-size="10.5" fill="#8A8177">gateway de pagamento · espera 3 s</text>
+  <text x="642" y="180" font-size="12" fill="#1E1812">pedido vai para <tspan font-weight="700">PAYMENT_APPROVED</tspan></text>
+  <text x="642" y="200" font-size="10.5" fill="#8A8177">e grava <tspan font-family="'JetBrains Mono', Menlo, monospace">order.payment-approved</tspan></text>
+
+  <rect x="40" y="228" width="880" height="72" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="258" font-size="13.5" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.payment-approved</text>
+  <text x="62" y="278" font-size="10.5" fill="#8A8177">gravado por <tspan font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</tspan></text>
+  <text x="352" y="258" font-size="12" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">store.start-picking</text>
+  <text x="352" y="278" font-size="10.5" fill="#8A8177">loja separa os itens · espera 2 s</text>
+  <text x="642" y="258" font-size="12" fill="#1E1812">pedido vai para <tspan font-weight="700">PICKING</tspan></text>
+  <text x="642" y="278" font-size="10.5" fill="#8A8177">e grava <tspan font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</tspan></text>
+
+  <rect x="40" y="306" width="880" height="72" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="336" font-size="13.5" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</text>
+  <text x="62" y="356" font-size="10.5" fill="#8A8177">gravado por <tspan font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</tspan></text>
+  <text x="352" y="336" font-size="12" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">delivery.dispatch-order</text>
+  <text x="352" y="356" font-size="10.5" fill="#8A8177">entregador sai com o pedido · espera 6 s</text>
+  <text x="642" y="336" font-size="12" fill="#1E1812">pedido vai para <tspan font-weight="700">OUT_FOR_DELIVERY</tspan></text>
+  <text x="642" y="356" font-size="10.5" fill="#8A8177">e grava <tspan font-family="'JetBrains Mono', Menlo, monospace">order.out-for-delivery</tspan></text>
+
+  <rect x="40" y="384" width="880" height="72" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="414" font-size="13.5" font-weight="800" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.out-for-delivery</text>
+  <text x="62" y="434" font-size="10.5" fill="#8A8177">gravado por <tspan font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</tspan></text>
+  <text x="352" y="414" font-size="12" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">delivery.complete-order</text>
+  <text x="352" y="434" font-size="10.5" fill="#8A8177">entrega ao cliente · espera 8 s</text>
+  <text x="642" y="414" font-size="12" fill="#1E1812">pedido vai para <tspan font-weight="700">DELIVERED</tspan></text>
+  <text x="642" y="434" font-size="10.5" fill="#8A8177">e grava <tspan font-family="'JetBrains Mono', Menlo, monospace">order.delivered</tspan></text>
+
+  <rect x="40" y="462" width="880" height="72" rx="14" fill="#E7F6EE" stroke="#BEE5D1"/>
+  <text x="62" y="492" font-size="13.5" font-weight="800" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">order.delivered</text>
+  <text x="62" y="512" font-size="10.5" fill="#5C544B">gravado por <tspan font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</tspan></text>
+  <text x="352" y="492" font-size="12" font-weight="700" fill="#5C544B">nenhum consumidor de negócio</text>
+  <text x="352" y="512" font-size="10.5" fill="#5C544B">só o feed ao vivo assina tudo (<tspan font-family="'JetBrains Mono', Menlo, monospace">#</tspan>)</text>
+  <text x="642" y="492" font-size="12" font-weight="700" fill="#0E9F5D">fim da cadeia</text>
+  <text x="642" y="512" font-size="10.5" fill="#5C544B">a tela recebe o aviso e recarrega o pedido</text>
+
+  <text x="40" y="572" font-size="12" fill="#5C544B">Os quatro consumidores são <tspan font-weight="700" fill="#1E1812">serviços simulados</tspan> (pagamento, loja, entrega) dentro do próprio backend.</text>
+  <text x="40" y="592" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/modules/orders/simulation/order-simulation.steps.ts</text>
+</svg>
+</div><figcaption>A cadeia inteira em uma tabela: quem publica, quem reage, o que muda.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Este é o slide de referência — vale deixar impresso na mesa da turma durante o resto da aula.</li><li>Leia da esquerda para a direita, linha a linha: o efeito de cada linha é o gatilho da próxima.</li><li>Note que o último evento não tem consumidor: a cadeia termina sozinha, sem ninguém “desligar” nada.</li></ul><p class="file"><code>docs/aula-arquitetura/06-catalogo-eventos.svg</code></p></div></article><article class="fig" id="f07"><div class="fig-head"><span class="num">07</span><div class="fig-titles"><h3>Onde mora o código de eventos</h3><p class="claim">Quatro lugares, quatro papéis — abra nesta ordem para entender a cadeia.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640" role="img" aria-label="Os quatro lugares onde vive o código de eventos: contratos, eventos de negócio, infraestrutura e handlers" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="640" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Onde mora o código de eventos</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">quatro lugares, quatro papéis — abra nesta ordem para entender a cadeia</text>
+
+  <!-- P1 contratos -->
+  <rect x="40" y="100" width="430" height="230" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="130" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">1 · OS CONTRATOS — NINGUÉM DEPENDE DE NINGUÉM</text>
+  <text x="62" y="152" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">packages/shared/src/</text>
+  <line x1="62" y1="166" x2="448" y2="166" stroke="#EFE9E2"/>
+  <text x="62" y="190" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">events/domain-event.ts</text>
+  <text x="270" y="190" font-size="10.3" fill="#8A8177">a forma de todo evento</text>
+  <text x="62" y="214" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">events/abstract-domain-event.ts</text>
+  <text x="270" y="214" font-size="10.3" fill="#8A8177">a classe base</text>
+  <text x="62" y="238" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">events/domain-event.repository.ts</text>
+  <text x="270" y="238" font-size="10.3" fill="#8A8177">a porta do outbox</text>
+  <text x="62" y="262" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">messaging/message-publisher.ts</text>
+  <text x="270" y="262" font-size="10.3" fill="#8A8177">porta: publicar</text>
+  <text x="62" y="286" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">messaging/message-consumer.ts</text>
+  <text x="270" y="286" font-size="10.3" fill="#8A8177">porta: consumir</text>
+  <text x="62" y="310" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">base/aggregate-root.ts</text>
+  <text x="270" y="310" font-size="10.3" fill="#8A8177">addEvent / pullEvents</text>
+
+  <!-- P2 eventos -->
+  <rect x="490" y="100" width="430" height="230" rx="18" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="512" y="130" font-size="10" font-weight="800" fill="#FF6B00" letter-spacing="0.6">2 · OS EVENTOS DE NEGÓCIO — AQUI ESTÁ O DOMÍNIO</text>
+  <text x="512" y="152" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">modules/orders/src/order/</text>
+  <line x1="512" y1="166" x2="898" y2="166" stroke="#FFD9BD"/>
+  <text x="512" y="190" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">event/order-placed.event.ts</text>
+  <text x="730" y="190" font-size="10.3" fill="#8A8177">order.placed</text>
+  <text x="512" y="214" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">event/order-status-changed...</text>
+  <text x="730" y="214" font-size="10.3" fill="#8A8177">os 4 tipos de status</text>
+  <text x="512" y="238" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">event/index.ts</text>
+  <text x="730" y="238" font-size="10.3" fill="#8A8177">o union OrderEvent</text>
+  <text x="512" y="262" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">model/order.entity.ts</text>
+  <text x="730" y="262" font-size="10.3" fill="#8A8177">quem chama addEvent()</text>
+  <text x="512" y="286" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">use-case/place-order...</text>
+  <text x="730" y="286" font-size="10.3" fill="#8A8177">quem grava no outbox</text>
+  <text x="512" y="310" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">use-case/advance-order-status...</text>
+  <text x="730" y="310" font-size="10.3" fill="#8A8177">chamado pelos consumidores</text>
+
+  <!-- P3 infra -->
+  <rect x="40" y="350" width="430" height="230" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="380" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">3 · A INFRAESTRUTURA — O ENCANAMENTO</text>
+  <text x="62" y="402" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/</text>
+  <line x1="62" y1="416" x2="448" y2="416" stroke="#EFE9E2"/>
+  <text x="62" y="440" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">outbox/</text>
+  <text x="270" y="440" font-size="10.3" fill="#8A8177">relay, lote, retry</text>
+  <text x="62" y="464" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">consumer/</text>
+  <text x="270" y="464" font-size="10.3" fill="#8A8177">registry, runner, idempotência</text>
+  <text x="62" y="488" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">rabbitmq/</text>
+  <text x="270" y="488" font-size="10.3" fill="#8A8177">publisher e consumer AMQP</text>
+  <text x="62" y="512" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">live/</text>
+  <text x="270" y="512" font-size="10.3" fill="#8A8177">feed ao vivo por instância</text>
+  <text x="62" y="536" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">monitoring/</text>
+  <text x="270" y="536" font-size="10.3" fill="#8A8177">linha do tempo do admin</text>
+  <text x="62" y="560" font-size="11" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">messaging.module.ts</text>
+  <text x="270" y="560" font-size="10.3" fill="#8A8177">liga as portas ao RabbitMQ</text>
+
+  <!-- P4 handlers -->
+  <rect x="490" y="350" width="430" height="230" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="512" y="380" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">4 · OS HANDLERS E AS TELAS — QUEM REAGE</text>
+  <text x="512" y="402" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/modules/orders/</text>
+  <line x1="512" y1="416" x2="898" y2="416" stroke="#EFE9E2"/>
+  <text x="512" y="440" font-size="11" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">simulation/...steps.ts</text>
+  <text x="730" y="440" font-size="10.3" fill="#8A8177">os 4 passos e as esperas</text>
+  <text x="512" y="464" font-size="11" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">simulation/...consumers.ts</text>
+  <text x="730" y="464" font-size="10.3" fill="#8A8177">os handlers, registrados no boot</text>
+  <text x="512" y="488" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">order-live-updates.ts</text>
+  <text x="730" y="488" font-size="10.3" fill="#8A8177">avisos SSE por pedido</text>
+  <text x="512" y="512" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">my-order.controller.ts</text>
+  <text x="730" y="512" font-size="10.3" fill="#8A8177">POST /me/orders + stream</text>
+  <text x="512" y="536" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">order-admin.controller.ts</text>
+  <text x="730" y="536" font-size="10.3" fill="#8A8177">monitor e linha do tempo</text>
+  <text x="512" y="560" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">orders.module.ts</text>
+  <text x="730" y="560" font-size="10.3" fill="#8A8177">importa o MessagingModule</text>
+
+  <text x="40" y="614" font-size="12" fill="#5C544B">O quadro 2 é o único que fala de pedido. Os outros três serviriam para <tspan font-weight="700" fill="#1E1812">qualquer</tspan> módulo que quisesse publicar eventos.</text>
+</svg>
+</div><figcaption>Quatro lugares, quatro papéis — abra nesta ordem para entender a cadeia.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Use como roteiro de navegação no editor: quadro 1, quadro 2, quadro 3, quadro 4.</li><li>O recado do rodapé é o mais importante: só o quadro 2 fala de pedido. Os outros três serviriam para qualquer módulo.</li><li>Se alguém perguntar “por onde eu começo a ler?”, a resposta é o quadro 2.</li></ul><p class="file"><code>docs/aula-arquitetura/07-onde-mora-o-codigo.svg</code></p></div></article><article class="fig" id="f08"><div class="fig-head"><span class="num">08</span><div class="fig-titles"><h3>Transactional outbox</h3><p class="claim">O evento é gravado com o pedido, na mesma transação, e publicado depois.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 660" width="960" height="660" role="img" aria-label="Transactional outbox: o evento é gravado na mesma transação do pedido e publicado depois pelo relay" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m08" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="660" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Transactional outbox</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">como o evento nunca se perde entre o banco e o broker — o coração da arquitetura</text>
+
+  <!-- left: transaction -->
+  <rect x="40" y="100" width="400" height="340" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="130" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">1 · UMA TRANSAÇÃO SÓ</text>
+  <text x="62" y="156" font-size="14" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">PlaceOrder.execute()</text>
+  <rect x="62" y="178" width="356" height="222" rx="12" fill="#F6F1EA"/>
+  <text x="78" y="199" font-size="10.5" font-weight="700" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">BEGIN</text>
+  <rect x="78" y="208" width="324" height="52" rx="10" fill="#FFFFFF"/>
+  <text x="94" y="230" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">INSERT orders</text>
+  <text x="94" y="248" font-size="10.3" fill="#8A8177">o pedido, com os itens e preços congelados</text>
+  <rect x="78" y="266" width="324" height="52" rx="10" fill="#FFFFFF"/>
+  <text x="94" y="288" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">UPDATE carts</text>
+  <text x="94" y="306" font-size="10.3" fill="#8A8177">o carrinho da conta fica vazio</text>
+  <rect x="78" y="324" width="324" height="52" rx="10" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="94" y="346" font-size="11.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">INSERT outbox_events</text>
+  <text x="94" y="364" font-size="10.3" fill="#8A8177">status PENDING · o evento <tspan font-family="'JetBrains Mono', Menlo, monospace">order.placed</tspan></text>
+  <text x="78" y="392" font-size="10.5" font-weight="700" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">COMMIT</text>
+  <text x="62" y="424" font-size="12" font-weight="700" fill="#1E1812">Os três gravam juntos — ou nenhum grava.</text>
+
+  <!-- arrow -->
+  <text x="479" y="248" font-size="10" font-weight="700" fill="#FF6B00" text-anchor="middle">depois,</text>
+  <text x="479" y="260" font-size="10" font-weight="700" fill="#FF6B00" text-anchor="middle">fora da tx</text>
+  <line x1="446" y1="276" x2="512" y2="276" stroke="#FF6B00" stroke-width="2" marker-end="url(#m08)"/>
+
+  <!-- right: relay -->
+  <rect x="520" y="100" width="400" height="340" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="542" y="130" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">2 · O RELAY PUBLICA DEPOIS</text>
+  <text x="542" y="156" font-size="14" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">OutboxRelay</text>
+  <rect x="542" y="178" width="356" height="48" rx="10" fill="#F6F1EA"/>
+  <text x="558" y="200" font-size="11.5" font-weight="700" fill="#1E1812">a cada 1 segundo, dentro do backend</text>
+  <text x="558" y="217" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">OUTBOX_POLL_INTERVAL_MS · não é uma rota HTTP</text>
+  <rect x="542" y="234" width="356" height="62" rx="10" fill="#F6F1EA"/>
+  <text x="558" y="256" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">SELECT … FOR UPDATE SKIP LOCKED</text>
+  <text x="558" y="273" font-size="10.3" fill="#8A8177">até 50 pendentes, do mais antigo para o mais novo</text>
+  <text x="558" y="288" font-size="10.3" fill="#8A8177">outra instância pula as linhas travadas: nunca publicam o mesmo</text>
+  <rect x="542" y="304" width="356" height="48" rx="10" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="558" y="326" font-size="11.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">publish() com confirm</text>
+  <text x="558" y="343" font-size="10.3" fill="#8A8177">só segue quando o RabbitMQ confirma a mensagem</text>
+  <rect x="542" y="360" width="356" height="48" rx="10" fill="#E7F6EE"/>
+  <text x="558" y="382" font-size="11.5" font-weight="700" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">UPDATE status = PUBLISHED</text>
+  <text x="558" y="399" font-size="10.3" fill="#5C544B">com <tspan font-family="'JetBrains Mono', Menlo, monospace">published_at</tspan> — a linha fica no banco como histórico</text>
+  <text x="542" y="428" font-size="12" font-weight="700" fill="#1E1812">Depende só da porta <tspan font-family="'JetBrains Mono', Menlo, monospace">MessagePublisher</tspan>.</text>
+
+  <!-- bottom cards -->
+  <rect x="40" y="470" width="400" height="130" rx="18" fill="#FFF7DD" stroke="#EFDFA8"/>
+  <text x="62" y="500" font-size="10" font-weight="800" fill="#B78A00" letter-spacing="0.6">SE A PUBLICAÇÃO FALHAR</text>
+  <text x="62" y="524" font-size="12" fill="#1E1812">O evento continua <tspan font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">PENDING</tspan>: <tspan font-family="'JetBrains Mono', Menlo, monospace">attempts + 1</tspan>,</text>
+  <text x="62" y="543" font-size="12" fill="#1E1812"><tspan font-family="'JetBrains Mono', Menlo, monospace">last_error</tspan> gravado e <tspan font-family="'JetBrains Mono', Menlo, monospace">available_at</tspan> empurrado</text>
+  <text x="62" y="562" font-size="12" fill="#1E1812">para o futuro (backoff).</text>
+  <text x="62" y="584" font-size="11" fill="#5C544B">Broker fora do ar não derruba o backend nem o checkout.</text>
+
+  <rect x="520" y="470" width="400" height="130" rx="18" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="542" y="500" font-size="10" font-weight="800" fill="#FF6B00" letter-spacing="0.6">ENTREGA AO MENOS UMA VEZ</text>
+  <text x="542" y="524" font-size="12" fill="#1E1812">Se o processo cair entre o confirm e o commit, o</text>
+  <text x="542" y="543" font-size="12" fill="#1E1812">evento segue pendente e é publicado <tspan font-weight="700">de novo</tspan> —</text>
+  <text x="542" y="562" font-size="12" fill="#1E1812">com o <tspan font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">mesmo messageId</tspan>.</text>
+  <text x="542" y="584" font-size="11" fill="#5C544B">É por isso que todo consumidor precisa ser idempotente.</text>
+
+  <text x="40" y="636" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/outbox/ · outbox-relay.ts · outbox.prisma.ts · domain-event.prisma.ts</text>
+</svg>
+</div><figcaption>O evento é gravado com o pedido, na mesma transação, e publicado depois.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>O slide mais importante da aula. Vale gastar tempo nele.</li><li>Faça a pergunta antes de mostrar a resposta: “e se eu publicar no RabbitMQ <i>dentro</i> da transação e o commit falhar?”</li><li>Depois: “e se eu publicar <i>depois</i> do commit e o processo cair antes?” O outbox é a resposta para as duas.</li></ul><p class="file"><code>docs/aula-arquitetura/08-transactional-outbox.svg</code></p></div></article><article class="fig" id="f09"><div class="fig-head"><span class="num">09</span><div class="fig-titles"><h3>A topologia no RabbitMQ</h3><p class="claim">Um exchange topic, quatro filas de trabalho, uma fila transiente — e o trio fila/wait/dead.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700" role="img" aria-label="Topologia no RabbitMQ: exchange topic jaja.events, quatro filas de trabalho, a fila transiente do feed ao vivo e o trio fila, wait e dead" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m09" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+    <marker id="m09g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8177"/></marker>
+    <marker id="m09r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#C93A31"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="700" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">A topologia no RabbitMQ</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">um exchange, seis filas — e a routing key é sempre o <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">type</tspan> do evento</text>
+
+  <!-- publisher -->
+  <rect x="40" y="170" width="180" height="80" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="198" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">OutboxRelay</text>
+  <text x="60" y="218" font-size="10.3" fill="#8A8177">publish com confirm,</text>
+  <text x="60" y="233" font-size="10.3" fill="#8A8177">persistent: true</text>
+  <line x1="226" y1="210" x2="252" y2="210" stroke="#FF6B00" stroke-width="2" marker-end="url(#m09)"/>
+
+  <!-- exchange -->
+  <rect x="260" y="150" width="200" height="120" rx="16" fill="#1E1812"/>
+  <text x="360" y="182" font-size="10" font-weight="800" fill="#B8AFA4" letter-spacing="0.6" text-anchor="middle">EXCHANGE</text>
+  <text x="360" y="208" font-size="14" font-weight="800" fill="#FF8A3D" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">jaja.events</text>
+  <text x="360" y="230" font-size="11" fill="#FAF8F5" text-anchor="middle">topic · durável</text>
+  <text x="360" y="250" font-size="10.3" fill="#B8AFA4" text-anchor="middle">roteia pela routing key</text>
+  <text x="260" y="296" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">RABBITMQ_EXCHANGE</text>
+  <text x="260" y="312" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">PREFETCH=10 · MAX_ATTEMPTS=5</text>
+
+  <!-- bindings -->
+  <path d="M466 210 C 510 210, 516 128, 554 128" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 196, 554 196" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 264, 554 264" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 332, 554 332" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 400, 554 400" fill="none" stroke="#8A8177" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#m09g)"/>
+
+  <!-- queues -->
+  <rect x="560" y="100" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="124" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.payment.approve-order</text>
+  <text x="578" y="142" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.placed</tspan> · durável · espera 3 s</text>
+
+  <rect x="560" y="168" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="192" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.store.start-picking</text>
+  <text x="578" y="210" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.payment-approved</tspan> · espera 2 s</text>
+
+  <rect x="560" y="236" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="260" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.delivery.dispatch-order</text>
+  <text x="578" y="278" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</tspan> · espera 6 s</text>
+
+  <rect x="560" y="304" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="328" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.delivery.complete-order</text>
+  <text x="578" y="346" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.out-for-delivery</tspan> · espera 8 s</text>
+
+  <rect x="560" y="372" width="360" height="56" rx="12" fill="#F6F1EA" stroke="#E0D5C9" stroke-dasharray="5 4"/>
+  <text x="578" y="396" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">jaja.live.&lt;host&gt;.&lt;pid&gt;.&lt;rand&gt;</text>
+  <text x="578" y="414" font-size="10.3" fill="#8A8177">binding <tspan fill="#5C544B" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">#</tspan> · transiente, uma por instância, cópia de tudo</text>
+
+  <text x="560" y="450" font-size="11" fill="#5C544B">As quatro primeiras são <tspan font-weight="700">filas de trabalho</tspan>: cada mensagem vai para <tspan font-weight="700">uma</tspan> instância.</text>
+
+  <!-- trio -->
+  <rect x="40" y="468" width="880" height="180" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="496" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">TODA FILA DE TRABALHO VEM EM TRIO — AQUI, A DO PAGAMENTO</text>
+
+  <rect x="62" y="516" width="232" height="100" rx="12" fill="#FFF7DD" stroke="#EFDFA8"/>
+  <text x="78" y="542" font-size="11" font-weight="700" fill="#B78A00" font-family="'JetBrains Mono', Menlo, monospace">…approve-order.wait</text>
+  <text x="78" y="564" font-size="10" fill="#5C544B">espera e nova tentativa</text>
+  <text x="78" y="582" font-size="10" fill="#5C544B">TTL por mensagem, sem consumidor</text>
+  <text x="78" y="600" font-size="10" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">x-dead-letter-exchange: ''</text>
+
+  <rect x="364" y="516" width="232" height="100" rx="12" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="380" y="542" font-size="11" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">jaja.payment.approve-order</text>
+  <text x="380" y="564" font-size="10" fill="#5C544B">a fila de trabalho</text>
+  <text x="380" y="582" font-size="10" fill="#5C544B">durável, dividida entre instâncias</text>
+  <text x="380" y="600" font-size="10" fill="#5C544B">é a única com consumidor</text>
+
+  <rect x="666" y="516" width="232" height="100" rx="12" fill="#FDEBEA" stroke="#F2C3BF"/>
+  <text x="682" y="542" font-size="11" font-weight="700" fill="#C93A31" font-family="'JetBrains Mono', Menlo, monospace">…approve-order.dead</text>
+  <text x="682" y="564" font-size="10" fill="#5C544B">mensagens descartadas</text>
+  <text x="682" y="582" font-size="10" fill="#5C544B">ficam para inspeção no painel</text>
+  <text x="682" y="600" font-size="10" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">x-jaja-dead-reason</text>
+
+  <text x="330" y="540" font-size="9.5" font-weight="700" fill="#B78A00" text-anchor="middle">falhou</text>
+  <line x1="360" y1="550" x2="300" y2="550" stroke="#B78A00" stroke-width="1.5" marker-end="url(#m09g)"/>
+  <text x="330" y="580" font-size="9.5" font-weight="700" fill="#B78A00" text-anchor="middle">TTL expira</text>
+  <line x1="298" y1="590" x2="358" y2="590" stroke="#B78A00" stroke-width="1.5" marker-end="url(#m09g)"/>
+  <text x="631" y="556" font-size="9.5" font-weight="700" fill="#C93A31" text-anchor="middle">5ª falha</text>
+  <line x1="600" y1="566" x2="660" y2="566" stroke="#C93A31" stroke-width="1.5" marker-end="url(#m09r)"/>
+
+  <text x="62" y="636" font-size="11" fill="#5C544B">A <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.wait</tspan> devolve a mensagem pelo exchange padrão, direto para a fila de origem: os outros consumidores do mesmo evento não recebem cópia da retentativa.</text>
+
+  <text x="40" y="678" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/rabbitmq/ · painel em http://localhost:15672 (jaja / jaja)</text>
+</svg>
+</div><figcaption>Um exchange topic, quatro filas de trabalho, uma fila transiente — e o trio fila/wait/dead.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Abra o painel em <code>localhost:15672</code> (jaja / jaja) e mostre as filas reais ao lado do slide.</li><li>O trio de baixo é o que mais gera pergunta: a <code>.wait</code> não tem consumidor — quem tira a mensagem de lá é o TTL.</li><li>A fila <code>jaja.live.*</code> desaparece quando o backend cai. Mostre isso reiniciando o processo.</li></ul><p class="file"><code>docs/aula-arquitetura/09-topologia-rabbitmq.svg</code></p></div></article><article class="fig" id="f10"><div class="fig-head"><span class="num">10</span><div class="fig-titles"><h3>A vida de uma mensagem no consumidor</h3><p class="claim">Caminho feliz à esquerda, os três desvios à direita — tudo dentro de uma transação.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 740" width="960" height="740" role="img" aria-label="Ciclo de vida de uma mensagem no consumidor: espera, transação única com marca de processada, handler e novos eventos, e os desvios de duplicata, falha e descarte" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+    <marker id="m10g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8177"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="740" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">A vida de uma mensagem no consumidor</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">o caminho feliz à esquerda, os três desvios à direita — <tspan font-family="'JetBrains Mono', Menlo, monospace">EventConsumerRunner</tspan></text>
+
+  <!-- S1 -->
+  <rect x="40" y="110" width="520" height="62" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="136" font-size="12.5" font-weight="800" fill="#1E1812">1 · A mensagem chega na fila do consumidor</text>
+  <text x="62" y="158" font-size="10.8" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">jaja.payment.approve-order · prefetch 10 · uma instância só recebe</text>
+  <line x1="300" y1="172" x2="300" y2="186" stroke="#FF6B00" stroke-width="2" marker-end="url(#m10)"/>
+
+  <!-- S2 -->
+  <rect x="40" y="190" width="520" height="76" rx="14" fill="#FFF7DD" stroke="#EFDFA8"/>
+  <text x="62" y="216" font-size="12.5" font-weight="800" fill="#1E1812">2 · A espera do serviço acontece no broker</text>
+  <text x="62" y="238" font-size="11" fill="#5C544B">Na primeira entrega a mensagem é republicada em <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.wait</tspan> com <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">expiration: 3000</tspan>,</text>
+  <text x="62" y="256" font-size="11" fill="#5C544B">volta sozinha quando o TTL expira. Nenhum <tspan font-family="'JetBrains Mono', Menlo, monospace">setTimeout</tspan> segurando transação.</text>
+  <line x1="300" y1="266" x2="300" y2="280" stroke="#FF6B00" stroke-width="2" marker-end="url(#m10)"/>
+
+  <!-- S3 -->
+  <rect x="40" y="284" width="520" height="200" rx="14" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="62" y="308" font-size="10" font-weight="800" fill="#FF6B00" letter-spacing="0.6">3 · UMA TRANSAÇÃO SÓ — TUDO OU NADA</text>
+  <rect x="62" y="320" width="476" height="36" rx="9" fill="#FFFFFF"/>
+  <text x="78" y="343" font-size="11" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">markProcessed()</text>
+  <text x="250" y="343" font-size="10.5" fill="#5C544B">grava a marca em <tspan font-family="'JetBrains Mono', Menlo, monospace">processed_messages</tspan></text>
+  <rect x="62" y="360" width="476" height="36" rx="9" fill="#FFFFFF"/>
+  <text x="78" y="383" font-size="11" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">handler(msg, tx)</text>
+  <text x="250" y="383" font-size="10.5" fill="#5C544B">chama <tspan font-family="'JetBrains Mono', Menlo, monospace">AdvanceOrderStatus</tspan> com a mesma tx</text>
+  <rect x="62" y="400" width="476" height="36" rx="9" fill="#FFFFFF"/>
+  <text x="78" y="423" font-size="11" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">append(novos eventos)</text>
+  <text x="250" y="423" font-size="10.5" fill="#5C544B">o próximo evento nasce <tspan font-family="'JetBrains Mono', Menlo, monospace">PENDING</tspan> no outbox</text>
+  <rect x="62" y="440" width="476" height="36" rx="9" fill="#1E1812"/>
+  <text x="78" y="463" font-size="11" font-weight="700" fill="#FF8A3D" font-family="'JetBrains Mono', Menlo, monospace">COMMIT</text>
+  <text x="250" y="463" font-size="10.5" fill="#FAF8F5">marca, status e próximo evento nascem juntos</text>
+  <line x1="300" y1="484" x2="300" y2="498" stroke="#FF6B00" stroke-width="2" marker-end="url(#m10)"/>
+
+  <!-- S4 -->
+  <rect x="40" y="502" width="520" height="62" rx="14" fill="#E7F6EE" stroke="#BEE5D1"/>
+  <text x="62" y="528" font-size="12.5" font-weight="800" fill="#0E9F5D">4 · ack — a mensagem sai da fila</text>
+  <text x="62" y="550" font-size="10.8" fill="#5C544B">O relay já vai encontrar o novo evento pendente e publicar o próximo passo.</text>
+
+  <!-- desvios -->
+  <line x1="566" y1="320" x2="594" y2="320" stroke="#8A8177" stroke-width="1.6" marker-end="url(#m10g)"/>
+  <rect x="600" y="284" width="320" height="90" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="620" y="310" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">SE A MARCA JÁ EXISTIA</text>
+  <text x="620" y="332" font-size="11" fill="#1E1812">A chave é <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">(consumer, messageId)</tspan>:</text>
+  <text x="620" y="350" font-size="11" fill="#1E1812">o handler <tspan font-weight="700">nem roda</tspan> e a mensagem</text>
+  <text x="620" y="368" font-size="11" fill="#1E1812">recebe ack. É a idempotência.</text>
+
+  <line x1="566" y1="438" x2="594" y2="438" stroke="#8A8177" stroke-width="1.6" marker-end="url(#m10g)"/>
+  <rect x="600" y="392" width="320" height="92" rx="14" fill="#FFF7DD" stroke="#EFDFA8"/>
+  <text x="620" y="418" font-size="10" font-weight="800" fill="#B78A00" letter-spacing="0.6">SE QUALQUER PASSO FALHAR</text>
+  <text x="620" y="440" font-size="11" fill="#1E1812">Rollback de tudo — inclusive da marca.</text>
+  <text x="620" y="458" font-size="11" fill="#1E1812">Republica com <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">x-jaja-attempt + 1</tspan></text>
+  <text x="620" y="476" font-size="11" fill="#1E1812">e espera o backoff na <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.wait</tspan>.</text>
+
+  <line x1="566" y1="533" x2="594" y2="533" stroke="#8A8177" stroke-width="1.6" marker-end="url(#m10g)"/>
+  <rect x="600" y="502" width="320" height="62" rx="14" fill="#FDEBEA" stroke="#F2C3BF"/>
+  <text x="620" y="528" font-size="10" font-weight="800" fill="#C93A31" letter-spacing="0.6">NA 5ª TENTATIVA</text>
+  <text x="620" y="550" font-size="11" fill="#1E1812">Vai para a <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.dead</tspan> com o motivo no cabeçalho.</text>
+
+  <!-- causation -->
+  <rect x="40" y="596" width="880" height="86" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="624" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">CAUSAÇÃO — O QUE LIGA UM EVENTO AO OUTRO</text>
+  <text x="62" y="648" font-size="12" fill="#1E1812">O evento gravado dentro de um consumidor herda a origem da mensagem: <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">causationId</tspan> = quem causou este evento;</text>
+  <text x="62" y="668" font-size="12" fill="#1E1812"><tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">correlationId</tspan> = o id que atravessa a cadeia inteira, do <tspan font-family="'JetBrains Mono', Menlo, monospace">order.placed</tspan> até o <tspan font-family="'JetBrains Mono', Menlo, monospace">order.delivered</tspan>.</text>
+
+  <text x="40" y="716" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/consumer/ · event-consumer.runner.ts · processed-message.prisma.ts · message-causation.ts</text>
+</svg>
+</div><figcaption>Caminho feliz à esquerda, os três desvios à direita — tudo dentro de uma transação.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>O bloco laranja é o coração: marca de processada, handler e novo evento <b>nascem juntos ou não nascem</b>.</li><li>Explique por que a marca entra na transação: se ela ficasse fora, um erro deixaria a mensagem “processada” sem efeito nenhum.</li><li>A faixa de causação lá embaixo é o que permite montar a linha do tempo do slide 13.</li></ul><p class="file"><code>docs/aula-arquitetura/10-ciclo-de-vida-mensagem.svg</code></p></div></article><article class="fig" id="f11"><div class="fig-head"><span class="num">11</span><div class="fig-titles"><h3>O pedido, do checkout à entrega</h3><p class="claim">Coreografia: ninguém orquestra, cada serviço reage ao evento do passo anterior.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760" width="960" height="760" role="img" aria-label="Linha do tempo de um pedido: cinco status, cinco eventos e os quatro serviços que reagem em cadeia" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="760" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">O pedido, do checkout à entrega</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">coreografia: ninguém manda em ninguém — cada serviço reage ao evento do passo anterior</text>
+
+  <text x="62" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">TEMPO</text>
+  <text x="150" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">STATUS DO PEDIDO</text>
+  <text x="380" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">EVENTO GRAVADO</text>
+  <text x="630" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">QUEM GRAVOU</text>
+
+  <rect x="40" y="136" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="180" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">0 s</text>
+  <rect x="150" y="160" width="190" height="30" rx="15" fill="#F6F1EA"/>
+  <text x="245" y="180" font-size="12" font-weight="800" fill="#1E1812" text-anchor="middle">PLACED</text>
+  <text x="380" y="176" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.placed</text>
+  <text x="630" y="170" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.place()</text>
+  <text x="630" y="187" font-size="10.3" fill="#8A8177">no POST /me/orders do checkout</text>
+
+  <line x1="200" y1="216" x2="200" y2="250" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="232" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">payment.approve-order</text>
+  <text x="224" y="248" font-size="10.3" fill="#8A8177">gateway de pagamento · espera 3 s na fila <tspan font-family="'JetBrains Mono', Menlo, monospace">.wait</tspan> antes de agir</text>
+
+  <rect x="40" y="256" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="300" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">3 s</text>
+  <rect x="150" y="280" width="190" height="30" rx="15" fill="#FFF1E6"/>
+  <text x="245" y="300" font-size="12" font-weight="800" fill="#FF6B00" text-anchor="middle">PAYMENT_APPROVED</text>
+  <text x="380" y="296" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.payment-approved</text>
+  <text x="630" y="290" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="307" font-size="10.3" fill="#8A8177">dentro da transação do consumidor</text>
+
+  <line x1="200" y1="336" x2="200" y2="370" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="352" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">store.start-picking</text>
+  <text x="224" y="368" font-size="10.3" fill="#8A8177">a loja separa os itens · espera 2 s</text>
+
+  <rect x="40" y="376" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="420" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">5 s</text>
+  <rect x="150" y="400" width="190" height="30" rx="15" fill="#FFF7DD"/>
+  <text x="245" y="420" font-size="12" font-weight="800" fill="#B78A00" text-anchor="middle">PICKING</text>
+  <text x="380" y="416" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</text>
+  <text x="630" y="410" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="427" font-size="10.3" fill="#8A8177">mesmo caso de uso, outro consumidor</text>
+
+  <line x1="200" y1="456" x2="200" y2="490" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="472" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">delivery.dispatch-order</text>
+  <text x="224" y="488" font-size="10.3" fill="#8A8177">o entregador sai com o pedido · espera 6 s</text>
+
+  <rect x="40" y="496" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="540" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">11 s</text>
+  <rect x="150" y="520" width="190" height="30" rx="15" fill="#FFF1E6"/>
+  <text x="245" y="540" font-size="12" font-weight="800" fill="#FF6B00" text-anchor="middle">OUT_FOR_DELIVERY</text>
+  <text x="380" y="536" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.out-for-delivery</text>
+  <text x="630" y="530" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="547" font-size="10.3" fill="#8A8177">a tela do cliente já mostra "a caminho"</text>
+
+  <line x1="200" y1="576" x2="200" y2="610" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="592" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">delivery.complete-order</text>
+  <text x="224" y="608" font-size="10.3" fill="#8A8177">entrega ao cliente · espera 8 s</text>
+
+  <rect x="40" y="616" width="880" height="76" rx="14" fill="#E7F6EE" stroke="#BEE5D1"/>
+  <text x="62" y="660" font-size="15" font-weight="800" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">19 s</text>
+  <rect x="150" y="640" width="190" height="30" rx="15" fill="#FFFFFF"/>
+  <text x="245" y="660" font-size="12" font-weight="800" fill="#0E9F5D" text-anchor="middle">DELIVERED</text>
+  <text x="380" y="656" font-size="12.5" font-weight="700" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">order.delivered</text>
+  <text x="630" y="650" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="667" font-size="10.3" fill="#5C544B">fim da cadeia: ninguém assina este evento</text>
+
+  <text x="40" y="726" font-size="12.5" fill="#1E1812">Para colocar <tspan font-weight="700">emissão de nota fiscal</tspan> entre o pagamento e a separação, basta registrar mais um consumidor. <tspan font-weight="700">Nenhum código existente muda.</tspan></text>
+  <text x="40" y="746" font-size="11" fill="#8A8177">Os tempos são da simulação (<tspan font-family="'JetBrains Mono', Menlo, monospace">ORDER_SIMULATION_DELAY_FACTOR</tspan> multiplica todos eles).</text>
+</svg>
+</div><figcaption>Coreografia: ninguém orquestra, cada serviço reage ao evento do passo anterior.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Rode a demo ao vivo com este slide na tela: são 19 segundos do checkout até “entregue”.</li><li>Contraste com orquestração: aqui não existe nenhuma classe que conheça os quatro passos.</li><li>Termine no rodapé — “para inserir nota fiscal, basta registrar mais um consumidor” é a frase que a turma leva para casa.</li></ul><p class="file"><code>docs/aula-arquitetura/11-coreografia-pedido.svg</code></p></div></article><article class="fig" id="f12"><div class="fig-head"><span class="num">12</span><div class="fig-titles"><h3>Como a tela fica viva</h3><p class="claim">O aviso não carrega estado: ele só diz “olhe de novo”.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 710" width="960" height="710" role="img" aria-label="Caminho do aviso ao vivo: fila transiente, LiveEventFeed, SSE e recarga pela API REST" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="710" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Como a tela fica viva</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">do evento no broker até o pedido se mexendo na tela, sem o usuário apertar F5</text>
+
+  <line x1="130" y1="130" x2="130" y2="258" stroke="#8A8177" stroke-width="3" stroke-linecap="round"/>
+  <text x="40" y="152" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">BROKER</text>
+  <line x1="130" y1="274" x2="130" y2="474" stroke="#FF6B00" stroke-width="3" stroke-linecap="round"/>
+  <text x="40" y="296" font-size="10" font-weight="800" fill="#FF6B00" letter-spacing="0.6">BACKEND</text>
+  <line x1="130" y1="490" x2="130" y2="618" stroke="#0E9F5D" stroke-width="3" stroke-linecap="round"/>
+  <text x="40" y="512" font-size="10" font-weight="800" fill="#0E9F5D" letter-spacing="0.6">NAVEGADOR</text>
+
+  <rect x="150" y="130" width="770" height="56" rx="13" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="170" y="154" font-size="12.5" font-weight="700" fill="#1E1812">O evento é publicado no exchange, como qualquer outro</text>
+  <text x="170" y="173" font-size="10.5" fill="#8A8177">o feed ao vivo não tem canal próprio — ele escuta o mesmo <tspan font-family="'JetBrains Mono', Menlo, monospace">jaja.events</tspan></text>
+  <text x="900" y="154" font-size="10.5" fill="#8A8177" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">topic</text>
+  <line x1="200" y1="188" x2="200" y2="198" stroke="#FF6B00" stroke-width="2" marker-end="url(#m12)"/>
+
+  <rect x="150" y="202" width="770" height="56" rx="13" fill="#F6F1EA" stroke="#E0D5C9" stroke-dasharray="5 4"/>
+  <text x="170" y="226" font-size="12.5" font-weight="700" fill="#1E1812">Fila transiente, uma por instância, assinando tudo (<tspan font-family="'JetBrains Mono', Menlo, monospace">#</tspan>)</text>
+  <text x="170" y="245" font-size="10.5" fill="#8A8177">exclusiva e apagada junto com a conexão — cada instância recebe <tspan font-weight="700">sua própria cópia</tspan></text>
+  <text x="900" y="226" font-size="10.5" fill="#8A8177" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">jaja.live.&lt;host&gt;.&lt;pid&gt;</text>
+  <line x1="200" y1="260" x2="200" y2="270" stroke="#FF6B00" stroke-width="2" marker-end="url(#m12)"/>
+
+  <rect x="150" y="274" width="770" height="56" rx="13" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="170" y="298" font-size="12.5" font-weight="700" fill="#1E1812">Cada mensagem vira um item de um <tspan font-family="'JetBrains Mono', Menlo, monospace">Subject</tspan> do RxJS</text>
+  <text x="170" y="317" font-size="10.5" fill="#8A8177">em memória, sem idempotência e sem retentativa: aviso perdido é aviso perdido</text>
+  <text x="900" y="298" font-size="10.5" fill="#8A8177" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">LiveEventFeed.events$</text>
+  <line x1="200" y1="332" x2="200" y2="342" stroke="#FF6B00" stroke-width="2" marker-end="url(#m12)"/>
+
+  <rect x="150" y="346" width="770" height="56" rx="13" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="170" y="370" font-size="12.5" font-weight="700" fill="#1E1812">Filtra pelo pedido e monta o aviso — sem payload de negócio</text>
+  <text x="170" y="389" font-size="10.5" fill="#8A8177">só <tspan font-family="'JetBrains Mono', Menlo, monospace">{ orderId, eventType, messageId, occurredAt }</tspan> + um <tspan font-family="'JetBrains Mono', Menlo, monospace">ping</tspan> a cada 20 s</text>
+  <text x="900" y="370" font-size="10.5" fill="#8A8177" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">OrderLiveUpdates</text>
+  <line x1="200" y1="404" x2="200" y2="414" stroke="#FF6B00" stroke-width="2" marker-end="url(#m12)"/>
+
+  <rect x="150" y="418" width="770" height="56" rx="13" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="170" y="442" font-size="12.5" font-weight="700" fill="#1E1812">Sai pela rota SSE do pedido (e a do admin, com todos)</text>
+  <text x="170" y="461" font-size="10.5" fill="#8A8177">conexão HTTP que fica aberta, <tspan font-family="'JetBrains Mono', Menlo, monospace">text/event-stream</tspan></text>
+  <text x="900" y="442" font-size="10.5" fill="#8A8177" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">@Sse(':id/stream')</text>
+  <line x1="200" y1="476" x2="200" y2="486" stroke="#FF6B00" stroke-width="2" marker-end="url(#m12)"/>
+
+  <rect x="150" y="490" width="770" height="56" rx="13" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="170" y="514" font-size="12.5" font-weight="700" fill="#1E1812">O navegador abre o stream com <tspan font-family="'JetBrains Mono', Menlo, monospace">fetch</tspan>, não com <tspan font-family="'JetBrains Mono', Menlo, monospace">EventSource</tspan></text>
+  <text x="170" y="533" font-size="10.5" fill="#8A8177">a <tspan font-family="'JetBrains Mono', Menlo, monospace">EventSource</tspan> nativa não manda cabeçalho — e o token nunca vai na URL</text>
+  <text x="900" y="514" font-size="10.5" fill="#8A8177" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">openEventStream()</text>
+  <line x1="200" y1="548" x2="200" y2="558" stroke="#0E9F5D" stroke-width="2" marker-end="url(#m12)"/>
+
+  <rect x="150" y="562" width="770" height="56" rx="13" fill="#E7F6EE" stroke="#BEE5D1"/>
+  <text x="170" y="586" font-size="12.5" font-weight="700" fill="#0E9F5D">Ao receber o aviso, a tela busca o pedido de novo na API REST</text>
+  <text x="170" y="605" font-size="10.5" fill="#5C544B">a REST continua sendo a fonte da verdade; o aviso só diz <tspan font-weight="700">"olhe de novo"</tspan></text>
+  <text x="900" y="586" font-size="10.5" fill="#5C544B" text-anchor="end" font-family="'JetBrains Mono', Menlo, monospace">useLiveRefetch()</text>
+
+  <text x="40" y="664" font-size="12.5" fill="#1E1812">Por que o aviso não carrega o estado: se uma mensagem se perder — broker reiniciou, instância sem conexão — <tspan font-weight="700">a tela não fica errada</tspan>.</text>
+  <text x="40" y="686" font-size="12" fill="#5C544B">A próxima leitura corrige sozinha. É o que permite usar uma fila sem garantia nenhuma para a parte visual.</text>
+</svg>
+</div><figcaption>O aviso não carrega estado: ele só diz “olhe de novo”.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Sete passos, três donos: broker, backend e navegador. Leia de cima para baixo.</li><li>Explique por que a fila do feed é transiente: cada instância precisa da <i>sua</i> cópia, senão o aviso vai para a instância errada.</li><li>O último passo é o que salva o design: perder um aviso não deixa a tela errada, só atrasa.</li></ul><p class="file"><code>docs/aula-arquitetura/12-tempo-real-sse.svg</code></p></div></article><article class="fig" id="f13"><div class="fig-head"><span class="num">13</span><div class="fig-titles"><h3>O monitor de eventos do admin</h3><p class="claim">Três leituras do banco viram a linha do tempo de um pedido — sem perguntar nada ao broker.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620" role="img" aria-label="O monitor de eventos do admin é montado juntando outbox_events, processed_messages e o registro de consumidores" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m13" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8177"/></marker>
+    <marker id="m13o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="620" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">O monitor de eventos do admin</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">observabilidade sem plugin: três leituras do banco viram a linha do tempo de um pedido</text>
+
+  <rect x="40" y="110" width="270" height="94" rx="16" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="138" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">outbox_events</text>
+  <text x="62" y="160" font-size="10.5" fill="#8A8177">o evento saiu daqui?</text>
+  <text x="62" y="178" font-size="10.5" fill="#8A8177"><tspan font-family="'JetBrains Mono', Menlo, monospace">status · attempts</tspan></text>
+  <text x="62" y="194" font-size="10.5" fill="#8A8177"><tspan font-family="'JetBrains Mono', Menlo, monospace">published_at · last_error</tspan></text>
+
+  <rect x="345" y="110" width="270" height="94" rx="16" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="367" y="138" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">processed_messages</text>
+  <text x="367" y="160" font-size="10.5" fill="#8A8177">quem já processou?</text>
+  <text x="367" y="178" font-size="10.5" fill="#8A8177"><tspan font-family="'JetBrains Mono', Menlo, monospace">consumer · message_id</tspan></text>
+  <text x="367" y="194" font-size="10.5" fill="#8A8177"><tspan font-family="'JetBrains Mono', Menlo, monospace">processed_at</tspan></text>
+
+  <rect x="650" y="110" width="270" height="94" rx="16" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="672" y="138" font-size="12" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">EventConsumerRegistry</text>
+  <text x="672" y="160" font-size="10.5" fill="#8A8177">quem deveria processar?</text>
+  <text x="672" y="178" font-size="10.5" fill="#8A8177">os consumidores registrados</text>
+  <text x="672" y="194" font-size="10.5" fill="#8A8177">nesta instância, e a espera de cada um</text>
+
+  <path d="M175 208 C 175 236, 380 226, 440 248" fill="none" stroke="#8A8177" stroke-width="1.5" marker-end="url(#m13)"/>
+  <line x1="480" y1="208" x2="480" y2="248" stroke="#8A8177" stroke-width="1.5" marker-end="url(#m13)"/>
+  <path d="M785 208 C 785 236, 580 226, 520 248" fill="none" stroke="#8A8177" stroke-width="1.5" marker-end="url(#m13)"/>
+
+  <rect x="280" y="252" width="400" height="60" rx="14" fill="#1E1812"/>
+  <text x="480" y="278" font-size="13" font-weight="700" fill="#FF8A3D" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">EventTimelinePrisma</text>
+  <text x="480" y="298" font-size="10.5" fill="#B8AFA4" text-anchor="middle">cruza os três por evento e deduz o estado de cada consumidor</text>
+  <line x1="480" y1="314" x2="480" y2="352" stroke="#FF6B00" stroke-width="2" marker-end="url(#m13o)"/>
+
+  <rect x="40" y="356" width="880" height="196" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="384" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">O QUE A TELA MOSTRA — GET /orders/:id/events</text>
+
+  <rect x="62" y="394" width="836" height="76" rx="12" fill="#F6F1EA"/>
+  <text x="78" y="420" font-size="13" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</text>
+  <rect x="290" y="404" width="96" height="22" rx="11" fill="#E7F6EE"/>
+  <text x="338" y="419" font-size="10" font-weight="800" fill="#0E9F5D" text-anchor="middle">PUBLISHED</text>
+  <text x="404" y="420" font-size="10.5" fill="#8A8177">publicado há 1 s · <tspan font-family="'JetBrains Mono', Menlo, monospace">attempts 0</tspan> · <tspan font-family="'JetBrains Mono', Menlo, monospace">causationId</tspan> aponta para o evento anterior</text>
+  <rect x="78" y="434" width="290" height="26" rx="13" fill="#FFF7DD"/>
+  <text x="94" y="451" font-size="10.5" font-weight="700" fill="#B78A00" font-family="'JetBrains Mono', Menlo, monospace">delivery.dispatch-order · aguardando</text>
+  <text x="386" y="451" font-size="10.5" fill="#8A8177">esperado em +6 s — a marca de processada ainda não existe</text>
+
+  <rect x="62" y="484" width="270" height="30" rx="15" fill="#F6F1EA"/>
+  <text x="80" y="503" font-size="10.5" font-weight="700" fill="#5C544B">evento pendente</text>
+  <text x="196" y="503" font-size="10" fill="#8A8177">ainda não saiu do outbox</text>
+  <rect x="345" y="484" width="270" height="30" rx="15" fill="#FFF7DD"/>
+  <text x="363" y="503" font-size="10.5" font-weight="700" fill="#B78A00">aguardando</text>
+  <text x="452" y="503" font-size="10" fill="#8A8177">publicado, ainda sem marca</text>
+  <rect x="628" y="484" width="270" height="30" rx="15" fill="#E7F6EE"/>
+  <text x="646" y="503" font-size="10.5" font-weight="700" fill="#0E9F5D">processado</text>
+  <text x="730" y="503" font-size="10" fill="#8A8177">a marca existe, com a hora</text>
+
+  <text x="62" y="536" font-size="11.5" fill="#1E1812">Nada disso pergunta ao RabbitMQ: os três estados são deduzidos do banco. Retentativa e descarte ficam invisíveis aqui — vivem no broker.</text>
+
+  <text x="40" y="592" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/monitoring/ · event-timeline.prisma.ts · event-timeline.builder.ts</text>
+</svg>
+</div><figcaption>Três leituras do banco viram a linha do tempo de um pedido — sem perguntar nada ao broker.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Mostre a tela de admin do projeto com um pedido em andamento, atualizando sozinha.</li><li>Os três estados (<i>pendente</i>, <i>aguardando</i>, <i>processado</i>) são deduzidos, não gravados. Vale mostrar o builder.</li><li>Diga o que o monitor <b>não</b> vê: retentativa e descarte vivem no broker, e só aparecem no painel do RabbitMQ.</li></ul><p class="file"><code>docs/aula-arquitetura/13-monitor-eventos-admin.svg</code></p></div></article><article class="fig" id="f14"><div class="fig-head"><span class="num">14</span><div class="fig-titles"><h3>Seis perguntas para fechar a revisão</h3><p class="claim">Se a turma responder estas seis, entendeu a arquitetura.</p></div></div><figure><div class="mat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 690" width="960" height="690" role="img" aria-label="Seis perguntas de revisão sobre falhas, duplicatas, escala, ordem e troca de broker, com a resposta de cada uma" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="690" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Seis perguntas para fechar a revisão</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">se a turma souber responder estas, entendeu a arquitetura</text>
+
+  <rect x="40" y="110" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="142" font-size="13" font-weight="800" fill="#1E1812">E se o RabbitMQ cair?</text>
+  <text x="62" y="164" font-size="11" fill="#8A8177">nada trava</text>
+  <text x="400" y="140" font-size="11.5" fill="#1E1812">O checkout continua funcionando: o pedido é gravado e o evento fica <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">PENDING</tspan>.</text>
+  <text x="400" y="158" font-size="11.5" fill="#1E1812">O relay tenta de novo a cada rodada, com backoff, e o publisher reconecta sozinho.</text>
+  <text x="400" y="176" font-size="11.5" fill="#5C544B">Quando o broker volta, a fila de eventos pendentes sai em ordem.</text>
+
+  <rect x="40" y="194" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="226" font-size="13" font-weight="800" fill="#1E1812">E se a mesma mensagem chegar duas vezes?</text>
+  <text x="62" y="248" font-size="11" fill="#8A8177">idempotência</text>
+  <text x="400" y="224" font-size="11.5" fill="#1E1812">A chave primária <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">(consumer, message_id)</tspan> barra a segunda.</text>
+  <text x="400" y="242" font-size="11.5" fill="#1E1812">O handler <tspan font-weight="700">não roda</tspan> e a mensagem recebe ack como duplicata.</text>
+  <text x="400" y="260" font-size="11.5" fill="#5C544B">Repetição é esperada: a entrega é "ao menos uma vez", nunca "exatamente uma".</text>
+
+  <rect x="40" y="278" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="310" font-size="13" font-weight="800" fill="#1E1812">E se o handler falhar no meio?</text>
+  <text x="62" y="332" font-size="11" fill="#8A8177">tudo ou nada</text>
+  <text x="400" y="308" font-size="11.5" fill="#1E1812">Rollback de tudo — inclusive da marca de processada.</text>
+  <text x="400" y="326" font-size="11.5" fill="#1E1812">A mensagem é republicada com <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">x-jaja-attempt + 1</tspan> e espera o backoff na <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.wait</tspan>.</text>
+  <text x="400" y="344" font-size="11.5" fill="#5C544B">Na 5ª tentativa vai para a <tspan font-family="'JetBrains Mono', Menlo, monospace">.dead</tspan>, com o motivo no cabeçalho.</text>
+
+  <rect x="40" y="362" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="394" font-size="13" font-weight="800" fill="#1E1812">E se eu subir duas instâncias do backend?</text>
+  <text x="62" y="416" font-size="11" fill="#8A8177">escala horizontal</text>
+  <text x="400" y="392" font-size="11.5" fill="#1E1812">O relay usa <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">FOR UPDATE SKIP LOCKED</tspan>: duas instâncias nunca publicam o mesmo evento.</text>
+  <text x="400" y="410" font-size="11.5" fill="#1E1812">As filas de trabalho <tspan font-weight="700">dividem</tspan> as mensagens entre elas.</text>
+  <text x="400" y="428" font-size="11.5" fill="#5C544B">Só o feed ao vivo é diferente: cada instância tem a sua fila e recebe uma cópia.</text>
+
+  <rect x="40" y="446" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="478" font-size="13" font-weight="800" fill="#1E1812">E se as mensagens chegarem fora de ordem?</text>
+  <text x="62" y="500" font-size="11" fill="#8A8177">tolerância</text>
+  <text x="400" y="476" font-size="11.5" fill="#1E1812">O caso de uso pergunta <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">hasReached(status)</tspan> antes de mudar qualquer coisa.</text>
+  <text x="400" y="494" font-size="11.5" fill="#1E1812">Se o pedido já passou daquele ponto, responde <tspan font-family="'JetBrains Mono', Menlo, monospace">ok</tspan> sem gravar nada.</text>
+  <text x="400" y="512" font-size="11.5" fill="#5C544B">Mensagem que não se aplica mais não é erro — é só mensagem velha.</text>
+
+  <rect x="40" y="530" width="880" height="76" rx="14" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="62" y="562" font-size="13" font-weight="800" fill="#FF6B00">E se eu quiser trocar o RabbitMQ por outra coisa?</text>
+  <text x="62" y="584" font-size="11" fill="#B87A3D">o teste da arquitetura</text>
+  <text x="400" y="560" font-size="11.5" fill="#1E1812">Troca-se apenas os dois providers de <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">MESSAGE_PUBLISHER</tspan> e <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">MESSAGE_CONSUMER</tspan></text>
+  <text x="400" y="578" font-size="11.5" fill="#1E1812">no <tspan font-family="'JetBrains Mono', Menlo, monospace">MessagingModule</tspan>. Relay, runner, casos de uso e entidades <tspan font-weight="700">não mudam</tspan>.</text>
+  <text x="400" y="596" font-size="11.5" fill="#5C544B">É para isso que servem as portas em <tspan font-family="'JetBrains Mono', Menlo, monospace">packages/shared/src/messaging</tspan>.</text>
+
+  <text x="40" y="650" font-size="12.5" fill="#1E1812">A pergunta que amarra tudo: <tspan font-weight="700">quem publica o evento não sabe quem vai consumir</tspan> — e é isso que deixa o sistema crescer sem reescrita.</text>
+</svg>
+</div><figcaption>Se a turma responder estas seis, entendeu a arquitetura.</figcaption></figure><div class="notes"><h4>O que dizer neste slide</h4><ul><li>Use como avaliação oral: faça a pergunta, deixe a turma responder, só então revele a resposta.</li><li>A última é a que mede se o conceito de porta e adaptador entrou de verdade.</li><li>A frase do rodapé é o resumo da aula inteira em uma linha.</li></ul><p class="file"><code>docs/aula-arquitetura/14-garantias-e-decisoes.svg</code></p></div></article></main>
+
+<footer>
+  <p><b>Fonte dos diagramas.</b> Tudo foi desenhado a partir do código atual: <code>packages/shared/src/events</code> e <code>messaging</code> (as portas), <code>modules/orders/src/order/event</code> (os eventos), <code>apps/backend/src/messaging</code> (outbox, consumidores, RabbitMQ, feed ao vivo, monitoramento) e <code>apps/backend/src/modules/orders/simulation</code> (os quatro serviços simulados).</p>
+  <p>Se o código mudar, os SVGs não mudam sozinhos — vale revisar os slides 06, 09 e 11, que carregam nomes de fila e tempos.</p>
+</footer>
+</div>

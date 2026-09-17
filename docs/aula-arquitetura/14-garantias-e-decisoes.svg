@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 690" width="960" height="690" role="img" aria-label="Seis perguntas de revisão sobre falhas, duplicatas, escala, ordem e troca de broker, com a resposta de cada uma" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="690" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">Seis perguntas para fechar a revisão</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">se a turma souber responder estas, entendeu a arquitetura</text>
+
+  <rect x="40" y="110" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="142" font-size="13" font-weight="800" fill="#1E1812">E se o RabbitMQ cair?</text>
+  <text x="62" y="164" font-size="11" fill="#8A8177">nada trava</text>
+  <text x="400" y="140" font-size="11.5" fill="#1E1812">O checkout continua funcionando: o pedido é gravado e o evento fica <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">PENDING</tspan>.</text>
+  <text x="400" y="158" font-size="11.5" fill="#1E1812">O relay tenta de novo a cada rodada, com backoff, e o publisher reconecta sozinho.</text>
+  <text x="400" y="176" font-size="11.5" fill="#5C544B">Quando o broker volta, a fila de eventos pendentes sai em ordem.</text>
+
+  <rect x="40" y="194" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="226" font-size="13" font-weight="800" fill="#1E1812">E se a mesma mensagem chegar duas vezes?</text>
+  <text x="62" y="248" font-size="11" fill="#8A8177">idempotência</text>
+  <text x="400" y="224" font-size="11.5" fill="#1E1812">A chave primária <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">(consumer, message_id)</tspan> barra a segunda.</text>
+  <text x="400" y="242" font-size="11.5" fill="#1E1812">O handler <tspan font-weight="700">não roda</tspan> e a mensagem recebe ack como duplicata.</text>
+  <text x="400" y="260" font-size="11.5" fill="#5C544B">Repetição é esperada: a entrega é "ao menos uma vez", nunca "exatamente uma".</text>
+
+  <rect x="40" y="278" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="310" font-size="13" font-weight="800" fill="#1E1812">E se o handler falhar no meio?</text>
+  <text x="62" y="332" font-size="11" fill="#8A8177">tudo ou nada</text>
+  <text x="400" y="308" font-size="11.5" fill="#1E1812">Rollback de tudo — inclusive da marca de processada.</text>
+  <text x="400" y="326" font-size="11.5" fill="#1E1812">A mensagem é republicada com <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">x-jaja-attempt + 1</tspan> e espera o backoff na <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.wait</tspan>.</text>
+  <text x="400" y="344" font-size="11.5" fill="#5C544B">Na 5ª tentativa vai para a <tspan font-family="'JetBrains Mono', Menlo, monospace">.dead</tspan>, com o motivo no cabeçalho.</text>
+
+  <rect x="40" y="362" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="394" font-size="13" font-weight="800" fill="#1E1812">E se eu subir duas instâncias do backend?</text>
+  <text x="62" y="416" font-size="11" fill="#8A8177">escala horizontal</text>
+  <text x="400" y="392" font-size="11.5" fill="#1E1812">O relay usa <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">FOR UPDATE SKIP LOCKED</tspan>: duas instâncias nunca publicam o mesmo evento.</text>
+  <text x="400" y="410" font-size="11.5" fill="#1E1812">As filas de trabalho <tspan font-weight="700">dividem</tspan> as mensagens entre elas.</text>
+  <text x="400" y="428" font-size="11.5" fill="#5C544B">Só o feed ao vivo é diferente: cada instância tem a sua fila e recebe uma cópia.</text>
+
+  <rect x="40" y="446" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="478" font-size="13" font-weight="800" fill="#1E1812">E se as mensagens chegarem fora de ordem?</text>
+  <text x="62" y="500" font-size="11" fill="#8A8177">tolerância</text>
+  <text x="400" y="476" font-size="11.5" fill="#1E1812">O caso de uso pergunta <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">hasReached(status)</tspan> antes de mudar qualquer coisa.</text>
+  <text x="400" y="494" font-size="11.5" fill="#1E1812">Se o pedido já passou daquele ponto, responde <tspan font-family="'JetBrains Mono', Menlo, monospace">ok</tspan> sem gravar nada.</text>
+  <text x="400" y="512" font-size="11.5" fill="#5C544B">Mensagem que não se aplica mais não é erro — é só mensagem velha.</text>
+
+  <rect x="40" y="530" width="880" height="76" rx="14" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="62" y="562" font-size="13" font-weight="800" fill="#FF6B00">E se eu quiser trocar o RabbitMQ por outra coisa?</text>
+  <text x="62" y="584" font-size="11" fill="#B87A3D">o teste da arquitetura</text>
+  <text x="400" y="560" font-size="11.5" fill="#1E1812">Troca-se apenas os dois providers de <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">MESSAGE_PUBLISHER</tspan> e <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">MESSAGE_CONSUMER</tspan></text>
+  <text x="400" y="578" font-size="11.5" fill="#1E1812">no <tspan font-family="'JetBrains Mono', Menlo, monospace">MessagingModule</tspan>. Relay, runner, casos de uso e entidades <tspan font-weight="700">não mudam</tspan>.</text>
+  <text x="400" y="596" font-size="11.5" fill="#5C544B">É para isso que servem as portas em <tspan font-family="'JetBrains Mono', Menlo, monospace">packages/shared/src/messaging</tspan>.</text>
+
+  <text x="40" y="650" font-size="12.5" fill="#1E1812">A pergunta que amarra tudo: <tspan font-weight="700">quem publica o evento não sabe quem vai consumir</tspan> — e é isso que deixa o sistema crescer sem reescrita.</text>
+</svg>

@@ -5,7 +5,8 @@ import {
   ValueObjectConfig,
   resolveVoConfig,
 } from '@mentoria-360/shared'
-import { CustomerAddressDTO } from '../dto'
+import { CustomerAddressDTO, CustomerLocationDTO } from '../dto'
+import { CustomerLocation, CustomerLocationProps } from './customer-location.vo'
 import { StateCode } from './state-code.vo'
 import { ZipCode } from './zip-code.vo'
 
@@ -17,6 +18,8 @@ export interface CustomerAddressProps {
   neighborhood: string
   city: string
   state: string
+  // Point on the map; missing or `null` means the customer has not marked one.
+  location?: CustomerLocationProps | null
 }
 
 // Text limits, applied after trimming.
@@ -29,7 +32,11 @@ const CUSTOMER_ADDRESS_LIMITS = {
 } as const
 
 // The customer's single delivery address. It has no identity of its own: it is
-// always replaced as a whole, so two addresses with the same fields are equal.
+// always replaced as a whole, so two addresses with the same fields (point
+// included) are equal.
+// The text fields are for the delivery person; the point (`location`) is what
+// the coverage rules by store will use. The point is optional: an address may
+// exist without it.
 export class CustomerAddress extends ValueObject<
   CustomerAddressDTO,
   ValueObjectConfig
@@ -77,6 +84,11 @@ export class CustomerAddress extends ValueObject<
       maxLength: limits.city.max,
     })
     const state = StateCode.tryCreate(input.state as string)
+    // A missing or `null` location resolves to `null` (no point on the map).
+    const location =
+      input.location == null
+        ? Result.ok<CustomerLocation | null>(null)
+        : CustomerLocation.tryCreate(input.location)
 
     const attrs = Result.combine([
       zipCode,
@@ -86,6 +98,7 @@ export class CustomerAddress extends ValueObject<
       neighborhood,
       city,
       state,
+      location,
     ])
     if (attrs.isFailure) return Result.fail(attrs.errors)
 
@@ -99,6 +112,7 @@ export class CustomerAddress extends ValueObject<
           neighborhood: neighborhood.instance.value,
           city: city.instance.value,
           state: state.instance.value,
+          location: location.instance?.toDTO() ?? null,
         },
         resolveVoConfig(config),
       ),
@@ -133,12 +147,32 @@ export class CustomerAddress extends ValueObject<
     return this.value.state
   }
 
+  // A copy, or `null` when the address has no point.
+  get location(): CustomerLocationDTO | null {
+    const location = this.value.location
+    return location ? { ...location } : null
+  }
+
+  // Compares every text field and the point: the same text with another point
+  // (or with and without a point) is a different address.
   equals(other: CustomerAddress): boolean {
-    const keys = Object.keys(this.value) as (keyof CustomerAddressDTO)[]
-    return keys.every((key) => this.value[key] === other.value[key])
+    const keys = (Object.keys(this.value) as (keyof CustomerAddressDTO)[])
+      .filter((key) => key !== 'location')
+    return (
+      keys.every((key) => this.value[key] === other.value[key]) &&
+      sameLocation(this.value.location, other.value.location)
+    )
   }
 
   toDTO(): CustomerAddressDTO {
-    return { ...this.value }
+    return { ...this.value, location: this.location }
   }
+}
+
+function sameLocation(
+  left: CustomerLocationDTO | null,
+  right: CustomerLocationDTO | null,
+): boolean {
+  if (!left || !right) return left === right
+  return left.latitude === right.latitude && left.longitude === right.longitude
 }

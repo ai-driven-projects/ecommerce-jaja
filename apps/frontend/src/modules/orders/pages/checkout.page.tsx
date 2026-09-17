@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Clock, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuthForm } from '@/modules/auth/components/auth-form.component';
 import { useAuth } from '@/modules/auth/data/auth.context';
@@ -12,14 +12,13 @@ import { useStorefront } from '@/modules/catalog/data/use-storefront.hook';
 import { CustomerDeliveryForm } from '@/modules/customers/components/customer-delivery-form.component';
 import { CustomerDeliverySummary } from '@/modules/customers/components/customer-delivery-summary.component';
 import { useMyCustomer } from '@/modules/customers/data/use-my-customer.hook';
-import { BikeIcon } from '@/shared/components/branding/app-logo.component';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { STOREFRONT_ROUTE, orderTrackingRoute } from '@/shared/navigation/storefront-routes';
-import { useClientMinute } from '@/shared/hooks/use-client-clock.hook';
+import { withQuery } from '@/shared/navigation/with-query.util';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
 import { cn } from '@/shared/lib/class-name.util';
 import { ApiError, toErrorMessage } from '@/shared/util/api-client.util';
@@ -84,15 +83,6 @@ function SummaryLinesSkeleton() {
   );
 }
 
-// Janela de chegada relativa ao ETA do bairro: depende do relógio, então só
-// existe no cliente (o servidor renderiza "…").
-function useEtaWindow(etaMinutes: number | null): string | null {
-  const minute = useClientMinute();
-  if (etaMinutes === null || minute === null) return null;
-  const format = (date: Date) => `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  return `${format(new Date(minute + (etaMinutes - 5) * 60000))}–${format(new Date(minute + (etaMinutes + 5) * 60000))}`;
-}
-
 function CheckoutForm() {
   const router = useRouter();
   const { user, session } = useAuth();
@@ -104,14 +94,14 @@ function CheckoutForm() {
   const [recipientName, setRecipientName] = useState(user?.name ?? '');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
-  const etaWindow = useEtaWindow(storefront.etaMinutes);
-  const backHref = `${STOREFRONT_ROUTE}?${storefront.query}`;
+  // "← Voltar para a loja" preserva a query da vitrine (loja e categoria).
+  const backHref = withQuery(STOREFRONT_ROUTE, storefront.query);
   const refreshCart = cart.refresh;
   const { detail } = cart;
   const cartReady = !cart.loading && !cart.isSyncing && cart.count > 0 && !cart.hasUnavailableItems;
   // Confirmar exige cadastro de cliente salvo e o formulário de dados de entrega fechado.
   const deliveryReady = myCustomer.hasCustomer && !editingDelivery;
-  const canConfirm = cartReady && storefront.served && deliveryReady && !isConfirming;
+  const canConfirm = cartReady && deliveryReady && !isConfirming;
 
   // O carrinho da conta pode ter mudado em outro dispositivo: recarrega ao abrir o checkout.
   useEffect(() => {
@@ -151,17 +141,6 @@ function CheckoutForm() {
           {/* Endereço */}
           <section className={CARD_CLASS}>
             <StepTitle number={1}>Endereço de entrega</StepTitle>
-            <div
-              className={cn(
-                'mb-4 flex items-center gap-2.5 rounded-xl px-[15px] py-3 text-[13.5px] font-bold',
-                storefront.served ? 'bg-success-soft text-success-strong' : 'bg-danger-soft text-danger',
-              )}
-            >
-              <BikeIcon className="size-4 shrink-0" strokeWidth={2} />
-              {storefront.served
-                ? `Dentro da área de cobertura · entrega em ~${storefront.etaMinutes} min`
-                : `Ainda não entregamos em ${storefront.neighborhood}`}
-            </div>
 
             {/* Dados de entrega do cliente: carregando → criação | resumo ⇄ alteração. */}
             {myCustomer.loading ? (
@@ -173,7 +152,7 @@ function CheckoutForm() {
                 </p>
                 <CustomerDeliveryForm
                   customer={null}
-                  defaults={{ neighborhood: storefront.neighborhood, city: storefront.city ?? '', state: storefront.state ?? '' }}
+                  defaults={{ city: storefront.city ?? '', state: storefront.state ?? '' }}
                   save={myCustomer.save}
                 />
               </>
@@ -301,16 +280,7 @@ function CheckoutForm() {
             </div>
           </div>
 
-          {storefront.served ? (
-            <div className="my-3.5 flex items-center gap-2 rounded-xl bg-success-soft px-3.5 py-[11px] text-[13px] font-bold text-success-strong">
-              <Clock className="size-[15px] shrink-0 text-success" strokeWidth={2.2} aria-hidden="true" />
-              Previsão de chegada: <strong>{etaWindow ?? '…'}</strong>
-            </div>
-          ) : (
-            <div className="my-3.5" />
-          )}
-
-          <Button size="xl" className="w-full" disabled={!canConfirm} onClick={handleConfirm}>
+          <Button size="xl" className="mt-[26px] w-full" disabled={!canConfirm} onClick={handleConfirm}>
             {isConfirming ? 'Confirmando…' : `Confirmar pedido · ${formatPrice(detail.totalCents)}`}
           </Button>
           {!cart.loading && cart.hasUnavailableItems ? (

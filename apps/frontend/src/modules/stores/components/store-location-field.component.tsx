@@ -1,14 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 import { FormErrorMessage } from '@/shared/components/ui/form-error-message';
 import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { cn } from '@/shared/lib/class-name.util';
+import { GOOGLE_MAPS_LOAD_ERROR_MESSAGE, isGoogleMapsConfigured } from '@/shared/maps/google-maps.config';
+import { useGoogleMapsLoadFailure } from '@/shared/maps/use-google-maps-load-failure.hook';
 import {
   formatRadius,
-  isGoogleMapsConfigured,
   STORE_MAX_DELIVERY_RADIUS_METERS,
   STORE_MIN_DELIVERY_RADIUS_METERS,
   STORE_MOCK_LOCATION,
@@ -19,11 +20,7 @@ import { StoreLocationMap } from './store-location-map.component';
 import { StoreLocationMock } from './store-location-mock.component';
 
 /** Aviso exibido quando a chave pública existe, mas o Google Maps não carregou. */
-export const STORE_MAP_LOAD_ERROR_MESSAGE =
-  'Não foi possível carregar o Google Maps (chave recusada ou sem conexão). Usando o mapa simulado.';
-
-/** `window.gm_authFailure`: o Google chama essa função global quando recusa a chave. */
-type GoogleMapsAuthWindow = Window & { gm_authFailure?: () => void };
+export const STORE_MAP_LOAD_ERROR_MESSAGE = GOOGLE_MAPS_LOAD_ERROR_MESSAGE;
 
 type StoreLocationFieldProps = {
   form: UseFormReturn<StoreFormData>;
@@ -46,8 +43,8 @@ function isFiniteNumber(value: unknown): value is number {
 /**
  * Localização da loja. Usa o Google Maps quando há `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
  * e o carregamento não falhou; sem a chave, ou quando o `APIProvider` falha ou o
- * Google chama `window.gm_authFailure`, usa o mapa simulado (com o aviso da
- * falha). Abaixo do mapa ficam sempre os campos `latitude`, `longitude` e
+ * Google recusa a chave (`useGoogleMapsLoadFailure`), usa o mapa simulado (com
+ * o aviso da falha). Abaixo do mapa ficam sempre os campos `latitude`, `longitude` e
  * `deliveryRadiusMeters`, a fonte da verdade da localização: editáveis com o
  * Google Maps e somente leitura no modo simulado.
  */
@@ -60,29 +57,11 @@ export function StoreLocationField({ form, token, isEditing, disabled }: StoreLo
     formState: { errors },
   } = form;
 
-  const [loadFailed, setLoadFailed] = useState(false);
+  const { loadFailed, handleLoadError } = useGoogleMapsLoadFailure();
   const useGoogleMaps = isGoogleMapsConfigured && !loadFailed;
   const readOnly = !useGoogleMaps;
 
   const radius = useWatch({ control, name: 'deliveryRadiusMeters' });
-
-  const handleLoadError = useCallback(() => setLoadFailed(true), []);
-
-  // Chave recusada: o Google chama `gm_authFailure` depois de carregar o script.
-  useEffect(() => {
-    if (!useGoogleMaps) return;
-
-    const authWindow = window as GoogleMapsAuthWindow;
-    const previous = authWindow.gm_authFailure;
-    authWindow.gm_authFailure = () => {
-      previous?.();
-      setLoadFailed(true);
-    };
-
-    return () => {
-      authWindow.gm_authFailure = previous;
-    };
-  }, [useGoogleMaps]);
 
   // Falha de carregamento na criação ainda sem ponto: começa com o ponto simulado, como sem chave.
   useEffect(() => {

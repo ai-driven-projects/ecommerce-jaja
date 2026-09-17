@@ -147,6 +147,7 @@ describe('CustomerAddress', () => {
       neighborhood: 'Aldeota',
       city: 'Fortaleza',
       state: 'CE',
+      location: null,
     })
   })
 
@@ -155,6 +156,106 @@ describe('CustomerAddress', () => {
 
     expect(address.equals(CustomerAddress.create({ ...valid, zipCode: '60150160' }))).toBe(true)
     expect(address.equals(CustomerAddress.create({ ...valid, number: '1501' }))).toBe(false)
+  })
+
+  describe('location', () => {
+    const location = { latitude: -3.7356, longitude: -38.5012 }
+
+    test.each([undefined, null])('resolves location %p to null', (value) => {
+      const result = CustomerAddress.tryCreate({ ...valid, location: value })
+
+      expect(result.isOk).toBe(true)
+      expect(result.instance.location).toBeNull()
+      expect(result.instance.toDTO().location).toBeNull()
+    })
+
+    test('resolves a missing location key to null', () => {
+      const address = CustomerAddress.create(valid)
+
+      expect('location' in valid).toBe(false)
+      expect(address.location).toBeNull()
+    })
+
+    test('keeps a valid location, rounded to 6 decimal places', () => {
+      const address = CustomerAddress.create({
+        ...valid,
+        location: { latitude: -3.73561234, longitude: -38.50129876 },
+      })
+
+      expect(address.location).toEqual({
+        latitude: -3.735612,
+        longitude: -38.501299,
+      })
+      expect(address.toDTO().location).toEqual({
+        latitude: -3.735612,
+        longitude: -38.501299,
+      })
+    })
+
+    test.each([
+      { latitude: 91, longitude: -38.5 },
+      { latitude: -3.7 },
+      { latitude: '-3.7', longitude: -38.5 },
+    ])('fails with CUSTOMER_LOCATION_INVALID for %p', (value) => {
+      const result = CustomerAddress.tryCreate({
+        ...valid,
+        location: value as typeof location,
+      })
+
+      expect(result.isFailure).toBe(true)
+      expect(result.errors).toEqual(['CUSTOMER_LOCATION_INVALID'])
+    })
+
+    test('combines the location error with the other errors', () => {
+      const result = CustomerAddress.tryCreate({
+        ...valid,
+        state: 'XX',
+        location: { latitude: 91, longitude: 181 },
+      })
+
+      expect(result.errors).toEqual([
+        'CUSTOMER_STATE_INVALID',
+        'CUSTOMER_LOCATION_INVALID',
+      ])
+    })
+
+    test('equals compares the location', () => {
+      const address = CustomerAddress.create({ ...valid, location })
+
+      expect(
+        address.equals(
+          CustomerAddress.create({
+            ...valid,
+            location: { latitude: -3.7356000001, longitude: -38.5012 },
+          }),
+        ),
+      ).toBe(true)
+      expect(
+        address.equals(
+          CustomerAddress.create({
+            ...valid,
+            location: { ...location, longitude: -38.5 },
+          }),
+        ),
+      ).toBe(false)
+    })
+
+    test('equals differs with and without a location', () => {
+      const withLocation = CustomerAddress.create({ ...valid, location })
+      const withoutLocation = CustomerAddress.create({ ...valid, location: null })
+
+      expect(withLocation.equals(withoutLocation)).toBe(false)
+      expect(withoutLocation.equals(withLocation)).toBe(false)
+      expect(withoutLocation.equals(CustomerAddress.create(valid))).toBe(true)
+    })
+
+    test('location and toDTO return copies', () => {
+      const address = CustomerAddress.create({ ...valid, location })
+      address.location!.latitude = 0
+      address.toDTO().location!.latitude = 0
+
+      expect(address.location).toEqual(location)
+    })
   })
 
   test('create throws on invalid props', () => {

@@ -1,7 +1,7 @@
 import { ArgumentsHost, HttpStatus, NotFoundException } from '@nestjs/common';
 import { ValidationError } from '@mentoria-360/shared';
-import { ApiExceptionFilter } from './api-exception.filter.js';
-import { ApiErrorResponse } from './api-error-response.type.js';
+import { ApiExceptionFilter } from '../../../src/shared/errors/api-exception.filter.js';
+import { ApiErrorResponse } from '../../../src/shared/errors/api-error-response.type.js';
 
 function createHost(url = '/resource') {
   let statusCode: number | undefined;

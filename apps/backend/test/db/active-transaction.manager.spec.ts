@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ActiveTransactionManager } from './active-transaction.manager.js';
-import { PrismaTransactionContext } from './prisma.service.js';
+import { ActiveTransactionManager } from '../../src/db/active-transaction.manager.js';
+import { PrismaTransactionContext } from '../../src/db/prisma.service.js';
 
 function openTransaction() {
   const $transaction = vi.fn();

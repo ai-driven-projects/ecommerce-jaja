@@ -36,7 +36,7 @@ const ORDER_OPTIONS: ReadonlyArray<{ value: StorefrontOrder; label: string; sear
   { value: 'desconto', label: 'Maior desconto' },
 ];
 
-/** "Limpar filtros": marca, preço, só ofertas e só destaques (bairro, busca, categoria e ordem ficam). */
+/** "Limpar filtros": marca, preço, só ofertas e só destaques (loja, busca, categoria e ordem ficam). */
 const CLEAR_FILTERS: StorefrontParamChanges = {
   brands: [],
   minPriceCents: null,

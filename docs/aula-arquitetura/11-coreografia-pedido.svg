@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760" width="960" height="760" role="img" aria-label="Linha do tempo de um pedido: cinco status, cinco eventos e os quatro serviços que reagem em cadeia" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="760" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">O pedido, do checkout à entrega</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">coreografia: ninguém manda em ninguém — cada serviço reage ao evento do passo anterior</text>
+
+  <text x="62" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">TEMPO</text>
+  <text x="150" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">STATUS DO PEDIDO</text>
+  <text x="380" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">EVENTO GRAVADO</text>
+  <text x="630" y="122" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">QUEM GRAVOU</text>
+
+  <rect x="40" y="136" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="180" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">0 s</text>
+  <rect x="150" y="160" width="190" height="30" rx="15" fill="#F6F1EA"/>
+  <text x="245" y="180" font-size="12" font-weight="800" fill="#1E1812" text-anchor="middle">PLACED</text>
+  <text x="380" y="176" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.placed</text>
+  <text x="630" y="170" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.place()</text>
+  <text x="630" y="187" font-size="10.3" fill="#8A8177">no POST /me/orders do checkout</text>
+
+  <line x1="200" y1="216" x2="200" y2="250" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="232" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">payment.approve-order</text>
+  <text x="224" y="248" font-size="10.3" fill="#8A8177">gateway de pagamento · espera 3 s na fila <tspan font-family="'JetBrains Mono', Menlo, monospace">.wait</tspan> antes de agir</text>
+
+  <rect x="40" y="256" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="300" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">3 s</text>
+  <rect x="150" y="280" width="190" height="30" rx="15" fill="#FFF1E6"/>
+  <text x="245" y="300" font-size="12" font-weight="800" fill="#FF6B00" text-anchor="middle">PAYMENT_APPROVED</text>
+  <text x="380" y="296" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.payment-approved</text>
+  <text x="630" y="290" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="307" font-size="10.3" fill="#8A8177">dentro da transação do consumidor</text>
+
+  <line x1="200" y1="336" x2="200" y2="370" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="352" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">store.start-picking</text>
+  <text x="224" y="368" font-size="10.3" fill="#8A8177">a loja separa os itens · espera 2 s</text>
+
+  <rect x="40" y="376" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="420" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">5 s</text>
+  <rect x="150" y="400" width="190" height="30" rx="15" fill="#FFF7DD"/>
+  <text x="245" y="420" font-size="12" font-weight="800" fill="#B78A00" text-anchor="middle">PICKING</text>
+  <text x="380" y="416" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</text>
+  <text x="630" y="410" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="427" font-size="10.3" fill="#8A8177">mesmo caso de uso, outro consumidor</text>
+
+  <line x1="200" y1="456" x2="200" y2="490" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="472" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">delivery.dispatch-order</text>
+  <text x="224" y="488" font-size="10.3" fill="#8A8177">o entregador sai com o pedido · espera 6 s</text>
+
+  <rect x="40" y="496" width="880" height="76" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="540" font-size="15" font-weight="800" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">11 s</text>
+  <rect x="150" y="520" width="190" height="30" rx="15" fill="#FFF1E6"/>
+  <text x="245" y="540" font-size="12" font-weight="800" fill="#FF6B00" text-anchor="middle">OUT_FOR_DELIVERY</text>
+  <text x="380" y="536" font-size="12.5" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">order.out-for-delivery</text>
+  <text x="630" y="530" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="547" font-size="10.3" fill="#8A8177">a tela do cliente já mostra "a caminho"</text>
+
+  <line x1="200" y1="576" x2="200" y2="610" stroke="#FF6B00" stroke-width="2" marker-end="url(#m11)"/>
+  <text x="224" y="592" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">delivery.complete-order</text>
+  <text x="224" y="608" font-size="10.3" fill="#8A8177">entrega ao cliente · espera 8 s</text>
+
+  <rect x="40" y="616" width="880" height="76" rx="14" fill="#E7F6EE" stroke="#BEE5D1"/>
+  <text x="62" y="660" font-size="15" font-weight="800" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">19 s</text>
+  <rect x="150" y="640" width="190" height="30" rx="15" fill="#FFFFFF"/>
+  <text x="245" y="660" font-size="12" font-weight="800" fill="#0E9F5D" text-anchor="middle">DELIVERED</text>
+  <text x="380" y="656" font-size="12.5" font-weight="700" fill="#0E9F5D" font-family="'JetBrains Mono', Menlo, monospace">order.delivered</text>
+  <text x="630" y="650" font-size="11" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">Order.advanceTo()</text>
+  <text x="630" y="667" font-size="10.3" fill="#5C544B">fim da cadeia: ninguém assina este evento</text>
+
+  <text x="40" y="726" font-size="12.5" fill="#1E1812">Para colocar <tspan font-weight="700">emissão de nota fiscal</tspan> entre o pagamento e a separação, basta registrar mais um consumidor. <tspan font-weight="700">Nenhum código existente muda.</tspan></text>
+  <text x="40" y="746" font-size="11" fill="#8A8177">Os tempos são da simulação (<tspan font-family="'JetBrains Mono', Menlo, monospace">ORDER_SIMULATION_DELAY_FACTOR</tspan> multiplica todos eles).</text>
+</svg>

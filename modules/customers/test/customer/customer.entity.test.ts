@@ -36,6 +36,7 @@ describe('Customer', () => {
       neighborhood: 'Aldeota',
       city: 'Fortaleza',
       state: 'CE',
+      location: null,
     })
     expect(customer.isActive).toBe(false)
   })
@@ -207,6 +208,7 @@ describe('Customer', () => {
         neighborhood: 'Aldeota',
         city: 'Fortaleza',
         state: 'CE',
+        location: null,
       },
       isActive: true,
       createdAt: customer.createdAt,

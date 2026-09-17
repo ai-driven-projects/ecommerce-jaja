@@ -1,7 +1,11 @@
 import { Cpf, Id, Result, UseCase } from '@mentoria-360/shared'
-import { CustomerDTO } from '../dto'
+import { CustomerDTO, CustomerLocationDTO } from '../dto'
 import { CustomerErrors } from '../errors'
-import { Customer, CustomerAddressProps } from '../model'
+import {
+  Customer,
+  CustomerAddressProps,
+  CustomerLocationProps,
+} from '../model'
 import { CustomerRepository } from '../provider'
 
 export interface SaveCustomerInput {
@@ -11,6 +15,11 @@ export interface SaveCustomerInput {
   userId?: string
   cpf: string
   phone: string
+  // Replaces the whole address. `address.location` follows the preservation
+  // rule, so screens without a map do not erase the point:
+  // - on creation, missing (`undefined`) or `null` creates without a point;
+  // - on update, `undefined` keeps the customer's current point (even when the
+  //   text fields change), `null` removes it and an object replaces it.
   address: CustomerAddressProps
   // Only applied when updating by `id`; `undefined` keeps the current value.
   isActive?: boolean
@@ -24,6 +33,10 @@ export interface SaveCustomerInput {
 //   applying `isActive`; `CUSTOMER_NOT_FOUND` is propagated without creating,
 //   because every customer is born from its own user.
 // The `userId` link never changes after creation.
+// The point of the address (`address.location`) follows the preservation rule
+// in both paths: on creation, `undefined` or `null` means no point; on update,
+// `undefined` keeps the current point, `null` removes it and an object replaces
+// it. An invalid point fails with `CUSTOMER_LOCATION_INVALID` without saving.
 export class SaveCustomer implements UseCase<SaveCustomerInput, CustomerDTO> {
   constructor(private readonly customerRepository: CustomerRepository) {}
 
@@ -74,7 +87,8 @@ export class SaveCustomer implements UseCase<SaveCustomerInput, CustomerDTO> {
       userId,
       cpf: cpf.instance,
       phone: input.phone,
-      address: toAddress(input.address),
+      // Creation has no current point: `undefined` and `null` mean no point.
+      address: toAddress(input.address, null),
       isActive: true,
     })
     if (customer.isFailure) return customer.withFail
@@ -95,11 +109,12 @@ export class SaveCustomer implements UseCase<SaveCustomerInput, CustomerDTO> {
 
     // `cloneWith` ignores `undefined` (keeping the current value), so required
     // fields are sent explicitly and the address is replaced as a whole.
-    // `userId` is never sent: the link does not change.
+    // `userId` is never sent: the link does not change. The current point is
+    // kept when `address.location` is not sent.
     const customer = current.cloneWith({
       cpf: cpf.instance,
       phone: required(input.phone),
-      address: toAddress(input.address),
+      address: toAddress(input.address, current.address.location),
       isActive,
       updatedAt: new Date(),
     })
@@ -133,8 +148,10 @@ export class SaveCustomer implements UseCase<SaveCustomerInput, CustomerDTO> {
 
 // Every field is sent explicitly, so a missing one fails validation instead of
 // keeping the current value; an absent, `null` or `''` complement becomes `null`.
+// `location` is resolved by `toLocation` against the `currentLocation`.
 function toAddress(
   address: CustomerAddressProps | null | undefined,
+  currentLocation: CustomerLocationDTO | null,
 ): CustomerAddressProps {
   const input: Partial<CustomerAddressProps> = address ?? {}
   return {
@@ -145,6 +162,26 @@ function toAddress(
     neighborhood: required(input.neighborhood),
     city: required(input.city),
     state: required(input.state),
+    location: toLocation(input.location, currentLocation),
+  }
+}
+
+// Preservation rule of the point: `undefined` keeps `currentLocation` (`null`
+// on creation), `null` removes it and an object replaces it. Both coordinates
+// are sent explicitly, so a missing one fails validation instead of being
+// merged with the current point by `cloneWith`.
+function toLocation(
+  location: CustomerLocationProps | null | undefined,
+  currentLocation: CustomerLocationDTO | null,
+): CustomerLocationProps | null {
+  if (location === undefined) return currentLocation
+  if (location === null) return null
+  if (typeof location !== 'object') return location
+
+  const input: Partial<CustomerLocationProps> = location
+  return {
+    latitude: required(input.latitude),
+    longitude: required(input.longitude),
   }
 }
 

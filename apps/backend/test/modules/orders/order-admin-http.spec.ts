@@ -1,6 +1,6 @@
 import { ORDER_STATUSES } from '@jaja/orders';
 import { describe, expect, it } from 'vitest';
-import { toOrderFilters } from './order-admin-http.js';
+import { toOrderFilters } from '../../../src/modules/orders/order-admin-http.js';
 
 describe('toOrderFilters', () => {
   it('uses page 1 and pageSize 20 without parameters', () => {

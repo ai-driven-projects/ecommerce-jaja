@@ -72,10 +72,15 @@ export class Customer extends Entity<Customer, CustomerProps> {
     return this.props.phone
   }
 
-  // A copy, so callers cannot change the entity.
+  // A copy, so callers cannot change the entity. `location` is `null` when the
+  // address has no point on the map.
   get address(): CustomerAddressDTO {
     const address = this.props.address
-    return { ...address, complement: address.complement ?? null }
+    return {
+      ...address,
+      complement: address.complement ?? null,
+      location: address.location ? { ...address.location } : null,
+    }
   }
 
   get isActive(): boolean {

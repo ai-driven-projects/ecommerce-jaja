@@ -17,6 +17,10 @@
 # `@userEmail` é um usuário do seed com admin = false e com cadastro de cliente; o
 # CPF dele (536.174.732-70, em prisma/seed/data/customers.json) é usado na busca
 # com máscara do passo 18.
+#
+# Os passos 25 a 34 (ponto do endereço) alteram o cliente do seed de `@userEmail` e o
+# restauram no passo 33 com os valores lidos no passo 13 (inclusive `location: null`).
+# Execute o passo 13 antes deles; se a execução parar no meio, rode o passo 33.
 
 @baseUrl = http://localhost:4000
 @adminEmail = usuario@formacao.dev
@@ -295,3 +299,148 @@ Content-Type: application/json
     "state": "CE"
   }
 }
+
+# ---------------------------------------------------------------------------
+# Ponto do endereço (address.location): cliente do seed de @userEmail
+# Regra de preservação: location ausente mantém o ponto, null remove e um objeto substitui.
+# ---------------------------------------------------------------------------
+
+### 25. Gravar com ponto -> 200 com address.location arredondado para 6 casas:
+### { latitude: -23.561414, longitude: -46.655881 }
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "{{seedCustomer.response.body.phone}}",
+  "address": {
+    "zipCode": "{{seedCustomer.response.body.address.zipCode}}",
+    "street": "{{seedCustomer.response.body.address.street}}",
+    "number": "{{seedCustomer.response.body.address.number}}",
+    "neighborhood": "{{seedCustomer.response.body.address.neighborhood}}",
+    "city": "{{seedCustomer.response.body.address.city}}",
+    "state": "{{seedCustomer.response.body.address.state}}",
+    "location": { "latitude": -23.5614141234, "longitude": -46.6558809876 }
+  }
+}
+
+### 26. Novo PUT com outro número e sem location -> 200 com number "1578-A" e o ponto mantido
+### ({ latitude: -23.561414, longitude: -46.655881 })
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "{{seedCustomer.response.body.phone}}",
+  "address": {
+    "zipCode": "{{seedCustomer.response.body.address.zipCode}}",
+    "street": "{{seedCustomer.response.body.address.street}}",
+    "number": "1578-A",
+    "neighborhood": "{{seedCustomer.response.body.address.neighborhood}}",
+    "city": "{{seedCustomer.response.body.address.city}}",
+    "state": "{{seedCustomer.response.body.address.state}}"
+  }
+}
+
+### 27. Ponto inválido (latitude: 91) com outro telefone -> 400 CUSTOMER_LOCATION_INVALID e nada é gravado
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "(85) 90000-0000",
+  "address": {
+    "zipCode": "{{seedCustomer.response.body.address.zipCode}}",
+    "street": "{{seedCustomer.response.body.address.street}}",
+    "number": "1578-A",
+    "neighborhood": "{{seedCustomer.response.body.address.neighborhood}}",
+    "city": "{{seedCustomer.response.body.address.city}}",
+    "state": "{{seedCustomer.response.body.address.state}}",
+    "location": { "latitude": 91, "longitude": -46.65 }
+  }
+}
+
+### 28. GET /me/customer -> 200 com o telefone do passo 13 e o ponto do passo 25
+GET {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 29. location: null remove o ponto -> 200 com address.location = null
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "{{seedCustomer.response.body.phone}}",
+  "address": {
+    "zipCode": "{{seedCustomer.response.body.address.zipCode}}",
+    "street": "{{seedCustomer.response.body.address.street}}",
+    "number": "1578-A",
+    "neighborhood": "{{seedCustomer.response.body.address.neighborhood}}",
+    "city": "{{seedCustomer.response.body.address.city}}",
+    "state": "{{seedCustomer.response.body.address.state}}",
+    "location": null
+  }
+}
+
+### 30. Marcar outro ponto -> 200 com address.location = { latitude: -22.906847, longitude: -43.172897 }
+# @name markPoint
+PUT {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "{{seedCustomer.response.body.phone}}",
+  "address": {
+    "zipCode": "{{seedCustomer.response.body.address.zipCode}}",
+    "street": "{{seedCustomer.response.body.address.street}}",
+    "number": "1578-A",
+    "neighborhood": "{{seedCustomer.response.body.address.neighborhood}}",
+    "city": "{{seedCustomer.response.body.address.city}}",
+    "state": "{{seedCustomer.response.body.address.state}}",
+    "location": { "latitude": -22.906847, "longitude": -43.172897 }
+  }
+}
+
+### 31. Alteração pelo administrador com outro bairro e sem location -> 200 com neighborhood
+### "Bairro Alterado" e o ponto do passo 30 mantido
+PUT {{baseUrl}}/customers/{{markPoint.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "{{seedCustomer.response.body.phone}}",
+  "address": {
+    "zipCode": "{{seedCustomer.response.body.address.zipCode}}",
+    "street": "{{seedCustomer.response.body.address.street}}",
+    "number": "1578-A",
+    "neighborhood": "Bairro Alterado",
+    "city": "{{seedCustomer.response.body.address.city}}",
+    "state": "{{seedCustomer.response.body.address.state}}"
+  }
+}
+
+### 32. GET /customers/:id -> 200 com neighborhood "Bairro Alterado" e o ponto do passo 30
+GET {{baseUrl}}/customers/{{markPoint.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 33. Restaurar o cliente do seed com os valores do passo 13 (address com location: null) -> 200
+PUT {{baseUrl}}/customers/{{seedCustomer.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+Content-Type: application/json
+
+{
+  "cpf": "{{seedCustomer.response.body.cpf}}",
+  "phone": "{{seedCustomer.response.body.phone}}",
+  "address": {{seedCustomer.response.body.$.address}},
+  "isActive": {{seedCustomer.response.body.isActive}}
+}
+
+### 34. GET /me/customer -> 200 igual ao passo 13 (exceto updatedAt), com address.location = null
+GET {{baseUrl}}/me/customer
+Authorization: Bearer {{loginUser.response.body.token}}

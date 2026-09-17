@@ -38,11 +38,3 @@ export type Product = {
   /** Unidades em estoque na loja (dado local de exemplo). */
   stock: number;
 };
-
-export type Zone = {
-  neighborhood: string;
-  store: string;
-  /** Cidade e UF da loja, usadas como padrão nos dados de entrega. */
-  city: string;
-  state: string;
-};

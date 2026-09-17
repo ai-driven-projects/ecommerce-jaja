@@ -2,8 +2,8 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DomainEvent, MessagePublisher, Result } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { OutboxRelay } from './outbox-relay.js';
-import { OutboxBatchResult, OutboxPrisma, PublishBatch } from './outbox.prisma.js';
+import { OutboxRelay } from '../../../src/messaging/outbox/outbox-relay.js';
+import { OutboxBatchResult, OutboxPrisma, PublishBatch } from '../../../src/messaging/outbox/outbox.prisma.js';
 
 const LOG_LEVELS = ['log', 'error', 'warn', 'debug', 'verbose', 'fatal'] as const;
 

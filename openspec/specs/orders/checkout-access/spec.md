@@ -2,16 +2,14 @@
 
 ## Purpose
 
-Define como a rota pública `/checkout` da loja identifica o cliente e fecha o pedido: o que exibe sem sessão e com sessão, a permanência na rota após entrar ou criar conta, o retorno à vitrine com bairro e categoria preservados, o passo de dados de entrega, que usa e salva o cadastro de cliente do usuário, o passo de pagamento simulado, sem dados de pagamento do cliente, e o resumo do pedido montado a partir do carrinho da conta, cuja confirmação cria o pedido pela API (`orders/order-placement`) e leva ao acompanhamento do pedido (`orders/order-tracking`).
-
+Define como a rota pública `/checkout` da loja identifica o cliente e fecha o pedido: o que exibe sem sessão e com sessão, a permanência na rota após entrar ou criar conta, o retorno à vitrine com a loja e a categoria preservadas, o passo de dados de entrega, que usa e salva o cadastro de cliente do usuário, o passo de pagamento simulado, sem dados de pagamento do cliente, e o resumo do pedido montado a partir do carrinho da conta, cuja confirmação cria o pedido pela API (`orders/order-placement`) e leva ao acompanhamento do pedido (`orders/order-tracking`).
 ## Requirements
-
 ### Requirement: Checkout pede identificação sem bloquear a rota
 O sistema SHALL servir `/checkout` como rota pública dentro do shell da loja (cabeçalho, sacola e rodapé). Sem sessão, a página MUST exibir o título "Para fechar o pedido, entre ou crie sua conta." e o formulário com as abas "Entrar" (email e senha) e "Criar conta" (nome, email, senha e confirmação), com as mesmas validações e mensagens de erro da rota `/entrar`. A rota MUST NOT redirecionar visitantes sem sessão para outra página.
 
 #### Scenario: Visitante sem sessão
-- **WHEN** um visitante sem sessão acessa `/checkout?bairro=Aldeota&categoria=papelaria`
-- **THEN** permanece em `/checkout`, vê o cabeçalho da loja com "Aldeota", o título "Para fechar o pedido, entre ou crie sua conta." e as abas "Entrar" e "Criar conta"
+- **WHEN** um visitante sem sessão acessa `/checkout?loja=loja-paulista&categoria=papelaria`
+- **THEN** permanece em `/checkout`, vê o cabeçalho da loja com "Loja Paulista", o título "Para fechar o pedido, entre ou crie sua conta." e as abas "Entrar" e "Criar conta"
 
 #### Scenario: Erros de validação no checkout
 - **WHEN** o visitante tenta criar conta em `/checkout` com senha fraca, confirmação diferente da senha ou um email já cadastrado
@@ -21,8 +19,8 @@ O sistema SHALL servir `/checkout` como rota pública dentro do shell da loja (c
 Ao entrar ou criar conta a partir de `/checkout`, o sistema SHALL guardar a sessão, exibir a confirmação com o primeiro nome do cliente ("Bem-vindo, <primeiro nome>" ao entrar; "Conta criada. Bem-vindo, <primeiro nome>" ao criar conta) e MUST manter a URL em `/checkout` com a mesma query, trocando o conteúdo para o estado autenticado sem navegar. Criar conta MUST registrar um usuário comum e autenticá-lo na sequência, sem segundo passo.
 
 #### Scenario: Criar conta no checkout
-- **WHEN** a visitante "Ana Souza" cria conta com dados válidos em `/checkout?bairro=Aldeota&categoria=todas`
-- **THEN** a confirmação "Conta criada. Bem-vindo, Ana" é exibida, a URL continua `/checkout?bairro=Aldeota&categoria=todas`, o conteúdo passa ao estado autenticado e o cabeçalho mostra "olá, Ana"
+- **WHEN** a visitante "Ana Souza" cria conta com dados válidos em `/checkout?loja=loja-paulista&categoria=todas`
+- **THEN** a confirmação "Conta criada. Bem-vindo, Ana" é exibida, a URL continua `/checkout?loja=loja-paulista&categoria=todas`, o conteúdo passa ao estado autenticado e o cabeçalho mostra o controle de conta com "Ana"
 
 #### Scenario: Entrar no checkout
 - **WHEN** um cliente já cadastrado entra pela aba "Entrar" em `/checkout`
@@ -31,7 +29,7 @@ Ao entrar ou criar conta a partir de `/checkout`, o sistema SHALL guardar a sess
 ### Requirement: Estado autenticado do checkout
 Com sessão, `/checkout` SHALL exibir:
 - o título "Finalizar pedido";
-- o link "← Voltar para a loja", que leva a `/` preservando os parâmetros `bairro` e `categoria` da URL atual;
+- o link "← Voltar para a loja", que leva a `/` preservando os parâmetros `loja` e `categoria` da URL atual;
 - o passo 1 "Endereço de entrega", com os dados de entrega do cliente;
 - o passo 2 "Pagamento", simulado: o badge "Simulado" e o texto "Não pedimos nenhum dado de pagamento: nesta versão ele é simulado e aprovado automaticamente depois que você confirma o pedido.";
 - o "Resumo do pedido", com o botão "Confirmar pedido".
@@ -41,8 +39,8 @@ O passo "Pagamento" MUST NOT oferecer seletor de forma de pagamento nem campos d
 Um cliente que já tem sessão ao abrir `/checkout` MUST ver esse estado diretamente, sem o formulário de entrar ou criar conta e sem redirecionamento. Um reload MUST manter o estado autenticado.
 
 #### Scenario: Cliente com sessão abre o checkout
-- **WHEN** a cliente "Ana Souza" (ana@exemplo.com) com sessão acessa `/checkout?bairro=Meireles&categoria=papelaria`
-- **THEN** vê "Finalizar pedido", os passos "Endereço de entrega" e "Pagamento", o "Resumo do pedido" e o link "← Voltar para a loja" apontando para `/?bairro=Meireles&categoria=papelaria`
+- **WHEN** a cliente "Ana Souza" (ana@exemplo.com) com sessão acessa `/checkout?loja=loja-rio-branco&categoria=papelaria`
+- **THEN** vê "Finalizar pedido", os passos "Endereço de entrega" e "Pagamento", o "Resumo do pedido" e o link "← Voltar para a loja" apontando para `/?loja=loja-rio-branco&categoria=papelaria`
 
 #### Scenario: Pagamento simulado
 - **WHEN** a cliente autenticada olha o passo "Pagamento" em `/checkout`
@@ -56,7 +54,7 @@ Um cliente que já tem sessão ao abrir `/checkout` MUST ver esse estado diretam
 A ação "sair" SHALL ficar no menu da conta do cabeçalho da loja; o cabeçalho compacto de `/checkout` MUST NOT oferecê-la. Depois de sair, `/checkout` MUST exibir o título "Para fechar o pedido, entre ou crie sua conta." e o formulário, sem redirecionar, e MUST NOT exibir dados de entrega nem o resumo da conta anterior.
 
 #### Scenario: Sair e voltar ao checkout
-- **WHEN** a cliente autenticada usa "Sair" no menu da conta do cabeçalho da loja e abre `/checkout?bairro=Aldeota&categoria=todas`
+- **WHEN** a cliente autenticada usa "Sair" no menu da conta do cabeçalho da loja e abre `/checkout?loja=loja-paulista&categoria=todas`
 - **THEN** "Até já já." é exibido e `/checkout` mostra o formulário com as abas "Entrar" e "Criar conta", sem os dados de entrega da conta anterior
 
 #### Scenario: Cabeçalho compacto do checkout
@@ -114,7 +112,7 @@ No passo "Endereço de entrega", com sessão, o checkout SHALL usar o cadastro d
 
 **Sem cadastro de cliente**, o passo MUST exibir:
 - o texto "Precisamos destes dados uma vez só: ficam salvos para os próximos pedidos.";
-- o formulário com CPF, telefone, CEP, logradouro, número, complemento, bairro, cidade e UF, pré-preenchido com o bairro do parâmetro `bairro`, a cidade "Fortaleza" e a UF "CE";
+- o formulário com CPF, telefone, CEP, logradouro, número, complemento, bairro, cidade e UF, com a cidade e a UF pré-preenchidas com as da loja escolhida na vitrine, quando conhecidas, e os demais campos vazios;
 - o botão "Salvar dados de entrega".
 
 **Com cadastro**, o passo MUST exibir o resumo com o endereço (logradouro, número, complemento quando houver, bairro, cidade/UF e CEP), o telefone e o botão "Alterar". "Alterar" abre o mesmo formulário com os dados atuais e o botão "Cancelar", que volta ao resumo sem salvar.
@@ -124,11 +122,11 @@ Envio do formulário:
 - salvar MUST criar ou alterar o cadastro do usuário autenticado, exibir o toaster "Dados de entrega salvos" e mostrar o resumo atualizado, sem sair de `/checkout`;
 - erros da API MUST aparecer no campo correspondente (CPF, telefone, CEP ou UF), e os demais em um toaster.
 
-O aviso de cobertura continua baseado no bairro da vitrine. Abaixo dos dados de entrega, os campos "Quem recebe" (pré-preenchido com o nome do usuário) e "Instruções para o entregador" MUST continuar disponíveis e MUST NOT ser salvos no cadastro de cliente. Ao sair e entrar com outra conta, o passo MUST refletir o cadastro dessa outra conta.
+O checkout MUST NOT exibir aviso de cobertura: não há verificação de área de entrega nesta entrega, nem por bairro nem por raio. O passo MUST NOT apagar nem alterar o ponto do endereço do cliente (`customers/customer-registration`). Abaixo dos dados de entrega, os campos "Quem recebe" (pré-preenchido com o nome do usuário) e "Instruções para o entregador" MUST continuar disponíveis e MUST NOT ser salvos no cadastro de cliente. Ao sair e entrar com outra conta, o passo MUST refletir o cadastro dessa outra conta.
 
 #### Scenario: Primeiro pedido sem cadastro de cliente
-- **WHEN** a visitante "Ana Souza" cria conta em `/checkout?bairro=Aldeota&categoria=todas`
-- **THEN** o passo "Endereço de entrega" mostra o formulário com bairro "Aldeota", cidade "Fortaleza" e UF "CE" já preenchidos, e o botão "Salvar dados de entrega"
+- **WHEN** a visitante "Ana Souza" cria conta em `/checkout?loja=loja-paulista&categoria=todas`
+- **THEN** o passo "Endereço de entrega" mostra o formulário com cidade "São Paulo" e UF "SP" já preenchidas, bairro vazio, e o botão "Salvar dados de entrega"
 
 #### Scenario: Salvar os dados de entrega
 - **WHEN** a cliente sem cadastro preenche CPF, telefone e endereço válidos e clica em "Salvar dados de entrega"
@@ -155,18 +153,18 @@ O aviso de cobertura continua baseado no bairro da vitrine. Abaixo dos dados de 
 - **THEN** o passo mostra o formulário de dados de entrega, e não o resumo da conta anterior
 
 ### Requirement: Confirmar pedido exige cadastro de cliente
-O botão "Confirmar pedido" SHALL ficar desabilitado enquanto o usuário autenticado não tiver cadastro de cliente salvo ou enquanto o formulário de dados de entrega estiver aberto. Nesses casos, o texto "Preencha os dados de entrega para confirmar o pedido." MUST aparecer abaixo do botão. As demais condições para confirmar (sacola com itens e bairro da vitrine atendido) MUST continuar valendo.
+O botão "Confirmar pedido" SHALL ficar desabilitado enquanto o usuário autenticado não tiver cadastro de cliente salvo ou enquanto o formulário de dados de entrega estiver aberto. Nesses casos, o texto "Preencha os dados de entrega para confirmar o pedido." MUST aparecer abaixo do botão. A demais condição para confirmar (sacola com itens) MUST continuar valendo: não há mais condição de área de entrega no checkout.
 
 A API também exige cadastro de cliente **ativo** (`orders/order-placement`). Ao confirmar, a página MUST tratar a resposta assim:
 - cadastro inativo: exibir "Seu cadastro está inativo. Fale com o atendimento." e continuar em `/checkout`;
 - cadastro inexistente: exibir "Preencha os dados de entrega para confirmar o pedido." e recarregar os dados de entrega.
 
 #### Scenario: Sem cadastro de cliente
-- **WHEN** um usuário sem cadastro de cliente, com itens na sacola e bairro atendido, está em `/checkout`
+- **WHEN** um usuário sem cadastro de cliente, com itens na sacola, está em `/checkout`
 - **THEN** "Confirmar pedido" está desabilitado e o texto "Preencha os dados de entrega para confirmar o pedido." é exibido
 
 #### Scenario: Com cadastro de cliente
-- **WHEN** um usuário com cadastro de cliente salvo, com itens na sacola e bairro atendido, está em `/checkout` com o resumo dos dados de entrega exibido
+- **WHEN** um usuário com cadastro de cliente salvo, com itens na sacola, está em `/checkout` com o resumo dos dados de entrega exibido
 - **THEN** "Confirmar pedido" está habilitado e o texto de dados de entrega pendentes não aparece
 
 #### Scenario: Alteração em andamento
@@ -176,3 +174,4 @@ A API também exige cadastro de cliente **ativo** (`orders/order-placement`). Ao
 #### Scenario: Cadastro inativo
 - **WHEN** o cadastro de cliente foi desativado pelo administrador e o cliente confirma o pedido em `/checkout`
 - **THEN** o toaster exibe "Seu cadastro está inativo. Fale com o atendimento.", a página continua em `/checkout` e nenhum pedido é criado
+

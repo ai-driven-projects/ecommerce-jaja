@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { MessagingErrors } from '../messaging-errors.js';
-import { parseBrokerMessage } from './broker-message.parser.js';
+import { MessagingErrors } from '../../../src/messaging/messaging-errors.js';
+import { parseBrokerMessage } from '../../../src/messaging/rabbitmq/broker-message.parser.js';
 
 const BODY = {
   messageId: '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11',

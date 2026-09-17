@@ -2,7 +2,6 @@
 
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { EtaBadge } from '@/shared/components/store/eta-badge.component';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { cn } from '@/shared/lib/class-name.util';
 import type { StorefrontProductImage } from '../data/storefront.api';
@@ -14,17 +13,15 @@ type ProductGalleryProps = {
   name: string;
   /** Slug da categoria raiz: ilustração de reserva. */
   category: string;
-  /** ETA do bairro; sem valor o selo não aparece. */
-  etaMinutes: number | null;
 };
 
 /**
- * Galeria do detalhe: imagem principal quadrada (`largeUrl`) com o selo de
- * entrega; com mais de uma imagem, setas anterior/próxima, contador "n/total"
- * e miniaturas de 72px roláveis (`role="tablist"`, setas do teclado, Home e
- * End). Com uma imagem, só a principal; sem imagens, a ilustração da categoria.
+ * Galeria do detalhe: imagem principal quadrada (`largeUrl`); com mais de uma
+ * imagem, setas anterior/próxima, contador "n/total" e miniaturas de 72px
+ * roláveis (`role="tablist"`, setas do teclado, Home e End). Com uma imagem,
+ * só a principal; sem imagens, a ilustração da categoria.
  */
-export function ProductGallery({ images, name, category, etaMinutes }: ProductGalleryProps) {
+export function ProductGallery({ images, name, category }: ProductGalleryProps) {
   const [active, setActive] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
   const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -73,10 +70,6 @@ export function ProductGallery({ images, name, category, etaMinutes }: ProductGa
           eager={active === 0}
           className="aspect-square h-auto border border-line"
         />
-
-        {etaMinutes !== null ? (
-          <EtaBadge minutes={etaMinutes} prefix="Chega em" className="absolute left-4 top-4 px-3.5 py-1.5 text-[13px]" />
-        ) : null}
 
         {hasControls ? (
           <>

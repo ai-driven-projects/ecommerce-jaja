@@ -3,8 +3,8 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { AppUser } from '../types/app-user.type.js';
-import { AdminGuard } from './admin.guard.js';
+import type { AppUser } from '../../../src/shared/types/app-user.type.js';
+import { AdminGuard } from '../../../src/shared/auth/admin.guard.js';
 
 function createContext(user?: Partial<AppUser>) {
   return {

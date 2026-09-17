@@ -9,18 +9,25 @@ import { useAuth } from '@/modules/auth/data/auth.context';
 import type { CartLine } from '@/modules/orders/data/cart.api';
 import { CartProvider, useCart } from '@/modules/orders/data/cart.context';
 import { CART_ITEM_MAX_QUANTITY } from '@/modules/orders/data/cart.util';
+import { useStorefrontStores } from '@/modules/stores/data/use-storefront-stores.hook';
 import { AppLogo } from '@/shared/components/branding/app-logo.component';
 import { CartDrawer } from '@/shared/components/store/cart-drawer.component';
+import { STORE_PICKER_PLACEHOLDER } from '@/shared/components/store/store-picker.component';
 import type { CartItem } from '@/shared/components/store/store.types';
 import { StorefrontFooter } from '@/shared/components/store/storefront-footer.component';
 import { CompactStorefrontHeader, StorefrontHeader } from '@/shared/components/store/storefront-header.component';
 import { StorefrontLayout } from '@/shared/template/storefront-layout.component';
 import { useHydrated } from '@/shared/hooks/use-hydrated.hook';
 import { ADMIN_ROUTE } from '@/shared/navigation/admin-routes';
-import { CHECKOUT_ROUTE, STOREFRONT_LOGIN_ROUTE, STOREFRONT_ROUTE, productRoute } from '@/shared/navigation/storefront-routes';
+import {
+  CHECKOUT_ROUTE,
+  STOREFRONT_LOGIN_ROUTE,
+  STOREFRONT_ROUTE,
+  myAccountRoute,
+  productRoute,
+} from '@/shared/navigation/storefront-routes';
+import { withQuery } from '@/shared/navigation/with-query.util';
 import { StorefrontCatalogProvider } from '../data/storefront-catalog.context';
-import { ZONES } from '../data/storefront.mock';
-import { DEFAULT_NEIGHBORHOOD } from '../data/storefront-query.util';
 import { useStorefront } from '../data/use-storefront.hook';
 
 const TRACKING_PATH_PATTERN = /^\/pedidos\/[^/]+\/acompanhar$/;
@@ -41,9 +48,9 @@ function toCartItem(line: CartLine): CartItem {
   };
 }
 
-// Cabeçalho + carrinho ligados ao estado da vitrine (bairro e busca na URL)
-// e à sessão do cliente. Fica em um componente próprio porque `useSearchParams`
-// exige Suspense. A busca leva à vitrine com `q` e o bairro atual, descartando
+// Cabeçalho + carrinho ligados ao estado da vitrine (loja e busca na URL) e à
+// sessão do cliente. Fica em um componente próprio porque `useSearchParams`
+// exige Suspense. A busca leva à vitrine com `q` e a loja em vigor, descartando
 // os demais filtros, também a partir do detalhe do produto.
 function ConnectedHeader() {
   const storefront = useStorefront();
@@ -70,19 +77,20 @@ function ConnectedHeader() {
   // Fecha o carrinho antes de navegar: o shell persiste entre as rotas públicas.
   const handleCheckout = () => {
     cart.close();
-    router.push(`${CHECKOUT_ROUTE}?${storefront.query}`);
+    router.push(withQuery(CHECKOUT_ROUTE, storefront.query));
   };
 
   return (
     <>
       <StorefrontHeader
-        neighborhood={storefront.neighborhood}
-        neighborhoods={storefront.neighborhoods}
-        etaMinutes={storefront.etaMinutes}
+        store={storefront.store}
+        stores={storefront.stores}
         cartCount={hydrated ? cart.count : 0}
-        onNeighborhoodChange={storefront.setNeighborhood}
+        onStoreChange={storefront.setStore}
         onOpenCart={cart.open}
         userName={hydrated ? (user?.name ?? null) : null}
+        userEmail={hydrated ? (user?.email ?? null) : null}
+        myAccountHref={myAccountRoute(storefront.query)}
         isAdmin={hydrated && isAdmin}
         adminHref={ADMIN_ROUTE}
         signInHref={signInHref}
@@ -95,7 +103,6 @@ function ConnectedHeader() {
         onClose={cart.close}
         items={cart.lines.map(toCartItem)}
         totals={cart.detail}
-        etaMinutes={storefront.etaMinutes}
         loading={cart.loading}
         busy={cart.isSyncing}
         hasUnavailableItems={cart.hasUnavailableItems}
@@ -116,7 +123,7 @@ function HeaderSkeleton() {
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 px-4 py-3.5 sm:px-6">
         <AppLogo size="lg" />
         <span className="rounded-pill border border-line bg-surface px-4 py-[9px] text-sm text-placeholder">
-          Entrega em ~-- min · {DEFAULT_NEIGHBORHOOD}
+          {STORE_PICKER_PLACEHOLDER}
         </span>
         <span className="hidden h-[42px] flex-1 rounded-pill border border-line bg-surface md:block" />
         <span className="ml-auto h-10 w-[104px] rounded-pill bg-brand-soft" />
@@ -125,7 +132,7 @@ function HeaderSkeleton() {
   );
 }
 
-/** Cabeçalho compacto do checkout e do acompanhamento, sem bairro/busca/carrinho. */
+/** Cabeçalho compacto do checkout e do acompanhamento, sem seletor de lojas, busca nem carrinho. */
 function CompactHeader({ pathname }: { pathname: string }) {
   if (pathname === CHECKOUT_ROUTE) {
     return (
@@ -153,6 +160,7 @@ function CompactHeader({ pathname }: { pathname: string }) {
 
 function ShellBody({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { stores } = useStorefrontStores();
   const isCompact = pathname === CHECKOUT_ROUTE || TRACKING_PATH_PATTERN.test(pathname);
 
   return (
@@ -166,7 +174,7 @@ function ShellBody({ children }: { children: ReactNode }) {
           </Suspense>
         )
       }
-      footer={<StorefrontFooter neighborhoods={ZONES.map((zone) => zone.neighborhood)} />}
+      footer={<StorefrontFooter stores={stores.map((store) => store.name)} />}
     >
       {children}
     </StorefrontLayout>

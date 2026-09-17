@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700" role="img" aria-label="Topologia no RabbitMQ: exchange topic jaja.events, quatro filas de trabalho, a fila transiente do feed ao vivo e o trio fila, wait e dead" font-family="Manrope, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="m09" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#FF6B00"/></marker>
+    <marker id="m09g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8A8177"/></marker>
+    <marker id="m09r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#C93A31"/></marker>
+  </defs>
+  <rect x="0" y="0" width="960" height="700" fill="#FAF8F5"/>
+  <text x="40" y="48" font-size="26" font-weight="800" fill="#1E1812">A topologia no RabbitMQ</text>
+  <text x="40" y="74" font-size="13.5" fill="#8A8177">um exchange, seis filas — e a routing key é sempre o <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700" fill="#1E1812">type</tspan> do evento</text>
+
+  <!-- publisher -->
+  <rect x="40" y="170" width="180" height="80" rx="14" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="60" y="198" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">OutboxRelay</text>
+  <text x="60" y="218" font-size="10.3" fill="#8A8177">publish com confirm,</text>
+  <text x="60" y="233" font-size="10.3" fill="#8A8177">persistent: true</text>
+  <line x1="226" y1="210" x2="252" y2="210" stroke="#FF6B00" stroke-width="2" marker-end="url(#m09)"/>
+
+  <!-- exchange -->
+  <rect x="260" y="150" width="200" height="120" rx="16" fill="#1E1812"/>
+  <text x="360" y="182" font-size="10" font-weight="800" fill="#B8AFA4" letter-spacing="0.6" text-anchor="middle">EXCHANGE</text>
+  <text x="360" y="208" font-size="14" font-weight="800" fill="#FF8A3D" text-anchor="middle" font-family="'JetBrains Mono', Menlo, monospace">jaja.events</text>
+  <text x="360" y="230" font-size="11" fill="#FAF8F5" text-anchor="middle">topic · durável</text>
+  <text x="360" y="250" font-size="10.3" fill="#B8AFA4" text-anchor="middle">roteia pela routing key</text>
+  <text x="260" y="296" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">RABBITMQ_EXCHANGE</text>
+  <text x="260" y="312" font-size="10.3" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">PREFETCH=10 · MAX_ATTEMPTS=5</text>
+
+  <!-- bindings -->
+  <path d="M466 210 C 510 210, 516 128, 554 128" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 196, 554 196" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 264, 554 264" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 332, 554 332" fill="none" stroke="#8A8177" stroke-width="1.4" marker-end="url(#m09g)"/>
+  <path d="M466 210 C 510 210, 516 400, 554 400" fill="none" stroke="#8A8177" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#m09g)"/>
+
+  <!-- queues -->
+  <rect x="560" y="100" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="124" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.payment.approve-order</text>
+  <text x="578" y="142" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.placed</tspan> · durável · espera 3 s</text>
+
+  <rect x="560" y="168" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="192" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.store.start-picking</text>
+  <text x="578" y="210" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.payment-approved</tspan> · espera 2 s</text>
+
+  <rect x="560" y="236" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="260" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.delivery.dispatch-order</text>
+  <text x="578" y="278" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.picking-started</tspan> · espera 6 s</text>
+
+  <rect x="560" y="304" width="360" height="56" rx="12" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="578" y="328" font-size="11.5" font-weight="700" fill="#1E1812" font-family="'JetBrains Mono', Menlo, monospace">jaja.delivery.complete-order</text>
+  <text x="578" y="346" font-size="10.3" fill="#8A8177">binding <tspan fill="#FF6B00" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">order.out-for-delivery</tspan> · espera 8 s</text>
+
+  <rect x="560" y="372" width="360" height="56" rx="12" fill="#F6F1EA" stroke="#E0D5C9" stroke-dasharray="5 4"/>
+  <text x="578" y="396" font-size="11.5" font-weight="700" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">jaja.live.&lt;host&gt;.&lt;pid&gt;.&lt;rand&gt;</text>
+  <text x="578" y="414" font-size="10.3" fill="#8A8177">binding <tspan fill="#5C544B" font-weight="700" font-family="'JetBrains Mono', Menlo, monospace">#</tspan> · transiente, uma por instância, cópia de tudo</text>
+
+  <text x="560" y="450" font-size="11" fill="#5C544B">As quatro primeiras são <tspan font-weight="700">filas de trabalho</tspan>: cada mensagem vai para <tspan font-weight="700">uma</tspan> instância.</text>
+
+  <!-- trio -->
+  <rect x="40" y="468" width="880" height="180" rx="18" fill="#FFFFFF" stroke="#E0D5C9"/>
+  <text x="62" y="496" font-size="10" font-weight="800" fill="#8A8177" letter-spacing="0.6">TODA FILA DE TRABALHO VEM EM TRIO — AQUI, A DO PAGAMENTO</text>
+
+  <rect x="62" y="516" width="232" height="100" rx="12" fill="#FFF7DD" stroke="#EFDFA8"/>
+  <text x="78" y="542" font-size="11" font-weight="700" fill="#B78A00" font-family="'JetBrains Mono', Menlo, monospace">…approve-order.wait</text>
+  <text x="78" y="564" font-size="10" fill="#5C544B">espera e nova tentativa</text>
+  <text x="78" y="582" font-size="10" fill="#5C544B">TTL por mensagem, sem consumidor</text>
+  <text x="78" y="600" font-size="10" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">x-dead-letter-exchange: ''</text>
+
+  <rect x="364" y="516" width="232" height="100" rx="12" fill="#FFF1E6" stroke="#FFD9BD"/>
+  <text x="380" y="542" font-size="11" font-weight="700" fill="#FF6B00" font-family="'JetBrains Mono', Menlo, monospace">jaja.payment.approve-order</text>
+  <text x="380" y="564" font-size="10" fill="#5C544B">a fila de trabalho</text>
+  <text x="380" y="582" font-size="10" fill="#5C544B">durável, dividida entre instâncias</text>
+  <text x="380" y="600" font-size="10" fill="#5C544B">é a única com consumidor</text>
+
+  <rect x="666" y="516" width="232" height="100" rx="12" fill="#FDEBEA" stroke="#F2C3BF"/>
+  <text x="682" y="542" font-size="11" font-weight="700" fill="#C93A31" font-family="'JetBrains Mono', Menlo, monospace">…approve-order.dead</text>
+  <text x="682" y="564" font-size="10" fill="#5C544B">mensagens descartadas</text>
+  <text x="682" y="582" font-size="10" fill="#5C544B">ficam para inspeção no painel</text>
+  <text x="682" y="600" font-size="10" fill="#5C544B" font-family="'JetBrains Mono', Menlo, monospace">x-jaja-dead-reason</text>
+
+  <text x="330" y="540" font-size="9.5" font-weight="700" fill="#B78A00" text-anchor="middle">falhou</text>
+  <line x1="360" y1="550" x2="300" y2="550" stroke="#B78A00" stroke-width="1.5" marker-end="url(#m09g)"/>
+  <text x="330" y="580" font-size="9.5" font-weight="700" fill="#B78A00" text-anchor="middle">TTL expira</text>
+  <line x1="298" y1="590" x2="358" y2="590" stroke="#B78A00" stroke-width="1.5" marker-end="url(#m09g)"/>
+  <text x="631" y="556" font-size="9.5" font-weight="700" fill="#C93A31" text-anchor="middle">5ª falha</text>
+  <line x1="600" y1="566" x2="660" y2="566" stroke="#C93A31" stroke-width="1.5" marker-end="url(#m09r)"/>
+
+  <text x="62" y="636" font-size="11" fill="#5C544B">A <tspan font-family="'JetBrains Mono', Menlo, monospace" font-weight="700">.wait</tspan> devolve a mensagem pelo exchange padrão, direto para a fila de origem: os outros consumidores do mesmo evento não recebem cópia da retentativa.</text>
+
+  <text x="40" y="678" font-size="12" fill="#8A8177" font-family="'JetBrains Mono', Menlo, monospace">apps/backend/src/messaging/rabbitmq/ · painel em http://localhost:15672 (jaja / jaja)</text>
+</svg>

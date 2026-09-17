@@ -3,7 +3,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Trash2, X } from 'lucide-react';
-import { BikeIcon } from '@/shared/components/branding/app-logo.component';
 import { Price } from '@/shared/components/store/price.component';
 import { ProductArt } from '@/shared/components/store/product-art.component';
 import { QuantityStepper } from '@/shared/components/store/quantity-stepper.component';
@@ -22,7 +21,6 @@ type CartDrawerProps = {
   onClose: () => void;
   items: CartItem[];
   totals: CartTotals;
-  etaMinutes: number | null;
   /** Primeira carga: blocos estáticos no lugar das linhas. */
   loading?: boolean;
   /** Valores ainda não confirmados: atenuados, e "Finalizar pedido" indisponível. */
@@ -137,7 +135,6 @@ export function CartDrawer({
   onClose,
   items,
   totals,
-  etaMinutes,
   loading = false,
   busy = false,
   hasUnavailableItems = false,
@@ -183,13 +180,6 @@ export function CartDrawer({
             <X className="size-4" strokeWidth={2.2} aria-hidden="true" />
           </SheetClose>
         </div>
-
-        {etaMinutes !== null ? (
-          <div className="mx-[22px] mt-3.5 flex items-center gap-2.5 rounded-xl bg-success-soft px-3.5 py-[11px] text-[13.5px] font-bold text-success-strong">
-            <BikeIcon className="size-4 shrink-0 text-success" strokeWidth={2} />
-            Saindo de bike · chega em ~{etaMinutes} min
-          </div>
-        ) : null}
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-[22px] py-3.5">
           {loading ? (
