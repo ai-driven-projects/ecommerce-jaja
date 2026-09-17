@@ -9,7 +9,7 @@ type StorefrontHeroProps = {
 };
 
 const LIVE_CARDS = [
-  { emoji: '📦', tint: 'bg-tint-peach', title: 'Pedido #4207 saiu', detail: 'Loja Aldeota → Av. Santos Dumont', badge: '8 min' },
+  { emoji: '📦', tint: 'bg-tint-peach', title: 'Pedido #4207 saiu', detail: 'Loja Paulista → Rua Augusta', badge: '8 min' },
   { emoji: '🖨️', tint: 'bg-tint-blue', title: 'Toner entregue', detail: 'Ed. Torre Sul · 9º andar', badge: '✓ 19 min' },
 ] as const;
 

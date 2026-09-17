@@ -19,7 +19,7 @@ type DeliveryPillProps = {
   className?: string;
 };
 
-// Pílula creme com relógio verde: "Entrega em ~25 min · Aldeota". Abre um
+// Pílula creme com relógio verde: "Entrega em ~25 min · Bela Vista". Abre um
 // menu para trocar o bairro de entrega.
 export function DeliveryPill({ neighborhood, neighborhoods, etaMinutes, onNeighborhoodChange, className }: DeliveryPillProps) {
   return (

@@ -28,10 +28,6 @@ import { useCart } from '../data/cart.context';
 import { placeMyOrder } from '../data/order.api';
 import { ORDER_DELIVERY_INSTRUCTIONS_MAX_LENGTH, ORDER_RECIPIENT_NAME_MAX_LENGTH, formatOrderNumber } from '../data/order.util';
 
-// Cidade e UF iniciais dos dados de entrega sem cadastro: a loja só atende Fortaleza/CE.
-const DELIVERY_CITY = 'Fortaleza';
-const DELIVERY_STATE = 'CE';
-
 const CARD_CLASS = 'rounded-3xl border border-line bg-card px-5 py-[22px] sm:px-6';
 
 function StepTitle({ number, children, badge }: { number: number; children: string; badge?: ReactNode }) {
@@ -177,7 +173,7 @@ function CheckoutForm() {
                 </p>
                 <CustomerDeliveryForm
                   customer={null}
-                  defaults={{ neighborhood: storefront.neighborhood, city: DELIVERY_CITY, state: DELIVERY_STATE }}
+                  defaults={{ neighborhood: storefront.neighborhood, city: storefront.city ?? '', state: storefront.state ?? '' }}
                   save={myCustomer.save}
                 />
               </>

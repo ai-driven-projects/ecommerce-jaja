@@ -59,7 +59,7 @@ export function StoreForm({ form, token, isEditing, onSubmit, cancelHref }: Stor
             <Input
               id="store-name"
               autoComplete="off"
-              placeholder="Ex.: Loja Aldeota"
+              placeholder="Ex.: Loja Paulista"
               aria-invalid={errors.name ? true : undefined}
               disabled={isSubmitting}
               {...register('name', {
@@ -135,7 +135,7 @@ export function StoreForm({ form, token, isEditing, onSubmit, cancelHref }: Stor
             <Input
               id="store-address"
               autoComplete="off"
-              placeholder="Ex.: Rua Silva Paulet, 1100 – Aldeota, Fortaleza/CE"
+              placeholder="Ex.: Avenida Paulista, 2073 – Bela Vista, São Paulo/SP"
               aria-invalid={errors.address ? true : undefined}
               disabled={isSubmitting}
               {...register('address')}

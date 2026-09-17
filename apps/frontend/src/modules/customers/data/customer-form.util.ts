@@ -28,7 +28,7 @@ export const CUSTOMER_FIELD_BY_CODE: Readonly<Record<string, CustomerFormField>>
   CUSTOMER_STATE_INVALID: 'address.state',
 };
 
-/** Endereço inicial de um formulário sem cadastro (ex.: bairro da vitrine, Fortaleza e CE). */
+/** Endereço inicial de um formulário sem cadastro (ex.: bairro da vitrine, São Paulo e SP). */
 export type CustomerAddressDefaults = Partial<Record<keyof CustomerFormData['address'], string>>;
 
 /** Formulário vazio (sem `isActive`, que só o formulário administrativo usa). */

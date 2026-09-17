@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { withQuery } from '@/shared/navigation/with-query.util';
-import { ETA_BY_NEIGHBORHOOD, UNSERVED_NEIGHBORHOODS, ZONES, storeOf } from './storefront.mock';
+import { ETA_BY_NEIGHBORHOOD, UNSERVED_NEIGHBORHOODS, ZONES, zoneOf } from './storefront.mock';
 import {
   DEFAULT_NEIGHBORHOOD,
   buildStorefrontHref,
@@ -68,7 +68,7 @@ export function useStorefront() {
 
   const served = SERVED_NEIGHBORHOODS.includes(neighborhood);
   const etaMinutes = served ? (ETA_BY_NEIGHBORHOOD[neighborhood] ?? null) : null;
-  const store = storeOf(neighborhood);
+  const zone = zoneOf(neighborhood);
 
   // Seletor: atendidos, depois não atendidos. Um bairro desconhecido vindo da
   // URL entra no fim para o seletor não mostrar outro bairro no lugar.
@@ -85,7 +85,10 @@ export function useStorefront() {
     searchProducts,
     served,
     etaMinutes,
-    store,
+    store: zone?.store ?? null,
+    /** Cidade e UF da loja do bairro; `null` quando o bairro não é atendido. */
+    city: zone?.city ?? null,
+    state: zone?.state ?? null,
     stores: STORES,
     neighborhoods,
     servedNeighborhoods: SERVED_NEIGHBORHOODS,

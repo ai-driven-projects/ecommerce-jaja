@@ -16,32 +16,44 @@ export function categoryLabel(category: Category): string {
   return CATEGORY_OPTIONS.find((option) => option.id === category)?.label ?? category;
 }
 
-/** Bairros atendidos, agrupados por loja (a ordem define a ordem de exibição). */
+const PAULISTA = { store: 'Loja Paulista', city: 'São Paulo', state: 'SP' } as const;
+const RIO_BRANCO = { store: 'Loja Rio Branco', city: 'Rio de Janeiro', state: 'RJ' } as const;
+
+/**
+ * Bairros atendidos, agrupados por loja (a ordem define a ordem de exibição).
+ * Os nomes das lojas repetem as do seed (`apps/backend/prisma/seed/data/stores.json`).
+ */
 export const ZONES: readonly Zone[] = [
-  { neighborhood: 'Aldeota', store: 'Loja Aldeota' },
-  { neighborhood: 'Meireles', store: 'Loja Aldeota' },
-  { neighborhood: 'Centro', store: 'Loja Aldeota' },
-  { neighborhood: 'Cocó', store: 'Loja Cocó' },
-  { neighborhood: 'Dionísio Torres', store: 'Loja Cocó' },
+  { neighborhood: 'Bela Vista', ...PAULISTA },
+  { neighborhood: 'Consolação', ...PAULISTA },
+  { neighborhood: 'Jardim Paulista', ...PAULISTA },
+  { neighborhood: 'Centro', ...RIO_BRANCO },
+  { neighborhood: 'Lapa', ...RIO_BRANCO },
+  { neighborhood: 'Glória', ...RIO_BRANCO },
 ];
 
 /** Bairros que constam no seletor mas ainda não são atendidos. */
-export const UNSERVED_NEIGHBORHOODS: readonly string[] = ['Papicu', 'Montese', 'Messejana'];
+export const UNSERVED_NEIGHBORHOODS: readonly string[] = ['Pinheiros', 'Moema', 'Copacabana'];
 
 /** Tempo estimado de entrega, em minutos, por bairro atendido. */
 export const ETA_BY_NEIGHBORHOOD: Readonly<Record<string, number>> = {
-  Aldeota: 18,
-  Meireles: 22,
-  Centro: 27,
-  Cocó: 20,
-  'Dionísio Torres': 24,
+  'Bela Vista': 18,
+  Consolação: 22,
+  'Jardim Paulista': 25,
+  Centro: 18,
+  Lapa: 22,
+  Glória: 26,
 };
 
 /** Entregadores online agora (dado local de exemplo para o hero e o admin). */
 export const COURIERS_ONLINE = 14;
 
+export function zoneOf(neighborhood: string): Zone | null {
+  return ZONES.find((zone) => zone.neighborhood === neighborhood) ?? null;
+}
+
 export function storeOf(neighborhood: string): string | null {
-  return ZONES.find((zone) => zone.neighborhood === neighborhood)?.store ?? null;
+  return zoneOf(neighborhood)?.store ?? null;
 }
 
 const p = (

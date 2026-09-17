@@ -111,7 +111,7 @@ export function CustomerAddressFields({ form, idPrefix = 'customer', disabled = 
         <Input
           id={fieldId('neighborhood')}
           autoComplete="off"
-          placeholder="Ex.: Aldeota"
+          placeholder="Ex.: Bela Vista"
           aria-invalid={addressErrors?.neighborhood ? true : undefined}
           disabled={disabled}
           {...register('address.neighborhood')}
@@ -124,7 +124,7 @@ export function CustomerAddressFields({ form, idPrefix = 'customer', disabled = 
         <Input
           id={fieldId('city')}
           autoComplete="address-level2"
-          placeholder="Ex.: Fortaleza"
+          placeholder="Ex.: São Paulo"
           aria-invalid={addressErrors?.city ? true : undefined}
           disabled={disabled}
           {...register('address.city')}

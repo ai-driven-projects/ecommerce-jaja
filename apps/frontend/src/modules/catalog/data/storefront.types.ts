@@ -42,4 +42,7 @@ export type Product = {
 export type Zone = {
   neighborhood: string;
   store: string;
+  /** Cidade e UF da loja, usadas como padrão nos dados de entrega. */
+  city: string;
+  state: string;
 };

@@ -25,7 +25,7 @@ Excluir MUST pedir confirmação antes de chamar a API. Em sucesso, a tela MUST 
 
 #### Scenario: Lista após o seed
 - **WHEN** o administrador `usuario@formacao.dev` acessa `/admin/stores` após o seed
-- **THEN** vê "Lojas" com a contagem de 2, "Loja Aldeota" antes de "Loja Cocó", cada uma com o raio "2,5 km", o telefone formatado e o status "Ativa"
+- **THEN** vê "Lojas" com a contagem de 2, "Loja Paulista" antes de "Loja Rio Branco", cada uma com o raio "2,5 km", o telefone formatado e o status "Ativa"
 
 #### Scenario: Excluir pela lista
 - **WHEN** o administrador escolhe excluir uma loja e confirma

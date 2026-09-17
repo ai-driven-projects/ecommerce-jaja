@@ -12,7 +12,7 @@ import { CATEGORY_ALL } from './storefront.types';
  * montar links. Valores padrão ficam fora da URL.
  */
 
-export const DEFAULT_NEIGHBORHOOD = 'Aldeota';
+export const DEFAULT_NEIGHBORHOOD = 'Bela Vista';
 
 export const STOREFRONT_ORDERS = ['relevancia', 'destaques', 'menor-preco', 'maior-preco', 'nome', 'desconto'] as const;
 

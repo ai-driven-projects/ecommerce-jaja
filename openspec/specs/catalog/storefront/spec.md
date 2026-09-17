@@ -57,38 +57,38 @@ Uma seção sem itens MUST NOT ser exibida. As seções "Mais pedidos nos escrit
 - **THEN** a URL passa a conter `ofertas=1&ordem=desconto` e a listagem exibe os 96 produtos em oferta, paginados
 
 ### Requirement: Bairro e categoria na URL
-O bairro e a categoria selecionados SHALL ser lidos dos parâmetros de query `bairro` e `categoria`, com padrões "Aldeota" e "todas". A categoria MUST ser identificada pelo slug de uma categoria do catálogo. Trocar o bairro no cabeçalho ou a categoria nos chips MUST atualizar a URL sem adicionar entrada ao histórico e sem recarregar a página. Trocar a categoria MUST manter o bairro, a busca, os demais filtros e a ordenação, e voltar à página 1. Recarregar a página MUST preservar a seleção. Uma categoria desconhecida na URL MUST resultar na listagem vazia, sem erro.
+O bairro e a categoria selecionados SHALL ser lidos dos parâmetros de query `bairro` e `categoria`, com padrões "Bela Vista" e "todas". A categoria MUST ser identificada pelo slug de uma categoria do catálogo. Trocar o bairro no cabeçalho ou a categoria nos chips MUST atualizar a URL sem adicionar entrada ao histórico e sem recarregar a página. Trocar a categoria MUST manter o bairro, a busca, os demais filtros e a ordenação, e voltar à página 1. Recarregar a página MUST preservar a seleção. Uma categoria desconhecida na URL MUST resultar na listagem vazia, sem erro.
 
 #### Scenario: URL sem parâmetros
 - **WHEN** o visitante acessa `/`
-- **THEN** o bairro exibido é "Aldeota", o chip ativo é "Tudo" e a página inicial da vitrine é exibida
+- **THEN** o bairro exibido é "Bela Vista", o chip ativo é "Tudo" e a página inicial da vitrine é exibida
 
 #### Scenario: Filtro por categoria
 - **WHEN** o visitante clica no chip "Cartuchos & Toners"
 - **THEN** a URL passa a conter `categoria=cartuchos-toners`, apenas produtos dessa categoria e de suas subcategorias são exibidos, e o chip fica ativo
 
 #### Scenario: Recarga com parâmetros
-- **WHEN** o visitante acessa `/?bairro=Meireles&categoria=cartuchos-toners`
-- **THEN** o seletor mostra "Meireles", só produtos de "Cartuchos & Toners" aparecem e o ETA de Meireles é exibido
+- **WHEN** o visitante acessa `/?bairro=Consolação&categoria=cartuchos-toners`
+- **THEN** o seletor mostra "Consolação", só produtos de "Cartuchos & Toners" aparecem e o ETA de Consolação é exibido
 
 #### Scenario: Troca de bairro
-- **WHEN** o visitante escolhe "Cocó" no seletor
-- **THEN** a URL passa a conter `bairro=Cocó`, o ETA exibido é o de Cocó e a categoria selecionada é mantida
+- **WHEN** o visitante escolhe "Centro" no seletor
+- **THEN** a URL passa a conter `bairro=Centro`, o ETA exibido é o de Centro e a categoria selecionada é mantida
 
 #### Scenario: Categoria antiga na URL
 - **WHEN** o visitante acessa `/?categoria=papelaria`
 - **THEN** a listagem exibe o estado sem resultados, sem erro
 
 ### Requirement: Bairro não atendido
-Quando o bairro selecionado não pertencer a nenhuma loja, a vitrine SHALL ocultar filtros e grade e exibir o estado vazio: o título em display "Ainda não chegamos aí. Já já." com o ponto final em vermelho, o texto "Por enquanto atendemos:" e a lista dos bairros atendidos agrupados por loja (nome da loja em caixa alta com régua de 2px), cada bairro clicável. O cabeçalho MUST omitir o ETA. Os bairros não atendidos `Papicu`, `Montese` e `Messejana` MUST constar no seletor para permitir esse fluxo.
+Quando o bairro selecionado não pertencer a nenhuma loja, a vitrine SHALL ocultar filtros e grade e exibir o estado vazio: o título em display "Ainda não chegamos aí. Já já." com o ponto final em vermelho, o texto "Por enquanto atendemos:" e a lista dos bairros atendidos agrupados por loja (nome da loja em caixa alta com régua de 2px), cada bairro clicável. O cabeçalho MUST omitir o ETA. Os bairros não atendidos `Pinheiros`, `Moema` e `Copacabana` MUST constar no seletor para permitir esse fluxo.
 
 #### Scenario: Bairro fora da área
-- **WHEN** o visitante acessa `/?bairro=Papicu`
+- **WHEN** o visitante acessa `/?bairro=Pinheiros`
 - **THEN** nenhum produto é exibido, o título "Ainda não chegamos aí. Já já." aparece com o ponto em vermelho e os bairros atendidos aparecem agrupados por loja
 
 #### Scenario: Escolher bairro atendido pelo estado vazio
-- **WHEN** no estado vazio o visitante clica em "Aldeota"
-- **THEN** a URL passa a conter `bairro=Aldeota` e a grade de produtos volta a ser exibida
+- **WHEN** no estado vazio o visitante clica em "Bela Vista"
+- **THEN** a URL passa a conter `bairro=Bela+Vista` e a grade de produtos volta a ser exibida
 
 ### Requirement: Navegação para o detalhe do produto
 Cada card da vitrine SHALL ser um link para `/p/<slug>` que preserva todos os parâmetros atuais da vitrine (bairro, categoria, busca, filtros, ordenação e página). A rota `/p/<slug>` SHALL manter o cabeçalho da loja (logo, bairro, ETA, busca e carrinho) e o rodapé compartilhados, e exibir o produto lido da API:
@@ -106,12 +106,12 @@ Cada card da vitrine SHALL ser um link para `/p/<slug>` que preserva todos os pa
 O título do documento MUST ser "<nome> — já já". Um slug inexistente ou de produto não visível MUST resultar na página não encontrada. Dados inventados de estoque e ficha técnica MUST NOT ser exibidos.
 
 #### Scenario: Clique no card
-- **WHEN** o visitante em `/?bairro=Aldeota&categoria=escrita-corretivos&q=caneta` clica no card de uma caneta
-- **THEN** navega para `/p/<slug-da-caneta>?bairro=Aldeota&categoria=escrita-corretivos&q=caneta`, continua vendo o cabeçalho da loja com "Aldeota", e vê a galeria, o nome, o preço, a trilha de categorias e o link "← Voltar aos resultados"
+- **WHEN** o visitante em `/?bairro=Bela+Vista&categoria=escrita-corretivos&q=caneta` clica no card de uma caneta
+- **THEN** navega para `/p/<slug-da-caneta>?bairro=Bela+Vista&categoria=escrita-corretivos&q=caneta`, continua vendo o cabeçalho da loja com "Bela Vista", e vê a galeria, o nome, o preço, a trilha de categorias e o link "← Voltar aos resultados"
 
 #### Scenario: Voltar pela trilha
 - **WHEN** no detalhe o visitante clica na categoria raiz da trilha
-- **THEN** vai para `/?bairro=Aldeota&categoria=<slug-da-raiz>`, com a listagem dessa categoria
+- **THEN** vai para `/?bairro=Bela+Vista&categoria=<slug-da-raiz>`, com a listagem dessa categoria
 
 #### Scenario: Produto com preço "De:"
 - **WHEN** o visitante abre o detalhe de um produto com `priceCents: 1290` e `listPriceCents: 1590`
@@ -129,8 +129,8 @@ O título do documento MUST ser "<nome> — já já". Um slug inexistente ou de 
 O botão "Finalizar pedido" do carrinho SHALL fechar o painel do carrinho e navegar para `/checkout` preservando todos os parâmetros atuais da vitrine (bairro, categoria, busca, filtros, ordenação e página). A navegação MUST NOT depender de sessão: quem não estiver autenticado é identificado na própria página de checkout, e os itens do carrinho do visitante seguem para a conta ao entrar (`orders/storefront-cart`). O botão MUST ficar indisponível quando o carrinho está vazio, quando tem itens indisponíveis ou enquanto uma mudança no carrinho não foi confirmada.
 
 #### Scenario: Fechar pedido com bairro e categoria
-- **WHEN** um visitante com itens no carrinho em `/?bairro=Meireles&categoria=escrita-corretivos` clica em "Finalizar pedido"
-- **THEN** o painel do carrinho fecha e a página passa a `/checkout?bairro=Meireles&categoria=escrita-corretivos`
+- **WHEN** um visitante com itens no carrinho em `/?bairro=Consolação&categoria=escrita-corretivos` clica em "Finalizar pedido"
+- **THEN** o painel do carrinho fecha e a página passa a `/checkout?bairro=Consolação&categoria=escrita-corretivos`
 
 #### Scenario: Fechar pedido sem sessão
 - **WHEN** um visitante sem sessão, com itens no carrinho, clica em "Finalizar pedido"
@@ -144,8 +144,8 @@ O botão "Finalizar pedido" do carrinho SHALL fechar o painel do carrinho e nave
 O campo de busca do cabeçalho da loja SHALL buscar produtos. Enviar um termo, com Enter ou pelo botão da lupa, MUST navegar para `/` com `q=<termo>`, mantendo o `bairro` e descartando categoria, filtros, ordenação e página. Enviar o campo vazio MUST remover `q`. O campo MUST exibir o termo presente na URL, inclusive após recarregar, e oferecer um botão para limpar o texto. A busca MUST funcionar também a partir do detalhe do produto.
 
 #### Scenario: Buscar a partir da vitrine filtrada
-- **WHEN** o visitante em `/?bairro=Meireles&categoria=escolar&ordem=menor-preco` busca "caneta bic"
-- **THEN** a URL passa a ser `/?bairro=Meireles&q=caneta+bic`, e a listagem exibe "Resultados para “caneta bic”" com as canetas da BIC
+- **WHEN** o visitante em `/?bairro=Consolação&categoria=escolar&ordem=menor-preco` busca "caneta bic"
+- **THEN** a URL passa a ser `/?bairro=Consolação&q=caneta+bic`, e a listagem exibe "Resultados para “caneta bic”" com as canetas da BIC
 
 #### Scenario: Recarregar a busca
 - **WHEN** o visitante recarrega `/?q=toner`
@@ -201,8 +201,8 @@ Os filtros ficam numa coluna lateral em telas largas e num painel aberto pelo bo
 - **THEN** a recarga reproduz a página 2 da categoria em ordem de maior preço, e o "voltar" retorna à página 2
 
 #### Scenario: Limpar filtros
-- **WHEN** o visitante em `/?bairro=Cocó&q=caneta&marca=bic&ofertas=1` clica em "Limpar filtros"
-- **THEN** a URL passa a ser `/?bairro=Cocó&q=caneta`
+- **WHEN** o visitante em `/?bairro=Centro&q=caneta&marca=bic&ofertas=1` clica em "Limpar filtros"
+- **THEN** a URL passa a ser `/?bairro=Centro&q=caneta`
 
 #### Scenario: Sem resultados
 - **WHEN** o visitante busca "xyzabc"

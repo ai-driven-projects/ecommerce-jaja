@@ -124,11 +124,11 @@ O sistema SHALL expor `GET /stores`, que devolve `200` com uma página de lojas 
 
 #### Scenario: Lista após o seed
 - **WHEN** após o seed um administrador chama `GET /stores`
-- **THEN** o sistema responde `200` com `total: 2`, `page: 1`, `pageSize: 20`, `totalPages: 1` e "Loja Aldeota" antes de "Loja Cocó"
+- **THEN** o sistema responde `200` com `total: 2`, `page: 1`, `pageSize: 20`, `totalPages: 1` e "Loja Paulista" antes de "Loja Rio Branco"
 
 #### Scenario: Busca pelo endereço de referência
-- **WHEN** após o seed um administrador chama `GET /stores?search=silva paulet`
-- **THEN** o sistema responde `200` apenas com a loja "Loja Aldeota"
+- **WHEN** após o seed um administrador chama `GET /stores?search=conjunto nacional`
+- **THEN** o sistema responde `200` apenas com a loja "Loja Paulista"
 
 #### Scenario: pageSize acima do máximo
 - **WHEN** um administrador chama `GET /stores?pageSize=500`
@@ -186,16 +186,16 @@ O sistema SHALL expor `DELETE /stores/:id`, que marca a loja como excluída, pre
 - **THEN** o sistema responde `404` com `STORE_NOT_FOUND`
 
 ### Requirement: Carga inicial das lojas
-O seed de desenvolvimento SHALL cadastrar as lojas de `apps/backend/prisma/seed/data/stores.json`, arquivo versionado e escrito à mão, já no formato do banco. O arquivo contém "Loja Aldeota" (`loja-aldeota`) e "Loja Cocó" (`loja-coco`), em Fortaleza, ambas com raio de 2.500 m e ativas. Executar o seed novamente MUST NOT duplicar lojas, sobrescrever lojas já existentes nem recriar lojas excluídas. Se o arquivo não existir, o seed MUST falhar com uma mensagem que indique o caminho esperado.
+O seed de desenvolvimento SHALL cadastrar as lojas de `apps/backend/prisma/seed/data/stores.json`, arquivo versionado e escrito à mão, já no formato do banco. O arquivo contém "Loja Paulista" (`loja-paulista`), na Avenida Paulista em São Paulo/SP, e "Loja Rio Branco" (`loja-rio-branco`), na Avenida Rio Branco, no Centro do Rio de Janeiro/RJ, ambas com raio de 2.500 m e ativas. Executar o seed novamente MUST NOT duplicar lojas, sobrescrever lojas já existentes nem recriar lojas excluídas. Se o arquivo não existir, o seed MUST falhar com uma mensagem que indique o caminho esperado.
 
 #### Scenario: Seed em banco vazio
 - **WHEN** o seed é executado em um banco sem lojas
-- **THEN** a tabela de lojas passa a ter 2 registros, "Loja Aldeota" e "Loja Cocó", com raio de 2.500 m, `isActive = true` e latitude entre −3,8 e −3,7 e longitude entre −38,6 e −38,4
+- **THEN** a tabela de lojas passa a ter 2 registros, "Loja Paulista" e "Loja Rio Branco", com raio de 2.500 m e `isActive = true`; a "Loja Paulista" com latitude entre −23,6 e −23,5 e longitude entre −46,7 e −46,6, e a "Loja Rio Branco" com latitude entre −23,0 e −22,8 e longitude entre −43,3 e −43,1
 
 #### Scenario: Seed repetido
 - **WHEN** o seed é executado duas vezes seguidas
 - **THEN** a tabela de lojas continua com 2 registros
 
 #### Scenario: Edição preservada pelo seed
-- **WHEN** um administrador altera o raio da "Loja Aldeota" para 3.000 m e o seed é executado de novo
-- **THEN** a "Loja Aldeota" continua com raio de 3.000 m
+- **WHEN** um administrador altera o raio da "Loja Paulista" para 3.000 m e o seed é executado de novo
+- **THEN** a "Loja Paulista" continua com raio de 3.000 m

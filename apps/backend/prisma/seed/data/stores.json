@@ -1,20 +1,20 @@
 [
   {
-    "name": "Loja Aldeota",
-    "slug": "loja-aldeota",
-    "phone": "8530001001",
-    "address": "Rua Silva Paulet, 1100 – Aldeota, Fortaleza/CE",
-    "latitude": -3.7356,
-    "longitude": -38.5012,
+    "name": "Loja Paulista",
+    "slug": "loja-paulista",
+    "phone": "1130001001",
+    "address": "Avenida Paulista, 2073 – Conjunto Nacional, Bela Vista, São Paulo/SP",
+    "latitude": -23.558131,
+    "longitude": -46.660232,
     "deliveryRadiusMeters": 2500
   },
   {
-    "name": "Loja Cocó",
-    "slug": "loja-coco",
-    "phone": "8530001002",
-    "address": "Avenida Engenheiro Santana Júnior, 2500 – Cocó, Fortaleza/CE",
-    "latitude": -3.7475,
-    "longitude": -38.4839,
+    "name": "Loja Rio Branco",
+    "slug": "loja-rio-branco",
+    "phone": "2130001002",
+    "address": "Avenida Rio Branco, 156 – Centro, Rio de Janeiro/RJ",
+    "latitude": -22.906847,
+    "longitude": -43.177256,
     "deliveryRadiusMeters": 2500
   }
 ]

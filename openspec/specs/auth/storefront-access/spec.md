@@ -21,8 +21,8 @@ O sistema SHALL servir em `/entrar`, dentro do shell da loja (cabeçalho, sacola
 O link "entrar" do cabeçalho SHALL levar a `/entrar` com o parâmetro `voltar` contendo o caminho e a query da página atual. Após entrar ou criar conta, o sistema MUST exibir uma confirmação com o primeiro nome do cliente e voltar para o caminho de `voltar`; sem `voltar` MUST voltar para `/`. Só caminhos relativos iniciados por `/` MUST ser aceitos; qualquer outro valor MUST ser tratado como ausente. Um cliente que já tem sessão ao abrir `/entrar` MUST ser levado imediatamente ao destino de `voltar`.
 
 #### Scenario: Login com retorno
-- **WHEN** o visitante clica em "entrar" na vitrine em `/?bairro=Meireles&categoria=papelaria` e entra com credenciais válidas
-- **THEN** vê a confirmação com seu primeiro nome e volta para `/?bairro=Meireles&categoria=papelaria` já autenticado
+- **WHEN** o visitante clica em "entrar" na vitrine em `/?bairro=Consolação&categoria=papelaria` e entra com credenciais válidas
+- **THEN** vê a confirmação com seu primeiro nome e volta para `/?bairro=Consolação&categoria=papelaria` já autenticado
 
 #### Scenario: Retorno externo ignorado
 - **WHEN** o visitante abre `/entrar?voltar=https://exemplo.com` e entra

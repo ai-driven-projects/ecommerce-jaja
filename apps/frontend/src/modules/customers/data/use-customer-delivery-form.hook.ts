@@ -16,7 +16,7 @@ import {
 export type UseCustomerDeliveryFormOptions = {
   /** Cadastro atual; `null` quando o usuário ainda não tem cliente (criação). */
   customer: Customer | null;
-  /** Endereço inicial sem cadastro (ex.: bairro da vitrine, "Fortaleza" e "CE"). */
+  /** Endereço inicial sem cadastro (ex.: bairro da vitrine, "São Paulo" e "SP"). */
   defaults?: CustomerAddressDefaults;
   /** Grava os dados (`save` de `useMyCustomer`); lança `ApiError` em falha. */
   save: (input: CustomerInput) => Promise<unknown>;
