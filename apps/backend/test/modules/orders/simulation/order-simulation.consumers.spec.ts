@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Order, OrderErrors } from '@jaja/orders';
+import type { OrderProps } from '@jaja/orders';
 import {
   BrokerMessage,
   DomainEvent,
@@ -18,7 +19,7 @@ import { OrderSimulationConsumers } from '../../../../src/modules/orders/simulat
 const ORDER_ID = 'c7b8a3d2-5e4f-4a1b-8c9d-0e1f2a3b4c5d';
 const PLACED_AT = new Date('2026-09-17T12:00:00.000Z');
 
-function placedOrder(): Order {
+function placedOrder(overrides: Partial<OrderProps> = {}): Order {
   return Order.create({
     id: ORDER_ID,
     customerId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
@@ -47,7 +48,31 @@ function placedOrder(): Order {
     placedAt: PLACED_AT,
     createdAt: PLACED_AT,
     updatedAt: PLACED_AT,
+    ...overrides,
   });
+}
+
+const PAYMENT_APPROVED_AT = new Date('2026-09-17T12:00:03.000Z');
+const PICKING_STARTED_AT = new Date('2026-09-17T12:00:05.000Z');
+const OUT_FOR_DELIVERY_AT = new Date('2026-09-17T12:00:11.000Z');
+
+// A stored order that already concluded the steps before `status`, rehydrated
+// as the adapter reads it: with the dates of the steps and without events.
+function orderIn(status: 'PAYMENT_APPROVED' | 'PICKING' | 'OUT_FOR_DELIVERY'): Order {
+  const dates: Record<typeof status, Partial<OrderProps>> = {
+    PAYMENT_APPROVED: { paymentApprovedAt: PAYMENT_APPROVED_AT },
+    PICKING: {
+      paymentApprovedAt: PAYMENT_APPROVED_AT,
+      pickingStartedAt: PICKING_STARTED_AT,
+    },
+    OUT_FOR_DELIVERY: {
+      paymentApprovedAt: PAYMENT_APPROVED_AT,
+      pickingStartedAt: PICKING_STARTED_AT,
+      outForDeliveryAt: OUT_FOR_DELIVERY_AT,
+    },
+  };
+
+  return placedOrder({ status, ...dates[status] });
 }
 
 function message(payload: Record<string, unknown>): BrokerMessage {
@@ -199,7 +224,7 @@ describe('OrderSimulationConsumers', () => {
     },
   );
 
-  it('advances the order with the received transaction manager', async () => {
+  it('concludes the step of the payment with the received transaction manager', async () => {
     const { simulation, registry, orderPrisma, domainEvents } = setup();
     simulation.onModuleInit();
     const transactionManager = new FakeTransactionManager();
@@ -213,20 +238,90 @@ describe('OrderSimulationConsumers', () => {
     expect(result.instance ?? null).toBeNull();
     expect(transactionManager.calls).toBe(1);
     expect(orderPrisma.updates).toHaveLength(1);
-    expect(orderPrisma.updates[0].order.status).toBe('PAYMENT_APPROVED');
+    const order = orderPrisma.updates[0].order;
+    expect(order.status).toBe('PAYMENT_APPROVED');
     expect(orderPrisma.updates[0].tx).toBe(transactionManager.tx);
     expect(domainEvents.appends).toHaveLength(1);
     expect(domainEvents.appends[0].tx).toBe(transactionManager.tx);
-    expect(domainEvents.appends[0].events.map((event) => event.type)).toEqual([
-      'order.payment-approved',
-    ]);
+    const event = domainEvents.appends[0].events[0];
+    expect(event.type).toBe('order.payment-approved');
+    // The data of the gateway is derived from the id of the order.
+    expect(event.payload).toMatchObject({
+      transactionId: 'TX-C7B8A3D2',
+      paymentMethod: 'SIMULATED',
+      amountCents: order.totalCents,
+    });
     expect(logged.some((line) => line.text === 'Pedido C7B8A3D2 → PAYMENT_APPROVED')).toBe(true);
   });
 
-  it('ends with success and only a debug log when the order already reached the status', async () => {
+  it.each([
+    {
+      step: 'store.start-picking',
+      index: 1,
+      stored: 'PAYMENT_APPROVED' as const,
+      status: 'PICKING',
+      type: 'order.picking-started',
+      data: { pickingListId: 'SEP-C7B8A3D2', itemCount: 2 },
+    },
+    {
+      step: 'delivery.dispatch-order',
+      index: 2,
+      stored: 'PICKING' as const,
+      status: 'OUT_FOR_DELIVERY',
+      type: 'order.out-for-delivery',
+      data: { courierName: 'Entregador Simulado', trackingCode: 'JAJA-C7B8A3D2' },
+    },
+    {
+      step: 'delivery.complete-order',
+      index: 3,
+      stored: 'OUT_FOR_DELIVERY' as const,
+      status: 'DELIVERED',
+      type: 'order.delivered',
+      // Without information about who took it, the recipient of the order.
+      data: { receivedBy: 'Ana Pereira' },
+    },
+  ])('$step concludes its step with the simulated data', async ({ index, stored, status, type, data }) => {
+    const { simulation, registry, orderPrisma, domainEvents } = setup();
+    simulation.onModuleInit();
+    orderPrisma.order = orderIn(stored);
+    const transactionManager = new FakeTransactionManager();
+
+    const result = await registry.consumers[index].handle(
+      message({ aggregateType: 'Order', aggregateId: ORDER_ID }),
+      transactionManager,
+    );
+
+    expect(result.isOk).toBe(true);
+    expect(orderPrisma.updates[0].order.status).toBe(status);
+    const event = domainEvents.appends[0].events[0];
+    expect(event.type).toBe(type);
+    expect(event.payload).toMatchObject(data);
+    expect(logged.some((line) => line.text === `Pedido C7B8A3D2 → ${status}`)).toBe(true);
+  });
+
+  it('promises the delivery for 15 minutes after the dispatch', async () => {
+    const { simulation, registry, orderPrisma, domainEvents } = setup();
+    simulation.onModuleInit();
+    orderPrisma.order = orderIn('PICKING');
+    const before = Date.now();
+
+    await registry.consumers[2].handle(
+      message({ aggregateType: 'Order', aggregateId: ORDER_ID }),
+      new FakeTransactionManager(),
+    );
+
+    const { estimatedDeliveryAt } = domainEvents.appends[0].events[0].payload as {
+      estimatedDeliveryAt: string;
+    };
+    const promised = new Date(estimatedDeliveryAt).getTime();
+    expect(promised).toBeGreaterThanOrEqual(before + 15 * 60_000);
+    expect(promised).toBeLessThanOrEqual(Date.now() + 15 * 60_000);
+  });
+
+  it('ends with success and only a debug log when the step was already concluded', async () => {
     const { simulation, registry, orderPrisma } = setup();
     simulation.onModuleInit();
-    orderPrisma.order = placedOrder().advanceTo('PAYMENT_APPROVED').instance;
+    orderPrisma.order = orderIn('PAYMENT_APPROVED');
     const transactionManager = new FakeTransactionManager();
 
     const result = await registry.consumers[0].handle(
@@ -242,7 +337,7 @@ describe('OrderSimulationConsumers', () => {
     );
   });
 
-  it('returns the failure of the use case', async () => {
+  it('returns the failure of the operation', async () => {
     const { simulation, registry, orderPrisma } = setup();
     simulation.onModuleInit();
     orderPrisma.order = null;

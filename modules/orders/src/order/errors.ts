@@ -15,6 +15,10 @@ export const OrderErrors = {
   ORDER_DELIVERY_ADDRESS_INVALID: 'ORDER_DELIVERY_ADDRESS_INVALID',
   ORDER_STATUS_INVALID: 'ORDER_STATUS_INVALID',
   ORDER_STATUS_TRANSITION_INVALID: 'ORDER_STATUS_TRANSITION_INVALID',
+  ORDER_PAYMENT_DATA_INVALID: 'ORDER_PAYMENT_DATA_INVALID',
+  ORDER_PICKING_DATA_INVALID: 'ORDER_PICKING_DATA_INVALID',
+  ORDER_DISPATCH_DATA_INVALID: 'ORDER_DISPATCH_DATA_INVALID',
+  ORDER_DELIVERY_DATA_INVALID: 'ORDER_DELIVERY_DATA_INVALID',
 } as const
 
 export type OrderErrorCode = (typeof OrderErrors)[keyof typeof OrderErrors]
@@ -47,6 +51,16 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number]
 export function orderStatusIndex(status: OrderStatus): number {
   return ORDER_STATUSES.indexOf(status)
 }
+
+/**
+ * Means of payment an approved payment can have. Only `SIMULATED` is used
+ * today: the simulated gateway approves every order and there is no payment
+ * data in this version. `CREDIT_CARD` and `PIX` document where the real means
+ * land when a payment of its own exists.
+ */
+export const ORDER_PAYMENT_METHODS = ['SIMULATED', 'CREDIT_CARD', 'PIX'] as const
+
+export type OrderPaymentMethod = (typeof ORDER_PAYMENT_METHODS)[number]
 
 /** Maximum length of the recipient name, after trimming (minimum 2). */
 export const ORDER_RECIPIENT_NAME_MAX_LENGTH = 100

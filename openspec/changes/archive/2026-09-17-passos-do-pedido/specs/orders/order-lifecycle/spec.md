@@ -1,36 +1,4 @@
-# Ciclo do Pedido (Order Lifecycle) Specification
-
-## Purpose
-
-Define como o pedido do Jaja anda sozinho da confirmação até a entrega. Cobre a sequência de status, as operações de cada passo (pagamento, separação, despacho e entrega) com a data que registram, os eventos de negócio que cada passo grava, os serviços simulados de pagamento, separação e entrega (consumidores de eventos com espera) e a cadeia de causa e correlação que liga os eventos de um pedido.
-
-## Requirements
-
-### Requirement: Sequência de status do pedido
-O pedido SHALL ter um destes status, nesta ordem: `PLACED` ("Pedido recebido"), `PAYMENT_APPROVED` ("Pagamento aprovado"), `PICKING` ("Separando na loja"), `OUT_FOR_DELIVERY` ("A caminho") e `DELIVERED` ("Entregue"). O pedido MUST avançar só para o **status seguinte** da sequência. Avançar para o próprio status, para um anterior, pular um passo ou avançar depois de `DELIVERED` MUST falhar com `ORDER_STATUS_TRANSITION_INVALID`, sem alterar o pedido e sem gerar evento.
-
-#### Scenario: Avanço para o próximo status
-- **WHEN** um pedido `PLACED` avança para `PAYMENT_APPROVED`
-- **THEN** o pedido passa a `PAYMENT_APPROVED`
-
-#### Scenario: Pulo de passo
-- **WHEN** um pedido `PLACED` tenta avançar direto para `PICKING`
-- **THEN** a operação falha com `ORDER_STATUS_TRANSITION_INVALID` e o pedido continua `PLACED`
-
-#### Scenario: Pedido já entregue
-- **WHEN** um pedido `DELIVERED` tenta avançar para qualquer status
-- **THEN** a operação falha com `ORDER_STATUS_TRANSITION_INVALID`
-
-### Requirement: Data de cada passo
-O pedido SHALL guardar a data e hora em que chegou a cada passo: `placedAt` (`PLACED`), `paymentApprovedAt` (`PAYMENT_APPROVED`), `pickingStartedAt` (`PICKING`), `outForDeliveryAt` (`OUT_FOR_DELIVERY`) e `deliveredAt` (`DELIVERED`). A data de um passo MUST ser preenchida quando o pedido chega a ele e MUST ficar vazia enquanto o pedido não chegou. Um pedido gravado com status e datas inconsistentes MUST ser recusado com `ORDER_STATUS_INVALID`.
-
-#### Scenario: Datas até o status atual
-- **WHEN** um pedido chega a `PICKING`
-- **THEN** `placedAt`, `paymentApprovedAt` e `pickingStartedAt` estão preenchidas, em ordem crescente, e `outForDeliveryAt` e `deliveredAt` estão vazias
-
-#### Scenario: Status e datas inconsistentes
-- **WHEN** um pedido `PLACED` é lido com `paymentApprovedAt` preenchida
-- **THEN** a leitura falha com `ORDER_STATUS_INVALID`
+## ADDED Requirements
 
 ### Requirement: Evento de negócio de cada passo
 Cada passo concluído SHALL gravar um evento do seu fato **na mesma transação** em que o pedido é atualizado: se a transação for desfeita, nem o novo status nem o evento ficam gravados. O evento MUST ter:
@@ -100,6 +68,8 @@ O sistema SHALL oferecer **uma operação por passo** do ciclo: aprovar o pagame
 - **WHEN** o despacho de um pedido `PICKING` chega com o código de rastreio vazio
 - **THEN** a operação falha com `ORDER_DISPATCH_DATA_INVALID`, o pedido continua `PICKING` e nenhum evento é gravado
 
+## MODIFIED Requirements
+
 ### Requirement: Serviços simulados do pedido
 O backend SHALL simular os serviços de pagamento, separação e entrega como consumidores de eventos, cada um reagindo ao evento do passo anterior (coreografia, sem orquestrador) e concluindo **um** passo do pedido pela operação correspondente:
 
@@ -134,9 +104,12 @@ A espera de cada consumidor MUST ser a espera base multiplicada por `ORDER_SIMUL
 - **WHEN** um consumidor da simulação recebe uma mensagem sem `aggregateId` no payload
 - **THEN** o processamento falha com `ORDER_NOT_FOUND` e segue as novas tentativas e o descarte do consumo de eventos
 
-### Requirement: Cadeia de causa e correlação do pedido
-Os eventos de um mesmo pedido SHALL formar uma cadeia rastreável: os eventos de mudança de status MUST ter no `metadata` o `correlationId` igual ao `id` do `order.placed` do pedido, e o `causationId` igual ao `id` do evento que causou o avanço (o evento imediatamente anterior da sequência).
+## REMOVED Requirements
 
-#### Scenario: Cadeia completa
-- **WHEN** um pedido chega a `DELIVERED` pela simulação
-- **THEN** o outbox tem, na ordem, `order.placed`, `order.payment-approved`, `order.picking-started`, `order.out-for-delivery` e `order.delivered`; os quatro últimos têm `correlationId` igual ao id do `order.placed`, e cada um tem `causationId` igual ao id do evento anterior
+### Requirement: Evento a cada mudança de status
+**Reason**: Cada passo do pedido é um fato de negócio diferente (pagamento, separação, despacho, entrega) e precisa carregar os seus próprios dados, o que um evento único de "mudança de status" com payload comum não comporta.
+**Migration**: Substituído por "Evento de negócio de cada passo". Os `type` publicados, o `aggregateType`, o `aggregateId`, o `occurredAt` e a publicação pelo outbox continuam iguais; o payload de cada evento **ganha** os campos do seu passo, mantendo `customerId`, `previousStatus`, `status` e `changedAt`. Eventos já gravados continuam válidos: nenhum consumidor lê esses campos.
+
+### Requirement: Avanço idempotente
+**Reason**: O status de destino deixa de ser entrada: quem dispara um passo informa o fato do seu serviço, e o status é consequência da operação. Com isso, "avançar para um status" deixa de existir como operação, e com ela a falha por status de destino inválido.
+**Migration**: Substituído por "Operações de cada passo do pedido", que mantém o passo já concluído terminando com sucesso sem gravar nada, `ORDER_NOT_FOUND` para pedido inexistente e `ORDER_STATUS_TRANSITION_INVALID` para passo fora de ordem. A falha `ORDER_STATUS_INVALID` por status de destino `PLACED` ou fora da sequência deixa de existir; no lugar dela entram os códigos de dado do passo inválido (`ORDER_PAYMENT_DATA_INVALID`, `ORDER_PICKING_DATA_INVALID`, `ORDER_DISPATCH_DATA_INVALID` e `ORDER_DELIVERY_DATA_INVALID`). `ORDER_STATUS_INVALID` continua em uso para pedido gravado com status e datas inconsistentes.

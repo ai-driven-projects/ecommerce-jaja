@@ -40,6 +40,7 @@ import { LiveEventFeed } from '../src/messaging/live/live-event-feed.js';
 import { DomainEventPrisma } from '../src/messaging/outbox/domain-event.prisma.js';
 import { OrderLiveUpdates } from '../src/modules/orders/order-live-updates.js';
 import { OrderPrisma } from '../src/modules/orders/order.prisma.js';
+import { SIMULATED_COURIER_NAME } from '../src/modules/orders/simulation/order-simulation.data.js';
 import { ORDER_SIMULATION_STEPS } from '../src/modules/orders/simulation/order-simulation.steps.js';
 
 const CUSTOMER_EMAIL = 'ana.pereira.carvalho@jaja.dev';
@@ -278,6 +279,41 @@ describe.runIf(process.env.MESSAGING_E2E === 'true')(
           correlationId: placed.id,
           causationId: events[index].id,
         });
+      });
+    });
+
+    it('carries the fact of each simulated service in the payload of its event', async () => {
+      const [, approved, picking, dispatched, delivered] = await outboxOf(
+        orderId!,
+      );
+      const order = await prisma.client.order.findUniqueOrThrow({
+        where: { id: orderId! },
+      });
+      // The data of each service is derived from the id of the order.
+      const short = orderId!.slice(0, 8).toUpperCase();
+
+      expect(approved.payload).toMatchObject({
+        previousStatus: 'PLACED',
+        status: 'PAYMENT_APPROVED',
+        transactionId: `TX-${short}`,
+        paymentMethod: 'SIMULATED',
+        amountCents: order.totalCents,
+      });
+      expect(picking.payload).toMatchObject({
+        status: 'PICKING',
+        pickingListId: `SEP-${short}`,
+        itemCount: expect.any(Number),
+      });
+      expect(dispatched.payload).toMatchObject({
+        status: 'OUT_FOR_DELIVERY',
+        courierName: SIMULATED_COURIER_NAME,
+        trackingCode: `JAJA-${short}`,
+        estimatedDeliveryAt: expect.any(String),
+      });
+      // Nobody informs who took the order, so it is the recipient of the order.
+      expect(delivered.payload).toMatchObject({
+        status: 'DELIVERED',
+        receivedBy: order.recipientName,
       });
     });
 

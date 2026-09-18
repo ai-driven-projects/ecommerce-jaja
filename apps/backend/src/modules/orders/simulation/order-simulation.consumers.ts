@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AdvanceOrderStatus, OrderErrors } from '@jaja/orders';
+import { OrderErrors } from '@jaja/orders';
 import { Result } from '@mentoria-360/shared';
 import type { BrokerMessage, TransactionManager } from '@mentoria-360/shared';
 import type { TransactionalEventConsumer } from '../../../messaging/consumer/event-consumer.js';
@@ -19,10 +19,14 @@ const MAX_DELAY_MS = 300_000;
  * registered as event consumers in `onModuleInit` (before the runner subscribes
  * them). Each consumer reacts to the event of the previous step, waits
  * `delayMs` in the broker (queue `.wait`, never a `setTimeout` holding the
- * transaction) and calls `AdvanceOrderStatus` with the transaction of the
+ * transaction) and calls the operation of its step with the transaction of the
  * consumer, so the new status, its event and the "processed" mark are committed
  * together. The event stored gets the `causationId`/`correlationId` of the
  * message from the outbox, which chains the events of the order.
+ *
+ * The consumer never chooses the status the order reaches: it reports the fact
+ * of its service (`ORDER_SIMULATION_STEPS`), and the status is a consequence of
+ * the operation, decided inside `@jaja/orders`.
  *
  * Didactic simplification: in a real system each service would be a process of
  * its own, with events of its own (e.g. the payment gateway would publish
@@ -73,8 +77,9 @@ export class OrderSimulationConsumers implements OnModuleInit {
     };
   }
 
-  // Only translates the message into the use case: the id of the order comes
-  // from `payload.aggregateId` (set by the outbox for every event).
+  // Only translates the message into the operation of the step: the id of the
+  // order comes from `payload.aggregateId` (set by the outbox for every event),
+  // and the data of the service comes from the step itself.
   private async handle(
     step: OrderSimulationStep,
     message: BrokerMessage,
@@ -83,17 +88,19 @@ export class OrderSimulationConsumers implements OnModuleInit {
     const orderId = message.payload?.aggregateId;
     if (typeof orderId !== 'string') return Result.fail(OrderErrors.ORDER_NOT_FOUND);
 
-    const useCase = new AdvanceOrderStatus(
-      this.orderPrisma,
-      this.domainEventPrisma,
-      transactionManager,
+    const result = await step.execute(
+      {
+        orderRepository: this.orderPrisma,
+        domainEventRepository: this.domainEventPrisma,
+        transactionManager,
+      },
+      orderId,
     );
-    const result = await useCase.execute({ orderId, status: step.status });
     if (result.isFailure) return Result.fail(result.errors);
 
     const number = orderId.slice(0, 8).toUpperCase();
     if (result.instance.changed) {
-      this.logger.log(`Pedido ${number} → ${step.status}`);
+      this.logger.log(`Pedido ${number} → ${result.instance.status}`);
     } else {
       this.logger.debug(
         `Pedido ${number} já estava em ${result.instance.status}; ${step.consumerName} não alterou nada`,

@@ -6,7 +6,6 @@ import {
   OrderPlacedEvent,
   OrderProps,
   OrderStatus,
-  OrderStatusChangedEvent,
   PlaceOrderProps,
 } from '../../src/order'
 
@@ -82,6 +81,20 @@ function stored(overrides: Partial<OrderProps> = {}): OrderProps {
     updatedAt: placedAt,
     ...overrides,
   }
+}
+
+// The step dates a stored order has in each status.
+const STEP_DATES: Record<OrderStatus, Partial<OrderProps>> = {
+  PLACED: {},
+  PAYMENT_APPROVED: { paymentApprovedAt },
+  PICKING: { paymentApprovedAt, pickingStartedAt },
+  OUT_FOR_DELIVERY: { paymentApprovedAt, pickingStartedAt, outForDeliveryAt },
+  DELIVERED: {
+    paymentApprovedAt,
+    pickingStartedAt,
+    outForDeliveryAt,
+    deliveredAt,
+  },
 }
 
 // A stored order in `DELIVERED`, with every step date.
@@ -474,34 +487,64 @@ describe('Order', () => {
     })
   })
 
-  describe('advanceTo', () => {
+  describe('step methods', () => {
+    // The data each simulated service reports when it concludes its step.
+    const payment = {
+      transactionId: 'TX-9B2E7C1A',
+      paymentMethod: 'SIMULATED',
+    } as const
+    const picking = { pickingListId: 'SEP-9B2E7C1A' }
+    const dispatch = {
+      courierName: 'Entregador Simulado',
+      trackingCode: 'JAJA-9B2E7C1A',
+      estimatedDeliveryAt: new Date('2026-09-14T15:45:11.000Z'),
+    }
+    const delivery = { receivedBy: 'Porteiro do prédio' }
+
     test('walks the whole sequence with one date and one event per step', () => {
-      const steps: [OrderStatus, Date, string][] = [
-        ['PAYMENT_APPROVED', paymentApprovedAt, 'order.payment-approved'],
-        ['PICKING', pickingStartedAt, 'order.picking-started'],
-        ['OUT_FOR_DELIVERY', outForDeliveryAt, 'order.out-for-delivery'],
-        ['DELIVERED', deliveredAt, 'order.delivered'],
-      ]
       let order = Order.create(stored())
+      const steps: [OrderStatus, Date, string, () => Order][] = [
+        [
+          'PAYMENT_APPROVED',
+          paymentApprovedAt,
+          'order.payment-approved',
+          () => order.approvePayment(payment, paymentApprovedAt).instance,
+        ],
+        [
+          'PICKING',
+          pickingStartedAt,
+          'order.picking-started',
+          () => order.startPicking(picking, pickingStartedAt).instance,
+        ],
+        [
+          'OUT_FOR_DELIVERY',
+          outForDeliveryAt,
+          'order.out-for-delivery',
+          () => order.dispatch(dispatch, outForDeliveryAt).instance,
+        ],
+        [
+          'DELIVERED',
+          deliveredAt,
+          'order.delivered',
+          () => order.completeDelivery(delivery, deliveredAt).instance,
+        ],
+      ]
 
-      for (const [status, now, type] of steps) {
+      for (const [status, now, type, conclude] of steps) {
         const previousStatus = order.status
-        const result = order.advanceTo(status, now)
+        order = conclude()
 
-        expect(result.isOk).toBe(true)
-        order = result.instance
         expect(order.status).toBe(status)
         expect(order.updatedAt).toEqual(now)
         const events = order.pullEvents()
         expect(events).toHaveLength(1)
         const event = events[0]!
-        expect(event).toBeInstanceOf(OrderStatusChangedEvent)
         expect(event.type).toBe(type)
         expect(event.aggregateType).toBe('Order')
         expect(event.aggregateId).toBe(id)
         expect(event.occurredAt).toEqual(now)
         expect(event.metadata).toEqual({})
-        expect(event.payload).toEqual({
+        expect(event.payload).toMatchObject({
           customerId,
           previousStatus,
           status,
@@ -520,10 +563,126 @@ describe('Order', () => {
       })
     })
 
+    test('approvePayment carries the data of the gateway and the total of the order', () => {
+      const order = Order.create(stored())
+
+      const approved = order.approvePayment(payment, paymentApprovedAt).instance
+
+      expect(approved.peekEvents()[0]!.payload).toEqual({
+        customerId,
+        previousStatus: 'PLACED',
+        status: 'PAYMENT_APPROVED',
+        changedAt: paymentApprovedAt.toISOString(),
+        transactionId: 'TX-9B2E7C1A',
+        paymentMethod: 'SIMULATED',
+        amountCents: order.totalCents,
+      })
+    })
+
+    test('startPicking carries the picking list and the units of the order', () => {
+      const order = Order.create(
+        stored({ status: 'PAYMENT_APPROVED', paymentApprovedAt }),
+      )
+
+      const picked = order.startPicking(picking, pickingStartedAt).instance
+
+      expect(picked.peekEvents()[0]!.payload).toEqual({
+        customerId,
+        previousStatus: 'PAYMENT_APPROVED',
+        status: 'PICKING',
+        changedAt: pickingStartedAt.toISOString(),
+        pickingListId: 'SEP-9B2E7C1A',
+        itemCount: order.itemCount,
+      })
+    })
+
+    test('dispatch carries the courier, the tracking code and the estimate', () => {
+      const order = Order.create(
+        stored({
+          status: 'PICKING',
+          paymentApprovedAt,
+          pickingStartedAt,
+        }),
+      )
+
+      const sent = order.dispatch(dispatch, outForDeliveryAt).instance
+
+      expect(sent.peekEvents()[0]!.payload).toEqual({
+        customerId,
+        previousStatus: 'PICKING',
+        status: 'OUT_FOR_DELIVERY',
+        changedAt: outForDeliveryAt.toISOString(),
+        courierName: 'Entregador Simulado',
+        trackingCode: 'JAJA-9B2E7C1A',
+        estimatedDeliveryAt: '2026-09-14T15:45:11.000Z',
+      })
+    })
+
+    test('completeDelivery carries who received the order', () => {
+      const order = Order.create(
+        stored({
+          status: 'OUT_FOR_DELIVERY',
+          paymentApprovedAt,
+          pickingStartedAt,
+          outForDeliveryAt,
+        }),
+      )
+
+      const done = order.completeDelivery(delivery, deliveredAt).instance
+
+      expect(done.peekEvents()[0]!.payload).toEqual({
+        customerId,
+        previousStatus: 'OUT_FOR_DELIVERY',
+        status: 'DELIVERED',
+        changedAt: deliveredAt.toISOString(),
+        receivedBy: 'Porteiro do prédio',
+      })
+    })
+
+    test.each([undefined, null, '', '   '])(
+      'completeDelivery with receivedBy %p uses the recipient of the order',
+      (receivedBy) => {
+        const order = Order.create(
+          stored({
+            status: 'OUT_FOR_DELIVERY',
+            paymentApprovedAt,
+            pickingStartedAt,
+            outForDeliveryAt,
+          }),
+        )
+
+        const done = order.completeDelivery(
+          { receivedBy },
+          deliveredAt,
+        ).instance
+
+        expect(done.peekEvents()[0]!.payload).toMatchObject({
+          receivedBy: order.recipientName,
+        })
+      },
+    )
+
+    test('completeDelivery without data uses the recipient of the order', () => {
+      const order = Order.create(
+        stored({
+          status: 'OUT_FOR_DELIVERY',
+          paymentApprovedAt,
+          pickingStartedAt,
+          outForDeliveryAt,
+        }),
+      )
+
+      const done = order.completeDelivery(undefined, deliveredAt).instance
+
+      expect(done.peekEvents()[0]!.payload).toMatchObject({
+        receivedBy: order.recipientName,
+      })
+    })
+
     test('fills only the date of the reached step', () => {
       const order = Order.create(stored())
-        .advanceTo('PAYMENT_APPROVED', paymentApprovedAt)
-        .instance.advanceTo('PICKING', pickingStartedAt).instance
+        .approvePayment(payment, paymentApprovedAt)
+        .instance.startPicking(picking, pickingStartedAt).instance
 
       expect(order.placedAt).toEqual(placedAt)
       expect(order.paymentApprovedAt).toEqual(paymentApprovedAt)
@@ -535,7 +694,7 @@ describe('Order', () => {
     test('uses the current date by default', () => {
       const before = Date.now()
 
-      const order = Order.create(stored()).advanceTo('PAYMENT_APPROVED').instance
+      const order = Order.create(stored()).approvePayment(payment).instance
 
       expect(order.paymentApprovedAt!.getTime()).toBeGreaterThanOrEqual(before)
       expect(order.paymentApprovedAt!.getTime()).toBeLessThanOrEqual(Date.now())
@@ -544,25 +703,55 @@ describe('Order', () => {
     })
 
     test.each([
-      ['to the current status', stored(), 'PLACED'],
-      ['skipping a step', stored(), 'PICKING'],
-      ['skipping to DELIVERED', stored(), 'DELIVERED'],
-      [
-        'to a previous status',
-        stored({ status: 'PAYMENT_APPROVED', paymentApprovedAt }),
-        'PLACED',
-      ],
-      ['after DELIVERED', delivered(), 'DELIVERED'],
-      ['after DELIVERED to a previous status', delivered(), 'OUT_FOR_DELIVERY'],
-      ['to an unknown status', stored(), 'CANCELLED'],
-    ] as [string, OrderProps, OrderStatus][])(
-      'fails with ORDER_STATUS_TRANSITION_INVALID %s, without events',
-      (_, props, status) => {
-        const order = Order.create(props)
+      ['the payment of an order that already paid', 'PAYMENT_APPROVED'],
+      ['the payment of an order being picked', 'PICKING'],
+      ['the payment of a delivered order', 'DELIVERED'],
+    ] as [string, OrderStatus][])(
+      'fails with ORDER_STATUS_TRANSITION_INVALID approving %s, without events',
+      (_, status) => {
+        const order = Order.create(
+          stored({ status, ...STEP_DATES[status] }),
+        )
 
-        const result = order.advanceTo(status, paymentApprovedAt)
+        const result = order.approvePayment(payment, paymentApprovedAt)
 
         expect(result.isFailure).toBe(true)
+        expect(result.errors).toEqual([
+          OrderErrors.ORDER_STATUS_TRANSITION_INVALID,
+        ])
+        expect(order.status).toBe(status)
+        expect(order.hasEvents()).toBe(false)
+      },
+    )
+
+    test.each([
+      [
+        'startPicking on a PLACED order',
+        stored(),
+        (order: Order) => order.startPicking(picking, pickingStartedAt),
+      ],
+      [
+        'dispatch on a PLACED order',
+        stored(),
+        (order: Order) => order.dispatch(dispatch, outForDeliveryAt),
+      ],
+      [
+        'completeDelivery on a PICKING order',
+        stored({ status: 'PICKING', paymentApprovedAt, pickingStartedAt }),
+        (order: Order) => order.completeDelivery(delivery, deliveredAt),
+      ],
+      [
+        'completeDelivery on a delivered order',
+        delivered(),
+        (order: Order) => order.completeDelivery(delivery, deliveredAt),
+      ],
+    ] as [string, OrderProps, (order: Order) => ReturnType<Order['dispatch']>][])(
+      'fails with ORDER_STATUS_TRANSITION_INVALID for %s, without events',
+      (_, props, conclude) => {
+        const order = Order.create(props)
+
+        const result = conclude(order)
+
         expect(result.errors).toEqual([
           OrderErrors.ORDER_STATUS_TRANSITION_INVALID,
         ])
@@ -571,11 +760,112 @@ describe('Order', () => {
       },
     )
 
+    test.each([
+      ['a blank transaction', { ...payment, transactionId: '   ' }],
+      ['a transaction longer than 64', { ...payment, transactionId: 'x'.repeat(65) }],
+      ['a transaction that is not text', { ...payment, transactionId: 7 }],
+      ['an unknown means of payment', { ...payment, paymentMethod: 'BOLETO' }],
+      ['a missing means of payment', { transactionId: 'TX-1' }],
+    ])(
+      'approvePayment fails with ORDER_PAYMENT_DATA_INVALID for %s, without advancing',
+      (_, data) => {
+        const order = Order.create(stored())
+
+        const result = order.approvePayment(
+          data as unknown as Parameters<Order['approvePayment']>[0],
+          paymentApprovedAt,
+        )
+
+        expect(result.errors).toEqual([OrderErrors.ORDER_PAYMENT_DATA_INVALID])
+        expect(order.status).toBe('PLACED')
+        expect(order.hasEvents()).toBe(false)
+      },
+    )
+
+    test.each(['', '  ', 'x'.repeat(65), undefined, 12])(
+      'startPicking fails with ORDER_PICKING_DATA_INVALID for the picking list %p',
+      (pickingListId) => {
+        const order = Order.create(
+          stored({ status: 'PAYMENT_APPROVED', paymentApprovedAt }),
+        )
+
+        const result = order.startPicking(
+          { pickingListId } as unknown as Parameters<Order['startPicking']>[0],
+          pickingStartedAt,
+        )
+
+        expect(result.errors).toEqual([OrderErrors.ORDER_PICKING_DATA_INVALID])
+        expect(order.hasEvents()).toBe(false)
+      },
+    )
+
+    test.each([
+      ['a courier with one letter', { ...dispatch, courierName: 'J' }],
+      [
+        'a courier longer than 100',
+        { ...dispatch, courierName: 'a'.repeat(101) },
+      ],
+      ['a blank tracking code', { ...dispatch, trackingCode: '  ' }],
+      [
+        'an estimate that is not a date',
+        { ...dispatch, estimatedDeliveryAt: '2026-09-14T15:45:11.000Z' },
+      ],
+      [
+        'an invalid estimate',
+        { ...dispatch, estimatedDeliveryAt: new Date('invalid') },
+      ],
+      [
+        'an estimate before the step',
+        {
+          ...dispatch,
+          estimatedDeliveryAt: new Date('2026-09-14T15:30:10.000Z'),
+        },
+      ],
+    ])(
+      'dispatch fails with ORDER_DISPATCH_DATA_INVALID for %s, without advancing',
+      (_, data) => {
+        const order = Order.create(
+          stored({ status: 'PICKING', paymentApprovedAt, pickingStartedAt }),
+        )
+
+        const result = order.dispatch(
+          data as unknown as Parameters<Order['dispatch']>[0],
+          outForDeliveryAt,
+        )
+
+        expect(result.errors).toEqual([OrderErrors.ORDER_DISPATCH_DATA_INVALID])
+        expect(order.status).toBe('PICKING')
+        expect(order.hasEvents()).toBe(false)
+      },
+    )
+
+    test.each(['A', 'a'.repeat(101), 7])(
+      'completeDelivery fails with ORDER_DELIVERY_DATA_INVALID for the receiver %p',
+      (receivedBy) => {
+        const order = Order.create(
+          stored({
+            status: 'OUT_FOR_DELIVERY',
+            paymentApprovedAt,
+            pickingStartedAt,
+            outForDeliveryAt,
+          }),
+        )
+
+        const result = order.completeDelivery(
+          { receivedBy } as unknown as Parameters<Order['completeDelivery']>[0],
+          deliveredAt,
+        )
+
+        expect(result.errors).toEqual([OrderErrors.ORDER_DELIVERY_DATA_INVALID])
+        expect(order.hasEvents()).toBe(false)
+      },
+    )
+
     test('keeps the original instance unchanged and without events', () => {
       const order = Order.create(stored())
       const before = order.toDTO()
 
-      const advanced = order.advanceTo('PAYMENT_APPROVED', paymentApprovedAt)
+      const advanced = order.approvePayment(payment, paymentApprovedAt)
 
       expect(advanced.isOk).toBe(true)
       expect(advanced.instance).not.toBe(order)
@@ -588,7 +878,7 @@ describe('Order', () => {
     test('the advanced order keeps a pending order.placed before its own event', () => {
       const order = Order.place(placement()).instance
 
-      const advanced = order.advanceTo('PAYMENT_APPROVED').instance
+      const advanced = order.approvePayment(payment).instance
 
       expect(advanced.peekEvents().map((event) => event.type)).toEqual([
         'order.placed',
@@ -600,7 +890,7 @@ describe('Order', () => {
     test('fails with ORDER_STATUS_INVALID for an invalid date, without events', () => {
       const order = Order.create(stored())
 
-      const result = order.advanceTo('PAYMENT_APPROVED', new Date('invalid'))
+      const result = order.approvePayment(payment, new Date('invalid'))
 
       expect(result.errors).toEqual([OrderErrors.ORDER_STATUS_INVALID])
       expect(order.hasEvents()).toBe(false)

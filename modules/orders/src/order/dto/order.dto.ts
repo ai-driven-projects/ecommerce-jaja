@@ -1,4 +1,4 @@
-import { OrderStatus } from '../errors'
+import { OrderPaymentMethod, OrderStatus } from '../errors'
 
 // One line of the order, frozen when the order is placed.
 export interface OrderItemDTO {
@@ -176,19 +176,47 @@ export interface PlaceOrderOutputDTO {
   orderId: string
 }
 
-// Input of `AdvanceOrderStatus`: the order and the status it must reach.
-export interface AdvanceOrderStatusInputDTO {
+// Input of `ApproveOrderPayment`: the order and what the payment gateway
+// reports.
+export interface ApproveOrderPaymentInputDTO {
   orderId: string
-  // One of `ORDER_STATUSES` except `PLACED`.
-  status: OrderStatus
+  // Id of the transaction at the gateway; up to 64 characters.
+  transactionId: string
+  paymentMethod: OrderPaymentMethod
 }
 
-// Output of `AdvanceOrderStatus`.
-export interface AdvanceOrderStatusOutputDTO {
-  // The current status of the order: the requested one when it advanced, or
-  // the status it already had when it had reached the requested one.
+// Input of `StartOrderPicking`: the order and what the store reports.
+export interface StartOrderPickingInputDTO {
+  orderId: string
+  // Id of the picking list at the store; up to 64 characters.
+  pickingListId: string
+}
+
+// Input of `DispatchOrder`: the order and what the delivery reports when a
+// courier leaves with it.
+export interface DispatchOrderInputDTO {
+  orderId: string
+  // 2 to 100 characters.
+  courierName: string
+  // Up to 64 characters.
+  trackingCode: string
+  // Never before the moment of the step.
+  estimatedDeliveryAt: Date
+}
+
+// Input of `CompleteOrderDelivery`: the order and, optionally, who took it.
+export interface CompleteOrderDeliveryInputDTO {
+  orderId: string
+  // Missing, `null` or blank resolves to the recipient of the order.
+  receivedBy?: string | null
+}
+
+// Output of every operation of a step of the order.
+export interface OrderStepOutputDTO {
+  // The current status of the order: the one reached by the step, or the status
+  // it already had when the step had already been concluded.
   status: OrderStatus
-  // `false` when the order had already reached the status and nothing was
+  // `false` when the order had already concluded the step and nothing was
   // stored.
   changed: boolean
 }
