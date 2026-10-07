@@ -220,17 +220,62 @@ describe('RabbitMqMessageConsumer', () => {
     expect(connections[0].createConfirmChannel).toHaveBeenCalledTimes(1);
     expect(channel.prefetch).toHaveBeenCalledWith(7);
     expect(channel.assertExchange).toHaveBeenCalledWith('jaja.events', 'topic', { durable: true });
-    expect(channel.assertQueue).toHaveBeenCalledWith(QUEUE, { durable: true });
+    expect(channel.assertQueue).toHaveBeenCalledWith(QUEUE, {
+      durable: true,
+      arguments: { 'x-queue-type': 'classic' },
+    });
     expect(channel.assertQueue).toHaveBeenCalledWith(`${QUEUE}.wait`, {
       durable: true,
-      arguments: { 'x-dead-letter-exchange': '', 'x-dead-letter-routing-key': QUEUE },
+      arguments: {
+        'x-dead-letter-exchange': '',
+        'x-dead-letter-routing-key': QUEUE,
+        'x-queue-type': 'classic',
+      },
     });
-    expect(channel.assertQueue).toHaveBeenCalledWith(`${QUEUE}.dead`, { durable: true });
+    expect(channel.assertQueue).toHaveBeenCalledWith(`${QUEUE}.dead`, {
+      durable: true,
+      arguments: { 'x-queue-type': 'classic' },
+    });
     expect(channel.bindQueue).toHaveBeenCalledTimes(2);
     expect(channel.bindQueue).toHaveBeenCalledWith(QUEUE, 'jaja.events', 'order.placed');
     expect(channel.bindQueue).toHaveBeenCalledWith(QUEUE, 'jaja.events', 'order.paid');
     expect(channel.consume).toHaveBeenCalledWith(QUEUE, expect.any(Function), { noAck: false });
     expect(lines()).toContain(`Consumindo ${QUEUE} (order.placed, order.paid)`);
+  });
+
+  it('declares the three queues of jaja.<name> as quorum queues with queueType quorum', async () => {
+    const { result, channel } = await subscribed({}, { queueType: 'quorum' });
+
+    expect(result.isOk).toBe(true);
+    expect(channel.assertQueue).toHaveBeenCalledWith(QUEUE, {
+      durable: true,
+      arguments: { 'x-queue-type': 'quorum' },
+    });
+    expect(channel.assertQueue).toHaveBeenCalledWith(`${QUEUE}.wait`, {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': '',
+        'x-dead-letter-routing-key': QUEUE,
+        'x-queue-type': 'quorum',
+      },
+    });
+    expect(channel.assertQueue).toHaveBeenCalledWith(`${QUEUE}.dead`, {
+      durable: true,
+      arguments: { 'x-queue-type': 'quorum' },
+    });
+  });
+
+  it('connects to an amqps URL as given, logging only host and port', async () => {
+    const url = `amqps://usuario:${PASSWORD}@b-1234.mq.sa-east-1.amazonaws.com:5671`;
+    connectMock.mockRejectedValueOnce(new Error(`connect ETIMEDOUT for ${url}`));
+
+    const consumer = createConsumer({ url });
+    await consumer.subscribe(subscription().input);
+    await settle();
+
+    expect(connectMock).toHaveBeenCalledWith(url, { timeout: 5_000 });
+    expect(lines().join('\n')).toContain('b-1234.mq.sa-east-1.amazonaws.com:5671');
+    expect(lines().join('\n')).not.toContain(PASSWORD);
   });
 
   it('uses one connection and one channel per subscription', async () => {
@@ -592,6 +637,21 @@ describe('RabbitMqMessageConsumer', () => {
       subscribed({ name: 'live', eventTypes: [], mode: 'broadcast', ...overrides });
     const queueOf = (channel: FakeChannel) => channel.assertQueue.mock.calls[0][0];
 
+    it('keeps the broadcast queue classic and exclusive with queueType quorum', async () => {
+      const { channel } = await subscribed(
+        { name: 'live', eventTypes: [], mode: 'broadcast' },
+        { queueType: 'quorum' },
+      );
+
+      expect(channel.assertQueue).toHaveBeenCalledTimes(1);
+      expect(channel.assertQueue).toHaveBeenCalledWith(queueOf(channel), {
+        durable: false,
+        exclusive: true,
+        autoDelete: true,
+        arguments: { 'x-queue-type': 'classic' },
+      });
+    });
+
     it('declares only a non-durable, exclusive and auto-deleted jaja.<name>.<host>.<pid>.<suffix> queue bound with #', async () => {
       const { result, channel } = await transient();
       const LIVE_QUEUE = queueOf(channel);
@@ -604,6 +664,7 @@ describe('RabbitMqMessageConsumer', () => {
         durable: false,
         exclusive: true,
         autoDelete: true,
+        arguments: { 'x-queue-type': 'classic' },
       });
       expect(channel.assertQueue).not.toHaveBeenCalledWith(`${LIVE_QUEUE}.wait`, expect.anything());
       expect(channel.assertQueue).not.toHaveBeenCalledWith(`${LIVE_QUEUE}.dead`, expect.anything());
@@ -694,6 +755,7 @@ describe('RabbitMqMessageConsumer', () => {
         durable: false,
         exclusive: true,
         autoDelete: true,
+        arguments: { 'x-queue-type': 'classic' },
       });
       expect(again.bindQueue).toHaveBeenCalledWith(LIVE_QUEUE, 'jaja.events', '#');
       expect(again.consume).toHaveBeenCalledWith(LIVE_QUEUE, expect.any(Function), {

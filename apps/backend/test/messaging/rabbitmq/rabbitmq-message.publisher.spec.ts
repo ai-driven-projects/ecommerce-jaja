@@ -125,8 +125,22 @@ describe('RabbitMqMessagePublisher', () => {
     await publisher.publish({ message: MESSAGE });
 
     const { channel } = connections[0];
-    expect(channel.assertQueue).toHaveBeenCalledWith('jaja.events.all', { durable: true });
+    expect(channel.assertQueue).toHaveBeenCalledWith('jaja.events.all', {
+      durable: true,
+      arguments: { 'x-queue-type': 'classic' },
+    });
     expect(channel.bindQueue).toHaveBeenCalledWith('jaja.events.all', 'jaja.events', '#');
+  });
+
+  it('declares the inspection queue as a quorum queue with queueType quorum', async () => {
+    const publisher = createPublisher({ inspectionQueue: 'jaja.events.all', queueType: 'quorum' });
+
+    await publisher.publish({ message: MESSAGE });
+
+    expect(connections[0].channel.assertQueue).toHaveBeenCalledWith('jaja.events.all', {
+      durable: true,
+      arguments: { 'x-queue-type': 'quorum' },
+    });
   });
 
   it('declares no queue without an inspection queue', async () => {

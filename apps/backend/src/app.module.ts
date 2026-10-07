@@ -7,6 +7,7 @@ import { OrdersModule } from './modules/orders/orders.module.js';
 import { StoresModule } from './modules/stores/stores.module.js';
 import { CustomersModule } from './modules/customers/customers.module.js';
 import { SharedModule } from './shared/shared.module.js';
+import { HealthController } from './shared/http/health.controller.js';
 import { DbModule } from './db/db.module.js';
 import { MessagingModule } from './messaging/messaging.module.js';
 
@@ -21,7 +22,7 @@ import { MessagingModule } from './messaging/messaging.module.js';
     CatalogModule,
     AuthModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}

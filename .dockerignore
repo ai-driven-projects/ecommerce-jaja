@@ -1,0 +1,21 @@
+# Build context of the images built from the monorepo root (apps/*/Dockerfile).
+# Only sources and lockfiles go to Docker: dependencies and build outputs are
+# recreated inside the image, and no .env (with real secrets) ever leaves the machine.
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/.turbo
+**/cdk.out
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+.git
+**/.git
+.claude
+.agents
+openspec
+apps/cli
+apps/frontend
+apps/infra

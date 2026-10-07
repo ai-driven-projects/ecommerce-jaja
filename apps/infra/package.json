@@ -1,0 +1,28 @@
+{
+  "name": "@jaja/infra",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Ambiente efêmero do backend do Jaja na AWS (CDK): ECS Fargate, RDS PostgreSQL, Amazon MQ for RabbitMQ e ALB com HTTPS",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "synth": "tsx scripts/cdk.ts synth",
+    "diff": "tsx scripts/cdk.ts diff",
+    "deploy": "tsx scripts/deploy.ts",
+    "destroy": "tsx scripts/destroy.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1147.0",
+    "@aws-sdk/client-sts": "^3.1147.0",
+    "aws-cdk-lib": "^2.272.0",
+    "constructs": "^10.8.1",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "aws-cdk": "^2.1144.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  }
+}

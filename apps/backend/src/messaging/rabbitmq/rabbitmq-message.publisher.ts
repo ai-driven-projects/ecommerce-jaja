@@ -10,6 +10,8 @@ import amqp from 'amqplib';
 import type { ChannelModel, ConfirmChannel, Options } from 'amqplib';
 import { errorMessage } from '../error-message.util.js';
 import { MessagingErrors } from '../messaging-errors.js';
+import { DEFAULT_RABBITMQ_QUEUE_TYPE, durableQueueOptions } from './rabbitmq-queue-type.js';
+import type { RabbitMqQueueType } from './rabbitmq-queue-type.js';
 import { brokerAddress, redactCredentials } from './rabbitmq-url.util.js';
 
 export interface RabbitMqPublisherConfig {
@@ -19,6 +21,8 @@ export interface RabbitMqPublisherConfig {
   // Development only: durable queue bound with `#` that receives a copy of every
   // event. Empty or missing: no queue is declared.
   readonly inspectionQueue?: string;
+  // Type of the inspection queue (default `classic`).
+  readonly queueType?: RabbitMqQueueType;
 }
 
 // A stuck connection attempt gives up after 5 s, well below the 30 s timeout of
@@ -151,7 +155,10 @@ export class RabbitMqMessagePublisher implements MessagePublisher, OnModuleInit,
       await channel.assertExchange(this.config.exchange, 'topic', { durable: true });
       const queue = this.config.inspectionQueue;
       if (queue) {
-        await channel.assertQueue(queue, { durable: true });
+        await channel.assertQueue(
+          queue,
+          durableQueueOptions(this.config.queueType ?? DEFAULT_RABBITMQ_QUEUE_TYPE),
+        );
         await channel.bindQueue(queue, this.config.exchange, '#');
       }
 

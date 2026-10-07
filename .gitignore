@@ -44,3 +44,9 @@ yarn-error.log*
 
 # cópia antiga das skills — usar .claude/skills
 .agents/
+
+# Infra: arquivos de ambiente com valores reais, saída e cache de lookups do CDK
+apps/infra/.env*
+!apps/infra/.env.example
+apps/infra/cdk.out/
+apps/infra/cdk.context.json

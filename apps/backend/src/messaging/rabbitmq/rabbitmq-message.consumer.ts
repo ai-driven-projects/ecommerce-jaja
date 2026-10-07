@@ -15,6 +15,12 @@ import {
   waitQueueOf,
   workQueueOf,
 } from './rabbitmq-queue-names.js';
+import {
+  BROADCAST_QUEUE_OPTIONS,
+  DEFAULT_RABBITMQ_QUEUE_TYPE,
+  durableQueueOptions,
+} from './rabbitmq-queue-type.js';
+import type { RabbitMqQueueType } from './rabbitmq-queue-type.js';
 import { brokerAddress, redactCredentials } from './rabbitmq-url.util.js';
 
 export interface RabbitMqConsumerConfig {
@@ -26,6 +32,8 @@ export interface RabbitMqConsumerConfig {
   readonly prefetch: number;
   // Attempts before the discard, counting the first one.
   readonly maxAttempts: number;
+  // Type of the `work` queues and of their `.wait`/`.dead` (default `classic`).
+  readonly queueType?: RabbitMqQueueType;
 }
 
 // Same pattern of the consumer names (`EventConsumerRegistry`), with a single
@@ -107,6 +115,9 @@ interface ActiveSubscription {
  *   and `x-dead-letter-routing-key: <queue>`: an expired message goes straight
  *   back to `<queue>`, so the other consumers of the event get no copy;
  * - `<queue>.dead`: durable, without arguments: discarded messages for inspection.
+ *
+ * The three `work` queues are of the configured type (`queueType`, see
+ * `rabbitmq-queue-type.ts`): `classic` or `quorum`, with the same behavior.
  *
  * The arguments of the queues are fixed in the code. RabbitMQ does not change
  * the arguments of an existing queue (the declaration fails with
@@ -307,21 +318,23 @@ export class RabbitMqMessageConsumer implements BrokerSubscriber, OnModuleDestro
 
       await current.prefetch(this.config.prefetch);
       await current.assertExchange(this.config.exchange, 'topic', { durable: true });
+      const queueType = this.config.queueType ?? DEFAULT_RABBITMQ_QUEUE_TYPE;
       await current.assertQueue(
         queue,
-        subscription.broadcast
-          ? { durable: false, exclusive: true, autoDelete: true }
-          : { durable: true },
+        subscription.broadcast ? BROADCAST_QUEUE_OPTIONS : durableQueueOptions(queueType),
       );
       for (const routingKey of subscription.routingKeys) {
         await current.bindQueue(queue, this.config.exchange, routingKey);
       }
       if (!subscription.broadcast) {
-        await current.assertQueue(waitQueueOf(queue), {
-          durable: true,
-          arguments: { 'x-dead-letter-exchange': '', 'x-dead-letter-routing-key': queue },
-        });
-        await current.assertQueue(deadQueueOf(queue), { durable: true });
+        await current.assertQueue(
+          waitQueueOf(queue),
+          durableQueueOptions(queueType, {
+            'x-dead-letter-exchange': '',
+            'x-dead-letter-routing-key': queue,
+          }),
+        );
+        await current.assertQueue(deadQueueOf(queue), durableQueueOptions(queueType));
       }
 
       if (this.closed || this.connection !== connection) {

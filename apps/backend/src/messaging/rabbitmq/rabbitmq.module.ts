@@ -7,6 +7,7 @@ import type { BrokerSubscriber } from '../broker/broker-subscriber.js';
 import { readInteger } from '../config.util.js';
 import { RabbitMqMessageConsumer } from './rabbitmq-message.consumer.js';
 import { RabbitMqMessagePublisher } from './rabbitmq-message.publisher.js';
+import { readQueueType } from './rabbitmq-queue-type.js';
 
 const DEFAULT_RABBITMQ_URL = 'amqp://jaja:jaja@localhost:5672';
 const DEFAULT_RABBITMQ_EXCHANGE = 'jaja.events';
@@ -17,7 +18,8 @@ const DEFAULT_CONSUMER_MAX_ATTEMPTS = 5;
 // (`MESSAGE_PUBLISHER`, port of the shared package) and consumption
 // (`BROKER_SUBSCRIBER`, port of the backend). Everything that is RabbitMQ lives
 // in this folder: the settings (`RABBITMQ_*`), the connections, the exchange,
-// the queue names and the `.wait`/`.dead` queues.
+// the queue names and types and the `.wait`/`.dead` queues. An invalid
+// `RABBITMQ_QUEUE_TYPE` throws in the factories and stops the startup.
 //
 // Another broker is another folder with a module that provides the same two
 // tokens; `MessagingModule` imports one of them.
@@ -32,6 +34,7 @@ const DEFAULT_CONSUMER_MAX_ATTEMPTS = 5;
           exchange: rabbitMqExchange(config),
           // Empty: no inspection queue.
           inspectionQueue: config.get<string>('RABBITMQ_INSPECTION_QUEUE')?.trim() || undefined,
+          queueType: readQueueType(config.get<string>('RABBITMQ_QUEUE_TYPE')),
         }),
     },
     {
@@ -54,6 +57,7 @@ const DEFAULT_CONSUMER_MAX_ATTEMPTS = 5;
             1,
             20,
           ),
+          queueType: readQueueType(config.get<string>('RABBITMQ_QUEUE_TYPE')),
         }),
     },
   ],
