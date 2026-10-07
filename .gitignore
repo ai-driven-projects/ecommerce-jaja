@@ -41,3 +41,6 @@ yarn-error.log*
 
 # TypeScript build cache
 *.tsbuildinfo
+
+# cópia antiga das skills — usar .claude/skills
+.agents/
