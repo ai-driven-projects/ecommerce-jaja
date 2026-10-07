@@ -6,6 +6,7 @@ import { CatalogModule } from './modules/catalog/catalog.module.js';
 import { OrdersModule } from './modules/orders/orders.module.js';
 import { StoresModule } from './modules/stores/stores.module.js';
 import { CustomersModule } from './modules/customers/customers.module.js';
+import { DevModule } from './modules/dev/dev.module.js';
 import { SharedModule } from './shared/shared.module.js';
 import { HealthController } from './shared/http/health.controller.js';
 import { DbModule } from './db/db.module.js';
@@ -21,6 +22,7 @@ import { MessagingModule } from './messaging/messaging.module.js';
     OrdersModule,
     CatalogModule,
     AuthModule,
+    DevModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

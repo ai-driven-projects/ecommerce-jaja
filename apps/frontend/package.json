@@ -12,6 +12,7 @@
     "@jaja/auth": "*",
     "@jaja/catalog": "*",
     "@jaja/customers": "*",
+    "@jaja/dev": "*",
     "@jaja/orders": "*",
     "@jaja/stores": "*",
     "@mentoria-360/shared": "*",

@@ -24,6 +24,8 @@ export interface InfraConfig {
   readonly backend: {
     readonly desiredCount: number;
     readonly maxCount: number;
+    /** `DB_POOL_MAX` of each task: connections of its database pool. */
+    readonly dbPoolMax: number;
     readonly cpu: number;
     readonly memory: number;
   };
@@ -40,6 +42,8 @@ export interface InfraConfig {
     readonly corsOrigin: string;
     readonly orderSimulationDelayFactor: string;
     readonly seedOnDeploy: boolean;
+    /** `DEV_TOOLS_ENABLED` of the backend: the admin development tools (load test). */
+    readonly devToolsEnabled: boolean;
   };
   /**
    * Names of the secrets written by the deploy script from the .env values.
@@ -85,6 +89,7 @@ export const INFRA_ENV_KEYS = [
   'BACKEND_MAX_COUNT',
   'BACKEND_CPU',
   'BACKEND_MEMORY',
+  'DB_POOL_MAX',
   'DB_INSTANCE_CLASS',
   'DB_MULTI_AZ',
   'MQ_INSTANCE_TYPE',
@@ -97,6 +102,7 @@ export const INFRA_ENV_KEYS = [
   'CORS_ORIGIN',
   'ORDER_SIMULATION_DELAY_FACTOR',
   'SEED_ON_DEPLOY',
+  'DEV_TOOLS_ENABLED',
 ] as const;
 
 // Values accepted by CloudWatch Logs (and by `RetentionDays` of the CDK).
@@ -189,6 +195,9 @@ export function loadInfraConfig(raw: Record<string, string | undefined>): Loaded
 
   const desiredCount = integer('BACKEND_DESIRED_COUNT', profile.backendDesiredCount, 1, 20);
   const maxCount = integer('BACKEND_MAX_COUNT', Math.max(profile.backendMaxCount, desiredCount), 1, 50);
+  // Connections of the pool of each task (the sum over every task must fit in
+  // `max_connections` of the RDS).
+  const dbPoolMax = integer('DB_POOL_MAX', 10, 1, 100);
   if (maxCount < desiredCount) {
     problems.push(`BACKEND_MAX_COUNT: ${maxCount} menor que BACKEND_DESIRED_COUNT (${desiredCount})`);
   }
@@ -245,6 +254,7 @@ export function loadInfraConfig(raw: Record<string, string | undefined>): Loaded
   }
 
   const seedOnDeploy = boolean('SEED_ON_DEPLOY', false);
+  const devToolsEnabled = boolean('DEV_TOOLS_ENABLED', false);
 
   if (problems.length > 0) throw new InfraConfigError(problems);
 
@@ -263,6 +273,11 @@ export function loadInfraConfig(raw: Record<string, string | undefined>): Loaded
       'SEED_ON_DEPLOY="true": os usuários do seed têm senhas conhecidas e ficarão acessíveis pela API pública enquanto o ambiente existir.',
     );
   }
+  if (devToolsEnabled) {
+    warnings.push(
+      'DEV_TOOLS_ENABLED="true": o teste de carga do admin (/admin/dev) fica ligado e cada pedido do teste é um pedido real, de um cliente ativo qualquer.',
+    );
+  }
 
   const config: InfraConfig = {
     envName,
@@ -273,7 +288,7 @@ export function loadInfraConfig(raw: Record<string, string | undefined>): Loaded
     apiDomainName: `api.${appSubdomain}.${domainName}`,
     size,
     network: { maxAzs: profile.maxAzs },
-    backend: { desiredCount, maxCount, cpu, memory },
+    backend: { desiredCount, maxCount, cpu, memory, dbPoolMax },
     database: { instanceClass: dbInstanceClass, multiAz: dbMultiAz },
     broker: {
       instanceType: mqInstanceType,
@@ -286,6 +301,7 @@ export function loadInfraConfig(raw: Record<string, string | undefined>): Loaded
       corsOrigin: corsOrigin.join(','),
       orderSimulationDelayFactor: delayFactorText || '1',
       seedOnDeploy,
+      devToolsEnabled,
     },
     appSecretNames: {
       ...(jwtSecret ? { jwtSecret: appSecretName(envName, 'jwt-secret') } : {}),

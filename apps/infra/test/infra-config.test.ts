@@ -49,7 +49,7 @@ describe('loadInfraConfig', () => {
       apiDomainName: 'api.jaja.exemplo.com.br',
       size: 'demo',
       network: { maxAzs: 2 },
-      backend: { desiredCount: 1, maxCount: 1, cpu: 512, memory: 1024 },
+      backend: { desiredCount: 1, maxCount: 1, cpu: 512, memory: 1024, dbPoolMax: 10 },
       database: { instanceClass: 't4g.micro', multiAz: false },
       broker: {
         instanceType: 'mq.m7g.medium',
@@ -58,7 +58,7 @@ describe('loadInfraConfig', () => {
         queueType: 'classic',
       },
       logRetentionDays: 3,
-      app: { corsOrigin: '', orderSimulationDelayFactor: '1', seedOnDeploy: false },
+      app: { corsOrigin: '', orderSimulationDelayFactor: '1', seedOnDeploy: false, devToolsEnabled: false },
       appSecretNames: {},
     });
     expect(warnings).toEqual([]);
@@ -67,7 +67,7 @@ describe('loadInfraConfig', () => {
   it('applies the load profile and overrides only the dimension that was given', () => {
     const { config } = loadInfraConfig({ ...BASE, ENV_SIZE: 'load', BACKEND_MAX_COUNT: '10' });
 
-    expect(config.backend).toEqual({ desiredCount: 2, maxCount: 10, cpu: 1024, memory: 2048 });
+    expect(config.backend).toEqual({ desiredCount: 2, maxCount: 10, cpu: 1024, memory: 2048, dbPoolMax: 10 });
     expect(config.database).toEqual({ instanceClass: 'm7g.large', multiAz: true });
     expect(config.broker).toMatchObject({ deploymentMode: 'CLUSTER_MULTI_AZ', queueType: 'quorum' });
     expect(config.network.maxAzs).toBe(3);
@@ -86,6 +86,18 @@ describe('loadInfraConfig', () => {
     expect(loadInfraConfig({ ...BASE, SEED_ON_DEPLOY: 'true' }).warnings).toEqual([
       expect.stringMatching(/senhas conhecidas/),
     ]);
+  });
+
+  it('accepts DB_POOL_MAX from 1 to 100', () => {
+    expect(loadInfraConfig({ ...BASE, DB_POOL_MAX: '30' }).config.backend.dbPoolMax).toBe(30);
+    expect(problemsOf({ ...BASE, DB_POOL_MAX: '0' })).toEqual(['DB_POOL_MAX: "0" inválido (inteiro de 1 a 100)']);
+  });
+
+  it('warns that the load test places real orders', () => {
+    const config = loadInfraConfig({ ...BASE, DEV_TOOLS_ENABLED: 'true' });
+
+    expect(config.config.app.devToolsEnabled).toBe(true);
+    expect(config.warnings).toEqual([expect.stringMatching(/teste de carga/)]);
   });
 
   it('rejects a memory that does not match the CPU and a maximum below the initial count', () => {

@@ -114,6 +114,8 @@ export class JajaStack extends Stack {
         RABBITMQ_ENDPOINT: broker.amqpEndpoint,
         RABBITMQ_QUEUE_TYPE: config.broker.queueType,
         ORDER_SIMULATION_DELAY_FACTOR: config.app.orderSimulationDelayFactor,
+        DB_POOL_MAX: String(config.backend.dbPoolMax),
+        DEV_TOOLS_ENABLED: String(config.app.devToolsEnabled),
         ...(config.app.corsOrigin ? { CORS_ORIGIN: config.app.corsOrigin } : {}),
       },
       secrets: {

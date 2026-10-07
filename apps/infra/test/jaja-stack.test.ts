@@ -202,6 +202,8 @@ describe('BackendService', () => {
       RABBITMQ_QUEUE_TYPE: 'classic',
       CORS_ORIGIN: 'http://localhost:3000',
       ORDER_SIMULATION_DELAY_FACTOR: '0.2',
+      DEV_TOOLS_ENABLED: 'false',
+      DB_POOL_MAX: '10',
     });
     expect(Object.keys(variablesOf(container))).toEqual(expect.arrayContaining(['DB_HOST', 'DB_PORT', 'RABBITMQ_ENDPOINT']));
     expect(secretNamesOf(container)).toEqual([

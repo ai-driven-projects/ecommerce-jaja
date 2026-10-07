@@ -1,4 +1,4 @@
-import { Bike, FolderTree, LayoutDashboard, Package, Store, Tag, Users } from 'lucide-react';
+import { Bike, FlaskConical, FolderTree, LayoutDashboard, Package, Store, Tag, Users } from 'lucide-react';
 import type { SidebarMenuItem, SidebarMenuSection } from '@/shared/components/ui/sidebar-menu.component';
 import { ADMIN_ROUTE } from '@/shared/navigation/admin-routes';
 import {
@@ -8,13 +8,14 @@ import {
   CATALOG_ROUTE,
 } from '@/shared/navigation/catalog-routes';
 import { CUSTOMERS_ROUTE } from '@/shared/navigation/customers-routes';
+import { DEV_ROUTE } from '@/shared/navigation/dev-routes';
 import { ORDERS_ROUTE } from '@/shared/navigation/orders-routes';
 import { STORES_ROUTE } from '@/shared/navigation/stores-routes';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
 /** IDs dos módulos da navegação principal. */
-export type AppModuleId = 'dashboard' | 'orders' | 'catalog' | 'couriers' | 'customers' | 'stores';
+export type AppModuleId = 'dashboard' | 'orders' | 'catalog' | 'couriers' | 'customers' | 'stores' | 'dev';
 
 export type AppSidebarState = {
   activeModuleId: AppModuleId;
@@ -37,6 +38,8 @@ const moduleItems: AppModuleItem[] = [
   { id: 'couriers', label: 'Entregadores', href: `${ADMIN_ROUTE}/couriers`, icon: Bike },
   { id: 'customers', label: 'Clientes', href: CUSTOMERS_ROUTE, icon: Users },
   { id: 'stores', label: 'Lojas', href: STORES_ROUTE, icon: Store },
+  // Ferramentas de desenvolvimento (teste de carga), por último: não é operação.
+  { id: 'dev', label: 'Desenvolvimento', href: DEV_ROUTE, icon: FlaskConical },
 ];
 
 // ── Sub-itens por módulo, agrupados em seções (vazio com uma única tela) ──────
@@ -66,6 +69,7 @@ const sectionsByModuleId: Record<AppModuleId, SidebarMenuSection[]> = {
   couriers: [],
   customers: [],
   stores: [],
+  dev: [],
 };
 
 // ── Funções exportadas ─────────────────────────────────────────────────────────
