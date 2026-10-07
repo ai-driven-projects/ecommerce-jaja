@@ -1,4 +1,5 @@
-import { ArgumentsHost, HttpStatus, NotFoundException } from '@nestjs/common';
+import { ArgumentsHost, HttpStatus, Logger, NotFoundException } from '@nestjs/common';
+import { afterEach, vi } from 'vitest';
 import { ValidationError } from '@mentoria-360/shared';
 import { ApiExceptionFilter } from '../../../src/shared/errors/api-exception.filter.js';
 import { ApiErrorResponse } from '../../../src/shared/errors/api-error-response.type.js';
@@ -21,7 +22,7 @@ function createHost(url = '/resource') {
   const host = {
     switchToHttp: () => ({
       getResponse: () => response,
-      getRequest: () => ({ url }),
+      getRequest: () => ({ url, method: 'POST' }),
     }),
   } as unknown as ArgumentsHost;
 
@@ -79,5 +80,30 @@ describe('ApiExceptionFilter', () => {
       'An unexpected error occurred. Please try again later.',
     ]);
     expect(JSON.stringify(ctx.body)).not.toContain('database exploded');
+  });
+
+  describe('log', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('logs the cause of an unexpected error, which the client never sees', () => {
+      const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      const ctx = createHost('/dev/load-test/orders');
+      const exception = new Error('Unable to start a transaction in the given time.');
+
+      filter.catch(exception, ctx.host);
+
+      expect(error).toHaveBeenCalledWith(
+        'POST /dev/load-test/orders → 500: Error: Unable to start a transaction in the given time.',
+        exception.stack,
+      );
+    });
+
+    it('does not log the expected errors (HttpException, ValidationError)', () => {
+      const error = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
+      filter.catch(new NotFoundException(['ORDER_NOT_FOUND']), createHost().host);
+
+      expect(error).not.toHaveBeenCalled();
+    });
   });
 });

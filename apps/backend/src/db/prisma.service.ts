@@ -20,10 +20,41 @@ export const MAX_DB_POOL_MAX = 100;
  * below `max_connections` of the database.
  */
 export function databasePoolMax(value: string | undefined): number {
+  return integerSetting(value, DEFAULT_DB_POOL_MAX, 1, MAX_DB_POOL_MAX);
+}
+
+// How long a transaction waits for a free connection of the pool before failing
+// (Prisma `maxWait`, whose own default is 2 s). A burst of transactions larger
+// than the pool queues for a connection; with a remote database each one takes
+// longer, and 2 s turned part of a burst of 100 orders into 500s.
+export const DEFAULT_DB_TRANSACTION_MAX_WAIT_MS = 5_000;
+export const MAX_DB_TRANSACTION_MAX_WAIT_MS = 60_000;
+
+/**
+ * `DB_TRANSACTION_MAX_WAIT_MS`: integer from 100 to
+ * `MAX_DB_TRANSACTION_MAX_WAIT_MS`; missing, blank or invalid falls back to
+ * `DEFAULT_DB_TRANSACTION_MAX_WAIT_MS`.
+ */
+export function transactionMaxWaitMs(value: string | undefined): number {
+  return integerSetting(
+    value,
+    DEFAULT_DB_TRANSACTION_MAX_WAIT_MS,
+    100,
+    MAX_DB_TRANSACTION_MAX_WAIT_MS,
+  );
+}
+
+// An integer written only with digits, from `min` to `max`, or `fallback`.
+function integerSetting(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
   const text = typeof value === 'string' ? value.trim() : '';
-  if (!/^\d+$/.test(text)) return DEFAULT_DB_POOL_MAX;
-  const max = Number(text);
-  return max >= 1 && max <= MAX_DB_POOL_MAX ? max : DEFAULT_DB_POOL_MAX;
+  if (!/^\d+$/.test(text)) return fallback;
+  const parsed = Number(text);
+  return parsed >= min && parsed <= max ? parsed : fallback;
 }
 
 @Injectable()
@@ -34,6 +65,9 @@ export class PrismaService
     TransactionManager<PrismaTransactionContext>
 {
   readonly client: PrismaClient;
+  private readonly transactionMaxWaitMs = transactionMaxWaitMs(
+    process.env.DB_TRANSACTION_MAX_WAIT_MS,
+  );
 
   constructor() {
     this.client = new PrismaClient({
@@ -60,8 +94,11 @@ export class PrismaService
   async runInTransaction<T>(
     operation: (context: PrismaTransactionContext) => Promise<T>,
   ): Promise<T> {
-    return this.client.$transaction(async (tx) => {
-      return operation({ client: tx });
-    });
+    return this.client.$transaction(
+      async (tx) => {
+        return operation({ client: tx });
+      },
+      { maxWait: this.transactionMaxWaitMs },
+    );
   }
 }
