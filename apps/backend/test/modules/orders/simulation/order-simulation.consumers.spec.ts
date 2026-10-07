@@ -96,8 +96,10 @@ class FakeRegistry {
 class FakeOrderPrisma {
   order: Order | null = placedOrder();
   readonly updates: { order: Order; tx?: TransactionContext }[] = [];
+  readonly reads: { id: string; tx?: TransactionContext }[] = [];
 
-  async findById(): Promise<Result<Order>> {
+  async findById(id: string, tx?: TransactionContext): Promise<Result<Order>> {
+    this.reads.push({ id, tx });
     return this.order ? Result.ok(this.order) : Result.fail(OrderErrors.ORDER_NOT_FOUND);
   }
 
@@ -236,7 +238,9 @@ describe('OrderSimulationConsumers', () => {
 
     expect(result.isOk).toBe(true);
     expect(result.instance ?? null).toBeNull();
-    expect(transactionManager.calls).toBe(1);
+    // One call to read the order, one to store it: both in the consumer transaction.
+    expect(transactionManager.calls).toBe(2);
+    expect(orderPrisma.reads).toEqual([{ id: ORDER_ID, tx: transactionManager.tx }]);
     expect(orderPrisma.updates).toHaveLength(1);
     const order = orderPrisma.updates[0].order;
     expect(order.status).toBe('PAYMENT_APPROVED');
@@ -330,7 +334,9 @@ describe('OrderSimulationConsumers', () => {
     );
 
     expect(result.isOk).toBe(true);
-    expect(transactionManager.calls).toBe(0);
+    // Only the read, with the connection of the consumer; nothing is written.
+    expect(transactionManager.calls).toBe(1);
+    expect(orderPrisma.reads[0].tx).toBe(transactionManager.tx);
     expect(orderPrisma.updates).toHaveLength(0);
     expect(logged.some((line) => line.level === 'debug' && line.text.includes('C7B8A3D2'))).toBe(
       true,

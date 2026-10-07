@@ -321,11 +321,14 @@ export class OrderPrisma implements OrderRepository {
     });
   }
 
-  async findById(id: string): Promise<Result<Order>> {
+  // With `tx`, reads with the client of that transaction: whoever already holds
+  // a connection (an event consumer) reads the order with it instead of taking a
+  // second one from the pool (see `OrderInTransactionRepository`).
+  async findById(id: string, tx?: TransactionContext): Promise<Result<Order>> {
     return Result.tryAsync(async () => {
       if (!this.isUuid(id)) return Result.fail<Order>(OrderErrors.ORDER_NOT_FOUND);
 
-      const row = await this.prisma.client.order.findFirst({
+      const row = await this.clientFor(tx).order.findFirst({
         where: { id: id.trim(), deletedAt: null },
         include: WITH_ITEMS,
       });

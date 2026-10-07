@@ -7,6 +7,7 @@ import type { TransactionalEventConsumer } from '../../../messaging/consumer/eve
 import { EventConsumerRegistry } from '../../../messaging/consumer/event-consumer.registry.js';
 import { DomainEventPrisma } from '../../../messaging/outbox/domain-event.prisma.js';
 import { OrderPrisma } from '../order.prisma.js';
+import { OrderInTransactionRepository } from './order-in-transaction.repository.js';
 import { ORDER_SIMULATION_STEPS, OrderSimulationStep } from './order-simulation.steps.js';
 
 const DEFAULT_DELAY_FACTOR = 1;
@@ -90,7 +91,8 @@ export class OrderSimulationConsumers implements OnModuleInit {
 
     const result = await step.execute(
       {
-        orderRepository: this.orderPrisma,
+        // Reads the order with the connection of the consumer transaction.
+        orderRepository: new OrderInTransactionRepository(this.orderPrisma, transactionManager),
         domainEventRepository: this.domainEventPrisma,
         transactionManager,
       },

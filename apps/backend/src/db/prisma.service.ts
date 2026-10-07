@@ -7,6 +7,25 @@ export interface PrismaTransactionContext extends TransactionContext {
   client: Prisma.TransactionClient;
 }
 
+// Connections of the pool of each backend instance, the default of `pg`.
+export const DEFAULT_DB_POOL_MAX = 10;
+export const MAX_DB_POOL_MAX = 100;
+
+/**
+ * `DB_POOL_MAX`: connections of the pool of **this instance**, an integer from
+ * 1 to `MAX_DB_POOL_MAX`; missing, blank or invalid falls back to
+ * `DEFAULT_DB_POOL_MAX`. Every transaction (an HTTP command, the outbox relay,
+ * each event being consumed) holds one connection until it ends, so the pool
+ * caps how much runs at the same time. The sum over every instance must stay
+ * below `max_connections` of the database.
+ */
+export function databasePoolMax(value: string | undefined): number {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!/^\d+$/.test(text)) return DEFAULT_DB_POOL_MAX;
+  const max = Number(text);
+  return max >= 1 && max <= MAX_DB_POOL_MAX ? max : DEFAULT_DB_POOL_MAX;
+}
+
 @Injectable()
 export class PrismaService
   implements
@@ -20,6 +39,7 @@ export class PrismaService
     this.client = new PrismaClient({
       adapter: new PrismaPg({
         connectionString: process.env.DATABASE_URL!,
+        max: databasePoolMax(process.env.DB_POOL_MAX),
       }),
     });
   }
