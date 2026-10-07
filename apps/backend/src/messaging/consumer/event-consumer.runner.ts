@@ -1,25 +1,24 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MESSAGE_CONSUMER, Result, ResultError } from '@mentoria-360/shared';
-import type { BrokerMessage, MessageConsumer } from '@mentoria-360/shared';
+import { Result, ResultError } from '@mentoria-360/shared';
+import type { BrokerMessage } from '@mentoria-360/shared';
 import { ActiveTransactionManager } from '../../db/active-transaction.manager.js';
 import { PrismaService } from '../../db/prisma.service.js';
+import { BROKER_SUBSCRIBER } from '../broker/broker-subscriber.js';
+import type { BrokerSubscriber, BrokerSubscription } from '../broker/broker-subscriber.js';
 import { errorMessage } from '../error-message.util.js';
-import type { RabbitMqSubscription } from '../rabbitmq/rabbitmq-message.consumer.js';
 import type { TransactionalEventConsumer } from './event-consumer.js';
 import { EventConsumerRegistry } from './event-consumer.registry.js';
 import { causationOf, ConsumerTransactionContext } from './message-causation.js';
 import { ProcessedMessagePrisma } from './processed-message.prisma.js';
-
-const QUEUE_PREFIX = 'jaja.';
 
 export type ConsumeOutcome = 'processed' | 'duplicate';
 
 // Subscribes the registered consumers when the application starts and runs
 // each message in a single transaction: "processed" mark, handler (use case)
 // and new events of the outbox are committed or rolled back together. Depends
-// only on the `MessageConsumer` port: retries, waits and discards belong to the
-// broker adapter.
+// only on the `BrokerSubscriber` port: queue names, retries, waits and discards
+// belong to the broker adapter.
 @Injectable()
 export class EventConsumerRunner implements OnApplicationBootstrap {
   private readonly logger = new Logger(EventConsumerRunner.name);
@@ -29,15 +28,16 @@ export class EventConsumerRunner implements OnApplicationBootstrap {
     private readonly registry: EventConsumerRegistry,
     private readonly prisma: PrismaService,
     private readonly processedMessages: ProcessedMessagePrisma,
-    @Inject(MESSAGE_CONSUMER) private readonly messageConsumer: MessageConsumer,
+    @Inject(BROKER_SUBSCRIBER) private readonly subscriber: BrokerSubscriber,
     config: ConfigService,
   ) {
     this.enabled = config.get<string>('EVENT_CONSUMERS_ENABLED')?.trim() !== 'false';
   }
 
-  // Runs after every `onModuleInit`, so all the consumers are registered. The
-  // subscriptions do not wait for the broker; a failed one is a programming
-  // error (empty or repeated queue) and stops the startup.
+  // Runs after every `onModuleInit`, so all the consumers are registered. Each
+  // consumer is a `work` subscription named after it. The subscriptions do not
+  // wait for the broker; a failed one is a programming error (invalid or
+  // repeated name) and stops the startup.
   async onApplicationBootstrap(): Promise<void> {
     if (!this.enabled) {
       this.logger.log('Consumo de eventos desligado (EVENT_CONSUMERS_ENABLED=false)');
@@ -46,9 +46,10 @@ export class EventConsumerRunner implements OnApplicationBootstrap {
 
     const consumers = this.registry.list();
     for (const consumer of consumers) {
-      const subscription: RabbitMqSubscription = {
-        queue: `${QUEUE_PREFIX}${consumer.name}`,
-        routingKeys: [consumer.eventType],
+      const subscription: BrokerSubscription = {
+        name: consumer.name,
+        eventTypes: [consumer.eventType],
+        mode: 'work',
         delayMs: consumer.delayMs ?? 0,
         onMessage: async (message) => {
           const result = await this.handle(consumer, message);
@@ -56,10 +57,10 @@ export class EventConsumerRunner implements OnApplicationBootstrap {
         },
       };
 
-      const subscribed = await this.messageConsumer.subscribe(subscription);
+      const subscribed = await this.subscriber.subscribe(subscription);
       if (subscribed.isFailure) {
         throw new Error(
-          `Consumer ${consumer.name} could not subscribe to ${subscription.queue}: ${subscribed.errors.join(', ')}`,
+          `Consumer ${consumer.name} could not subscribe: ${subscribed.errors.join(', ')}`,
         );
       }
     }

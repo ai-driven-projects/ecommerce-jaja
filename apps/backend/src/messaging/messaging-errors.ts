@@ -10,8 +10,8 @@ export const MessagingErrors = {
   // The body received from the broker is not a valid message (JSON with a uuid
   // `messageId`, a `type`, object `payload`/`metadata` and an ISO `occurredAt`).
   MESSAGE_INVALID: 'MESSAGE_INVALID',
-  // Subscription with an empty queue, without routing keys or to a queue that is
-  // already subscribed.
+  // Subscription with an invalid name, a blank event type, an invalid initial
+  // wait (or any wait in `broadcast` mode) or a name that is already subscribed.
   MESSAGE_SUBSCRIPTION_INVALID: 'MESSAGE_SUBSCRIPTION_INVALID',
   // Consumer registered with an invalid name, event type or initial delay.
   EVENT_CONSUMER_INVALID: 'EVENT_CONSUMER_INVALID',

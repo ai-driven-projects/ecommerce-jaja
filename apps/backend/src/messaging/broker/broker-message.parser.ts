@@ -7,16 +7,17 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 const ISO_DATE_TIME_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?$/;
 
-// Turns the body received from the broker into a `BrokerMessage`, the format
-// written by the publisher: JSON with `messageId` (uuid, the id of the event,
+// Turns the body received from the broker (bytes or text, whatever the adapter
+// gets) into a `BrokerMessage`, the format written by the publisher: JSON with `messageId` (uuid, the id of the event,
 // also the key of `processed_messages`), `type` (non-empty text), `payload` and
 // `metadata` (objects; a missing `metadata` becomes `{}`) and `occurredAt` (ISO
 // 8601 date, converted to `Date`). Anything else, invalid JSON included, fails
-// with `MESSAGE_INVALID`: such a message would never succeed.
-export function parseBrokerMessage(content: Buffer): Result<BrokerMessage> {
+// with `MESSAGE_INVALID`: such a message would never succeed. Shared by every
+// broker adapter.
+export function parseBrokerMessage(content: Buffer | string): Result<BrokerMessage> {
   let body: unknown;
   try {
-    body = JSON.parse(content.toString('utf8'));
+    body = JSON.parse(typeof content === 'string' ? content : content.toString('utf8'));
   } catch {
     return Result.fail(MessagingErrors.MESSAGE_INVALID);
   }

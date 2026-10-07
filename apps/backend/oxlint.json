@@ -6,5 +6,35 @@
   },
   "env": {
     "node": true
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "amqplib",
+                "message": "RabbitMQ fica em src/messaging/rabbitmq/. Fora dele, use as portas MESSAGE_PUBLISHER e BROKER_SUBSCRIBER."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/rabbitmq/*"],
+                "message": "RabbitMQ fica em src/messaging/rabbitmq/. Fora dele, use as portas MESSAGE_PUBLISHER e BROKER_SUBSCRIBER."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/messaging/rabbitmq/**/*.ts", "src/messaging/messaging.module.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ]
 }

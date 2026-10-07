@@ -2,24 +2,50 @@
 
 ## Purpose
 
-Define como o backend do Jaja troca mensagens com o broker: as portas de publicação e de consumo, o RabbitMQ como adapter trocável, o formato e a durabilidade das mensagens, as filas de consumo, espera e descarte, as conexões resilientes, a proteção das credenciais e o ambiente local do broker (Docker Compose e CLI).
+Define como o backend do Jaja troca mensagens com o broker: as portas de publicação e de consumo, o RabbitMQ como implementação isolada e trocável, o formato e a durabilidade das mensagens, as filas de consumo, espera e descarte, as conexões resilientes, a proteção das credenciais e o ambiente local do broker (Docker Compose e CLI).
 
 ## Requirements
 
-### Requirement: Publicação pela porta de mensagens com broker trocável
-Todo envio de mensagem do backend MUST passar pela porta de publicação do shared (`MessagePublisher`, token `MESSAGE_PUBLISHER`), e todo consumo MUST passar pela porta de consumo do shared (`MessageConsumer`, token `MESSAGE_CONSUMER`). O RabbitMQ SHALL ser o adapter registrado para as duas portas. Trocar de broker MUST exigir só trocar os providers desses tokens, sem alterar o relay, o registro de eventos, o registro e a execução dos consumidores, `modules/*` ou `packages/shared`. As opções de publicação MUST ser interpretadas de forma genérica: `routingKey`, quando informada, define a chave de roteamento; sem ela, vale o `type` da mensagem.
+### Requirement: Publicação e consumo por portas, com broker trocável
+Todo envio de mensagem do backend MUST passar pela porta de publicação do shared (`MessagePublisher`, token `MESSAGE_PUBLISHER`). Todo consumo MUST passar pela porta de consumo do próprio backend (`BrokerSubscriber`, token `BROKER_SUBSCRIBER`, em `src/messaging/broker/`), que substitui o `MessageConsumer` do shared dentro do backend porque as assinaturas precisam da espera inicial e do modo de difusão, que a porta do shared não tem. `packages/shared` MUST NOT ser alterado por isso.
+
+Uma assinatura (`BrokerSubscription`) MUST ser descrita só em termos do backend, sem nenhum conceito de broker:
+- `name`: nome lógico em segmentos kebab-case separados por ponto (por exemplo, `orders.approve-payment` ou `live`), único por adapter;
+- `eventTypes`: tipos de evento assinados; lista vazia significa todos os eventos;
+- `mode`: `work` (padrão) ou `broadcast`;
+- `delayMs`: espera inicial opcional, só no modo `work`;
+- `onMessage`: o processamento de cada mensagem.
+
+O adapter MUST ser o único a traduzir a assinatura em nomes físicos de fila, ligações, curingas e filas de espera e descarte. Trocar de broker MUST exigir só trocar o módulo do broker importado pelo `MessagingModule`, sem alterar o relay, o registro de eventos, o registro e a execução dos consumidores, o feed ao vivo, o monitoramento, `modules/*` ou `packages/shared`. As opções de publicação MUST ser interpretadas de forma genérica: `routingKey`, quando informada, define a chave de roteamento; sem ela, vale o `type` da mensagem.
 
 #### Scenario: Relay depende só da porta
 - **WHEN** o provider de `MESSAGE_PUBLISHER` é substituído por outra implementação da porta
 - **THEN** o relay publica os eventos por ela sem nenhuma outra mudança de código
 
 #### Scenario: Consumidores dependem só da porta
-- **WHEN** o provider de `MESSAGE_CONSUMER` é substituído por outra implementação da porta
-- **THEN** os consumidores registrados são assinados por ela sem nenhuma outra mudança de código
+- **WHEN** o provider de `BROKER_SUBSCRIBER` é substituído por outra implementação da porta
+- **THEN** os consumidores registrados e o feed ao vivo são assinados por ela sem nenhuma outra mudança de código
+
+#### Scenario: Assinatura sem conceitos de broker
+- **WHEN** o executor dos consumidores assina o consumidor `orders.approve-payment` do evento `order.placed`
+- **THEN** a assinatura enviada à porta tem `name` `orders.approve-payment`, `eventTypes` `["order.placed"]` e `mode` `work`, sem nome de fila, routing key nem curinga
 
 #### Scenario: Routing key padrão
 - **WHEN** uma mensagem do tipo `messaging.test-event` é publicada sem `routingKey` nas opções
 - **THEN** ela é roteada com a chave `messaging.test-event`
+
+### Requirement: Implementação RabbitMQ isolada em uma pasta
+Tudo que é específico do RabbitMQ SHALL ficar em `apps/backend/src/messaging/rabbitmq/`: os adapters de publicação e de consumo, os nomes físicos das filas e o curinga, o tratamento da URL do broker e o `RabbitMqModule`, que lê as variáveis `RABBITMQ_*`, `EVENT_CONSUMER_PREFETCH` e `EVENT_CONSUMER_MAX_ATTEMPTS` e fornece os tokens `MESSAGE_PUBLISHER` e `BROKER_SUBSCRIBER`. O que serve a qualquer broker, como a validação do corpo recebido (`broker-message.parser.ts`, que aceita bytes ou texto), SHALL ficar em `src/messaging/broker/`.
+
+Fora de `src/messaging/rabbitmq/`, o único arquivo de `src/` que MAY importar dessa pasta é `src/messaging/messaging.module.ts`, para escolher o broker, e nenhum arquivo de `src/` fora dela MAY importar `amqplib`. O lint do backend (`npm run lint`, que usa `apps/backend/oxlint.json`) MUST falhar quando essa regra é violada. Outro broker SHALL ser outra pasta com um módulo que fornece os mesmos dois tokens.
+
+#### Scenario: Import proibido
+- **WHEN** um arquivo em `src/messaging/live/` importa `../rabbitmq/rabbitmq-message.consumer.js` ou `amqplib`
+- **THEN** `npm run lint --workspace=@jaja/backend` falha com `no-restricted-imports` apontando esse import
+
+#### Scenario: Troca de broker
+- **WHEN** o `MessagingModule` passa a importar outro módulo que fornece `MESSAGE_PUBLISHER` e `BROKER_SUBSCRIBER`
+- **THEN** o relay, os consumidores e o feed ao vivo usam o novo broker sem outra mudança de código
 
 ### Requirement: Exchange topic durável e roteamento pelo tipo do evento
 O adapter MUST publicar em um exchange do tipo `topic`, durável, cujo nome vem de `RABBITMQ_EXCHANGE` (padrão `jaja.events`), declarado pelo próprio adapter ao conectar. A routing key de cada evento publicado pelo relay MUST ser o `type` do evento, para que consumidores futuros assinem por padrão (por exemplo, `order.*`).
@@ -154,8 +180,8 @@ O `doctor` SHALL verificar se o RabbitMQ local responde, com resultado no máxim
 - **THEN** o CLI informa que o painel não respondeu, sugere `broker:start` e termina com aviso
 
 ### Requirement: Filas de consumo, espera e descarte
-Para cada assinatura na fila `<fila>`, o adapter MUST declarar três filas duráveis:
-- `<fila>`: ligada ao exchange de eventos com cada routing key assinada;
+Uma assinatura `work` de nome `<nome>` MUST virar a fila `<fila>` = `jaja.<nome>`. Cada tipo de evento assinado MUST virar uma routing key; sem tipos de evento, a fila MUST ser ligada com `#`. Para cada assinatura `work`, o adapter MUST declarar três filas duráveis:
+- `<fila>`: ligada ao exchange de eventos com cada routing key;
 - `<fila>.wait`: sem consumidores; mensagens expiradas voltam direto para `<fila>` pelo exchange padrão, sem passar pelo exchange de eventos;
 - `<fila>.dead`: sem consumidores; guarda as mensagens descartadas para inspeção.
 
@@ -167,7 +193,7 @@ A mensagem MUST ser confirmada (ack) só depois do processamento com sucesso, ou
 
 A espera na fila `.wait` MUST usar a expiração por mensagem. Por isso, uma mensagem só expira ao chegar ao início dessa fila, e uma espera longa pode atrasar uma curta que esteja atrás dela.
 
-Uma assinatura com fila vazia, sem routing keys ou com fila já assinada MUST falhar com `MESSAGE_SUBSCRIPTION_INVALID`. Uma assinatura válida MUST ser aceita sem esperar a conexão com o broker.
+Uma assinatura com nome vazio ou fora do padrão, com tipo de evento em branco, com modo desconhecido, com espera inicial inválida ou com nome já assinado MUST falhar com `MESSAGE_SUBSCRIPTION_INVALID`. Uma assinatura válida MUST ser aceita sem esperar a conexão com o broker.
 
 #### Scenario: Topologia de um consumidor
 - **WHEN** o consumidor `orders.approve-payment` do evento `order.placed` é assinado
@@ -181,27 +207,36 @@ Uma assinatura com fila vazia, sem routing keys ou com fila já assinada MUST fa
 - **WHEN** o broker não confirma a republicação de uma mensagem na fila de espera
 - **THEN** a mensagem original é devolvida à fila do consumidor e entregue de novo
 
+#### Scenario: Todos os eventos
+- **WHEN** uma assinatura `work` é pedida sem tipos de evento
+- **THEN** a fila dela é ligada a `jaja.events` só com a chave `#`
+
 #### Scenario: Assinatura repetida
-- **WHEN** a fila `jaja.orders.approve-payment` é assinada duas vezes
+- **WHEN** o nome `orders.approve-payment` é assinado duas vezes
 - **THEN** a segunda assinatura falha com `MESSAGE_SUBSCRIPTION_INVALID`
 
-### Requirement: Assinatura transitória
-O adapter de consumo SHALL aceitar uma assinatura **transitória**, para avisos que não precisam de garantia de entrega. Uma assinatura transitória MUST:
-- declarar a fila como não durável, exclusiva da conexão e removida automaticamente ao fechar, ligada ao exchange de eventos com as routing keys pedidas;
+### Requirement: Assinatura de difusão (broadcast)
+O adapter de consumo SHALL aceitar uma assinatura no modo `broadcast`, para avisos que não precisam de garantia de entrega, em que cada instância do backend recebe a própria cópia de cada mensagem. No RabbitMQ, uma assinatura `broadcast` de nome `<nome>` MUST:
+- usar uma fila própria da instância, `jaja.<nome>.<host>.<pid>.<sufixo aleatório de 6 caracteres>`, só com letras minúsculas, dígitos, ponto e hífen, escolhida uma vez por assinatura e mantida nas reconexões;
+- declarar a fila como não durável, exclusiva da conexão e removida automaticamente ao fechar, ligada ao exchange de eventos com as routing keys dos tipos pedidos (`#` sem tipos);
 - não declarar fila de espera nem de descarte;
 - confirmar (ack) cada mensagem depois do processamento, qualquer que seja o resultado, registrando falhas e corpos inválidos só no log, sem `payload`;
 - ser declarada de novo ao reconectar, sem recuperar as mensagens publicadas durante a queda.
 
-Uma assinatura transitória com espera inicial MUST falhar com `MESSAGE_SUBSCRIPTION_INVALID`. As demais validações de assinatura continuam valendo.
+Uma assinatura `broadcast` com espera inicial MUST falhar com `MESSAGE_SUBSCRIPTION_INVALID`. As demais validações de assinatura continuam valendo.
 
-#### Scenario: Fila transitória
-- **WHEN** o backend assina `jaja.live.host1.4242.ab12cd` de forma transitória com a chave `#`
-- **THEN** a fila existe como não durável e exclusiva, ligada a `jaja.events` com `#`, e não existem `jaja.live.host1.4242.ab12cd.wait` nem `.dead`
+#### Scenario: Fila de difusão
+- **WHEN** o backend, no host `host1` e processo 4242, assina `live` no modo `broadcast` sem tipos de evento
+- **THEN** existe uma fila `jaja.live.host1.4242.<sufixo>` não durável e exclusiva, ligada a `jaja.events` com `#`, sem as filas `.wait` e `.dead`
+
+#### Scenario: Mesma fila depois de reconectar
+- **WHEN** a conexão de consumo cai e volta
+- **THEN** a assinatura `broadcast` declara de novo a mesma fila `jaja.live.host1.4242.<sufixo>`
 
 #### Scenario: Falha não repete a mensagem
-- **WHEN** o processamento de uma mensagem numa assinatura transitória falha
+- **WHEN** o processamento de uma mensagem numa assinatura `broadcast` falha
 - **THEN** a mensagem é confirmada, a falha vai para o log sem o `payload`, e a mensagem não é entregue de novo
 
 #### Scenario: Espera inicial recusada
-- **WHEN** uma assinatura transitória é pedida com espera inicial de 1 000 ms
+- **WHEN** uma assinatura `broadcast` é pedida com espera inicial de 1 000 ms
 - **THEN** a assinatura falha com `MESSAGE_SUBSCRIPTION_INVALID`

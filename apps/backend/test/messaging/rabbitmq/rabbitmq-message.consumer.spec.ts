@@ -3,10 +3,10 @@ import { Logger } from '@nestjs/common';
 import { BrokerMessage, Result } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MessagingErrors } from '../../../src/messaging/messaging-errors.js';
+import type { BrokerSubscription } from '../../../src/messaging/broker/broker-subscriber.js';
 import {
   RabbitMqConsumerConfig,
   RabbitMqMessageConsumer,
-  RabbitMqSubscription,
 } from '../../../src/messaging/rabbitmq/rabbitmq-message.consumer.js';
 
 const { connectMock } = vi.hoisted(() => ({ connectMock: vi.fn() }));
@@ -19,7 +19,8 @@ vi.mock('amqplib', () => ({
 const LOG_LEVELS = ['log', 'error', 'warn', 'debug', 'verbose', 'fatal'] as const;
 const PASSWORD = 's3nh4';
 const URL_WITH_SECRET = `amqp://usuario:${PASSWORD}@localhost:5999`;
-const QUEUE = 'jaja.orders.approve-payment';
+const NAME = 'orders.approve-payment';
+const QUEUE = `jaja.${NAME}`;
 const MESSAGE_ID = '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11';
 const TIMESTAMP = 1_757_853_045;
 
@@ -116,14 +117,17 @@ function createConsumer(overrides: Partial<RabbitMqConsumerConfig> = {}) {
   });
 }
 
-function subscription(overrides: Partial<RabbitMqSubscription> = {}) {
+function subscription(overrides: Partial<BrokerSubscription> = {}) {
   const onMessage = vi.fn<(message: BrokerMessage) => Promise<Result<void>>>(async () =>
     Result.ok(),
   );
-  return {
-    input: { queue: QUEUE, routingKeys: ['order.placed'], onMessage, ...overrides },
+  const input: BrokerSubscription = {
+    name: NAME,
+    eventTypes: ['order.placed'],
     onMessage,
+    ...overrides,
   };
+  return { input, onMessage };
 }
 
 function delivery(
@@ -190,7 +194,7 @@ describe('RabbitMqMessageConsumer', () => {
   });
 
   async function subscribed(
-    overrides: Partial<RabbitMqSubscription> = {},
+    overrides: Partial<BrokerSubscription> = {},
     config: Partial<RabbitMqConsumerConfig> = {},
   ) {
     const consumer = createConsumer(config);
@@ -205,9 +209,9 @@ describe('RabbitMqMessageConsumer', () => {
     await settle();
   }
 
-  it('declares the exchange, the three queues and the bindings, and applies the prefetch', async () => {
+  it('declares the exchange, the three queues of jaja.<name> and one binding per event type, and applies the prefetch', async () => {
     const { result, channel } = await subscribed(
-      { routingKeys: ['order.placed', 'order.paid'] },
+      { eventTypes: ['order.placed', 'order.paid'] },
       { prefetch: 7 },
     );
 
@@ -233,7 +237,7 @@ describe('RabbitMqMessageConsumer', () => {
     const consumer = createConsumer();
 
     await consumer.subscribe(subscription().input);
-    await consumer.subscribe(subscription({ queue: 'jaja.orders.ship-order' }).input);
+    await consumer.subscribe(subscription({ name: 'orders.ship-order' }).input);
     await settle();
 
     expect(connectMock).toHaveBeenCalledTimes(1);
@@ -246,11 +250,12 @@ describe('RabbitMqMessageConsumer', () => {
   });
 
   it.each([
-    { label: 'an empty queue', overrides: { queue: '' } },
-    { label: 'a blank queue', overrides: { queue: '   ' } },
-    { label: 'no routing keys', overrides: { routingKeys: [] } },
-    { label: 'an empty routing key', overrides: { routingKeys: [''] } },
+    { label: 'an empty name', overrides: { name: '' } },
+    { label: 'a blank name', overrides: { name: '   ' } },
+    { label: 'a name outside the pattern', overrides: { name: 'Orders/Approve' } },
+    { label: 'a blank event type', overrides: { eventTypes: [''] } },
     { label: 'a negative delay', overrides: { delayMs: -1 } },
+    { label: 'an unknown mode', overrides: { mode: 'fanout' as BrokerSubscription['mode'] } },
   ])('refuses a subscription with $label', async ({ overrides }) => {
     const consumer = createConsumer();
 
@@ -261,7 +266,15 @@ describe('RabbitMqMessageConsumer', () => {
     expect(connectMock).not.toHaveBeenCalled();
   });
 
-  it('refuses a queue that is already subscribed', async () => {
+  it('binds the queue with # when the subscription has no event types', async () => {
+    const { result, channel } = await subscribed({ eventTypes: [] });
+
+    expect(result.isOk).toBe(true);
+    expect(channel.bindQueue).toHaveBeenCalledTimes(1);
+    expect(channel.bindQueue).toHaveBeenCalledWith(QUEUE, 'jaja.events', '#');
+  });
+
+  it('refuses a name that is already subscribed', async () => {
     const { consumer } = await subscribed();
 
     const result = await consumer.subscribe(subscription().input);
@@ -455,7 +468,7 @@ describe('RabbitMqMessageConsumer', () => {
 
     const first = await consumer.subscribe(subscription().input);
     const second = await consumer.subscribe(
-      subscription({ queue: 'jaja.orders.ship-order' }).input,
+      subscription({ name: 'orders.ship-order' }).input,
     );
     await settle();
 
@@ -526,7 +539,7 @@ describe('RabbitMqMessageConsumer', () => {
   it('sets up again only the subscription whose channel was closed by the broker', async () => {
     const consumer = createConsumer();
     await consumer.subscribe(subscription().input);
-    await consumer.subscribe(subscription({ queue: 'jaja.orders.ship-order' }).input);
+    await consumer.subscribe(subscription({ name: 'orders.ship-order' }).input);
     await settle();
 
     connections[0].channels[0].closeByBroker();
@@ -573,15 +586,18 @@ describe('RabbitMqMessageConsumer', () => {
     expect(connectMock).toHaveBeenCalledTimes(1);
   });
 
-  describe('transient subscription', () => {
-    const LIVE_QUEUE = 'jaja.live.host1.4242.ab12cd';
-    const transient = (overrides: Partial<RabbitMqSubscription> = {}) =>
-      subscribed({ queue: LIVE_QUEUE, routingKeys: ['#'], transient: true, ...overrides });
+  describe('broadcast subscription', () => {
+    const LIVE_QUEUE_PATTERN = new RegExp(`^jaja\\.live\\.[a-z0-9.-]+\\.${process.pid}\\.[a-z0-9]{6}$`);
+    const transient = (overrides: Partial<BrokerSubscription> = {}) =>
+      subscribed({ name: 'live', eventTypes: [], mode: 'broadcast', ...overrides });
+    const queueOf = (channel: FakeChannel) => channel.assertQueue.mock.calls[0][0];
 
-    it('declares only a non-durable, exclusive and auto-deleted queue bound with the keys', async () => {
+    it('declares only a non-durable, exclusive and auto-deleted jaja.<name>.<host>.<pid>.<suffix> queue bound with #', async () => {
       const { result, channel } = await transient();
+      const LIVE_QUEUE = queueOf(channel);
 
       expect(result.isOk).toBe(true);
+      expect(LIVE_QUEUE).toMatch(LIVE_QUEUE_PATTERN);
       expect(channel.assertExchange).toHaveBeenCalledWith('jaja.events', 'topic', { durable: true });
       expect(channel.assertQueue).toHaveBeenCalledTimes(1);
       expect(channel.assertQueue).toHaveBeenCalledWith(LIVE_QUEUE, {
@@ -650,12 +666,11 @@ describe('RabbitMqMessageConsumer', () => {
       expect(warning?.text).not.toContain('not json');
     });
 
-    it('refuses a transient subscription with an initial wait', async () => {
+    it('refuses a broadcast subscription with an initial wait', async () => {
       const consumer = createConsumer();
 
       const result = await consumer.subscribe(
-        subscription({ queue: LIVE_QUEUE, routingKeys: ['#'], transient: true, delayMs: 1_000 })
-          .input,
+        subscription({ name: 'live', eventTypes: [], mode: 'broadcast', delayMs: 1_000 }).input,
       );
 
       expect(result.errors).toEqual([MessagingErrors.MESSAGE_SUBSCRIPTION_INVALID]);
@@ -663,8 +678,9 @@ describe('RabbitMqMessageConsumer', () => {
       expect(connectMock).not.toHaveBeenCalled();
     });
 
-    it('declares the transient queue again after the connection closes', async () => {
+    it('declares the same broadcast queue again after the connection closes', async () => {
       const { channel } = await transient();
+      const LIVE_QUEUE = queueOf(channel);
 
       channel.closeByBroker();
       connections[0].emit('close');

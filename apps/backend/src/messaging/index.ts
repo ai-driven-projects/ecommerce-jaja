@@ -1,5 +1,6 @@
 export * from './messaging.module.js';
 export * from './messaging-errors.js';
+export * from './broker/broker-subscriber.js';
 export * from './outbox/domain-event.prisma.js';
 export * from './consumer/event-consumer.registry.js';
 export * from './live/live-event-feed.js';

@@ -1,12 +1,20 @@
 import { Logger, OnModuleDestroy } from '@nestjs/common';
 import { Result } from '@mentoria-360/shared';
-import type { ConsumeMessageIn, MessageConsumer } from '@mentoria-360/shared';
+import type { BrokerMessage } from '@mentoria-360/shared';
 import amqp from 'amqplib';
 import type { ChannelModel, ConfirmChannel, ConsumeMessage, Options } from 'amqplib';
 import { backoffDelayMs } from '../backoff.js';
+import { parseBrokerMessage } from '../broker/broker-message.parser.js';
+import type { BrokerSubscriber, BrokerSubscription } from '../broker/broker-subscriber.js';
 import { errorMessage } from '../error-message.util.js';
 import { MessagingErrors } from '../messaging-errors.js';
-import { parseBrokerMessage } from './broker-message.parser.js';
+import {
+  broadcastQueueOf,
+  deadQueueOf,
+  routingKeysOf,
+  waitQueueOf,
+  workQueueOf,
+} from './rabbitmq-queue-names.js';
 import { brokerAddress, redactCredentials } from './rabbitmq-url.util.js';
 
 export interface RabbitMqConsumerConfig {
@@ -20,23 +28,28 @@ export interface RabbitMqConsumerConfig {
   readonly maxAttempts: number;
 }
 
-// Subscription accepted by this adapter: the port input plus the optional wait
-// before the first attempt of each message (0 or missing: no wait) and the
-// transient mode.
+// Same pattern of the consumer names (`EventConsumerRegistry`), with a single
+// segment also accepted (e.g. `live`).
+const NAME_PATTERN = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/;
+
+// A `BrokerSubscription` translated into the topology of this adapter.
 //
-// Work queue (default): durable, shared by every instance of the backend (each
-// message goes to **one** of them), with retries (`.wait`), discard (`.dead`)
-// and the idempotency of the consumers. Used by the business consumers.
+// `work` mode: durable queue `jaja.<name>`, shared by every instance of the
+// backend (each message goes to **one** of them), with retries (`.wait`) and
+// discard (`.dead`).
 //
-// Transient queue (`transient: true`): not durable, exclusive to the connection
-// and deleted when it closes, so each instance has its own queue and receives
-// **its own copy** of every message (broadcast). No wait, no retries, no discard:
-// every delivery is confirmed, whatever the result. Used for live notices, which
-// need no delivery guarantee.
-export interface RabbitMqSubscription extends ConsumeMessageIn {
-  readonly delayMs?: number;
-  // A transient subscription with an initial wait (`delayMs` > 0) is invalid.
-  readonly transient?: boolean;
+// `broadcast` mode: queue `jaja.<name>.<host>.<pid>.<suffix>`, not durable,
+// exclusive to the connection and deleted when it closes, so each instance has
+// its own queue and receives **its own copy** of every message. No wait, no
+// retries, no discard: every delivery is confirmed, whatever the result.
+interface QueueSubscription {
+  readonly name: string;
+  readonly queue: string;
+  // The event types, or `#` for every event.
+  readonly routingKeys: string[];
+  readonly delayMs: number;
+  readonly broadcast: boolean;
+  readonly onMessage: BrokerSubscription['onMessage'];
 }
 
 // Control headers of the republished messages.
@@ -71,17 +84,10 @@ interface ActiveSubscription {
   consumerTag: string | null;
 }
 
-export function waitQueueOf(queue: string): string {
-  return `${queue}.wait`;
-}
-
-export function deadQueueOf(queue: string): string {
-  return `${queue}.dead`;
-}
-
 /**
- * RabbitMQ adapter of the `MessageConsumer` port, created by the factory of
- * `MessagingModule`.
+ * RabbitMQ adapter of the `BrokerSubscriber` port, created by `RabbitMqModule`.
+ * It is the only place that turns a subscription into queues, bindings and
+ * wildcards (`rabbitmq-queue-names.ts`).
  *
  * Connection: its own, separate from the publisher (the flow control that
  * blocks a publishing connection must not stop the consumption). It opens on the
@@ -91,11 +97,11 @@ export function deadQueueOf(queue: string): string {
  * reconnection is scheduled; every subscription is set up again on connecting.
  *
  * Topology, per subscription and on its own confirm channel (so a channel error
- * brings down, and sets up again, only that subscription). A transient
+ * brings down, and sets up again, only that subscription). A `broadcast`
  * subscription declares only `<queue>` (`durable: false`, `exclusive: true`,
  * `autoDelete: true`), bound to the exchange with each routing key; it is
  * declared again on every reconnection, and the messages published while the
- * connection was down are lost. A work subscription declares:
+ * connection was down are lost. A `work` subscription declares:
  * - `<queue>`: durable, bound to the exchange with each routing key;
  * - `<queue>.wait`: durable, without consumers, with `x-dead-letter-exchange: ''`
  *   and `x-dead-letter-routing-key: <queue>`: an expired message goes straight
@@ -112,11 +118,13 @@ export function deadQueueOf(queue: string): string {
  * that is behind it. Accepted here: retries wait at most 60 s and the initial
  * wait of a consumer is usually constant.
  */
-export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy {
+export class RabbitMqMessageConsumer implements BrokerSubscriber, OnModuleDestroy {
   private readonly logger = new Logger(RabbitMqMessageConsumer.name);
   // `host:port` of the broker, the only identification that goes to the logs.
   private readonly address: string;
-  private readonly subscriptions = new Map<string, RabbitMqSubscription>();
+  // By physical queue.
+  private readonly subscriptions = new Map<string, QueueSubscription>();
+  private readonly names = new Set<string>();
   private readonly active = new Map<string, ActiveSubscription>();
   private readonly resubscribeTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly resubscribeAttempts = new Map<string, number>();
@@ -132,34 +140,39 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
     this.address = brokerAddress(config.url);
   }
 
-  // Validates and stores the subscription, and returns without waiting for the
-  // broker: the backend never waits for it to start.
-  async subscribe(input: RabbitMqSubscription): Promise<Result<void>> {
-    const queue = typeof input?.queue === 'string' ? input.queue.trim() : '';
-    const routingKeys = Array.isArray(input?.routingKeys) ? input.routingKeys : [];
-    const validKeys = routingKeys.every((key) => typeof key === 'string' && key.trim() !== '');
+  // Validates the subscription, translates it into its queue and routing keys
+  // and returns without waiting for the broker: the backend never waits for it
+  // to start.
+  async subscribe(input: BrokerSubscription): Promise<Result<void>> {
+    const name = typeof input?.name === 'string' ? input.name.trim() : '';
+    const eventTypes = Array.isArray(input?.eventTypes) ? input.eventTypes : [];
+    const validTypes = eventTypes.every((type) => typeof type === 'string' && type.trim() !== '');
+    const mode = input?.mode ?? 'work';
+    const broadcast = mode === 'broadcast';
     const delayMs = input?.delayMs ?? 0;
-    const transient = input?.transient === true;
-    // A transient queue has no `.wait`, so it cannot serve an initial wait.
-    const validDelay = Number.isInteger(delayMs) && delayMs >= 0 && !(transient && delayMs > 0);
+    // A broadcast queue has no `.wait`, so it cannot serve an initial wait.
+    const validDelay = Number.isInteger(delayMs) && delayMs >= 0 && !(broadcast && delayMs > 0);
 
     if (
-      !queue ||
-      !routingKeys.length ||
-      !validKeys ||
+      !NAME_PATTERN.test(name) ||
+      !validTypes ||
+      (mode !== 'work' && !broadcast) ||
       !validDelay ||
       typeof input.onMessage !== 'function' ||
-      this.subscriptions.has(queue)
+      this.names.has(name)
     ) {
       return Result.fail(MessagingErrors.MESSAGE_SUBSCRIPTION_INVALID);
     }
 
+    const queue = broadcast ? broadcastQueueOf(name) : workQueueOf(name);
+    this.names.add(name);
     this.subscriptions.set(queue, {
-      ...input,
+      name,
       queue,
-      routingKeys: [...routingKeys],
+      routingKeys: routingKeysOf(eventTypes),
       delayMs,
-      transient,
+      broadcast,
+      onMessage: input.onMessage,
     });
     if (this.connection) {
       this.startSetup(queue, this.connection);
@@ -296,14 +309,14 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
       await current.assertExchange(this.config.exchange, 'topic', { durable: true });
       await current.assertQueue(
         queue,
-        subscription.transient
+        subscription.broadcast
           ? { durable: false, exclusive: true, autoDelete: true }
           : { durable: true },
       );
       for (const routingKey of subscription.routingKeys) {
         await current.bindQueue(queue, this.config.exchange, routingKey);
       }
-      if (!subscription.transient) {
+      if (!subscription.broadcast) {
         await current.assertQueue(waitQueueOf(queue), {
           durable: true,
           arguments: { 'x-dead-letter-exchange': '', 'x-dead-letter-routing-key': queue },
@@ -386,7 +399,7 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
    * The original is confirmed only after the broker confirms the republication.
    */
   private async deliver(
-    subscription: RabbitMqSubscription,
+    subscription: QueueSubscription,
     channel: ConfirmChannel,
     delivery: ConsumeMessage | null,
   ): Promise<void> {
@@ -399,8 +412,8 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
       return;
     }
 
-    if (subscription.transient) {
-      await this.deliverTransient(subscription, channel, delivery);
+    if (subscription.broadcast) {
+      await this.deliverBroadcast(subscription, channel, delivery);
       return;
     }
 
@@ -420,7 +433,7 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
       }
 
       const message = parsed.instance;
-      const delayMs = subscription.delayMs ?? 0;
+      const { delayMs } = subscription;
       if (delayMs > 0 && headers[RabbitMqConsumerHeaders.DELAYED] !== true) {
         await this.republishAndAck(
           channel,
@@ -481,13 +494,13 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
   }
 
   /**
-   * Handles one delivery of a transient subscription (never rejects): an
+   * Handles one delivery of a broadcast subscription (never rejects): an
    * invalid body is dropped, a valid one goes to `onMessage`, and the delivery
    * is always confirmed (`ack`), so nothing is retried nor discarded to another
    * queue. Failures and invalid bodies go only to the log, without the payload.
    */
-  private async deliverTransient(
-    subscription: RabbitMqSubscription,
+  private async deliverBroadcast(
+    subscription: QueueSubscription,
     channel: ConfirmChannel,
     delivery: ConsumeMessage,
   ): Promise<void> {
@@ -518,8 +531,8 @@ export class RabbitMqMessageConsumer implements MessageConsumer, OnModuleDestroy
 
   // `null` on success; otherwise the codes of the failure.
   private async run(
-    subscription: RabbitMqSubscription,
-    message: Parameters<ConsumeMessageIn['onMessage']>[0],
+    subscription: QueueSubscription,
+    message: BrokerMessage,
   ): Promise<string[] | null> {
     try {
       const result = await subscription.onMessage(message);

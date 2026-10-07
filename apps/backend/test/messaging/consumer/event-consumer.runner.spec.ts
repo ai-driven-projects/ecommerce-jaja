@@ -1,16 +1,10 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  BrokerMessage,
-  ConsumeMessageIn,
-  MessageConsumer,
-  Result,
-  TransactionManager,
-} from '@mentoria-360/shared';
+import { BrokerMessage, Result, TransactionManager } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActiveTransactionManager } from '../../../src/db/active-transaction.manager.js';
 import { PrismaService, PrismaTransactionContext } from '../../../src/db/prisma.service.js';
-import type { RabbitMqSubscription } from '../../../src/messaging/rabbitmq/rabbitmq-message.consumer.js';
+import type { BrokerSubscriber } from '../../../src/messaging/broker/broker-subscriber.js';
 import type { TransactionalEventConsumer } from '../../../src/messaging/consumer/event-consumer.js';
 import { EventConsumerRegistry } from '../../../src/messaging/consumer/event-consumer.registry.js';
 import { EventConsumerRunner } from '../../../src/messaging/consumer/event-consumer.runner.js';
@@ -64,7 +58,7 @@ function consumer(overrides: Partial<TransactionalEventConsumer> = {}) {
 function createRunner(env: Record<string, string | undefined> = {}) {
   const prisma = new FakePrismaService();
   const markProcessed = vi.fn<ProcessedMessagePrisma['markProcessed']>(async () => true);
-  const subscribe = vi.fn<MessageConsumer['subscribe']>(async () => Result.ok());
+  const subscribe = vi.fn<BrokerSubscriber['subscribe']>(async () => Result.ok());
   const registry = new EventConsumerRegistry();
   const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   const runner = new EventConsumerRunner(
@@ -103,7 +97,7 @@ describe('EventConsumerRunner', () => {
     expect(logged.some((line) => line.text.includes('EVENT_CONSUMERS_ENABLED=false'))).toBe(true);
   });
 
-  it('subscribes each consumer to jaja.<name> with its event type and delay', async () => {
+  it('subscribes each consumer as a work subscription with its name, event type and delay', async () => {
     const { runner, registry, subscribe } = createRunner({ EVENT_CONSUMERS_ENABLED: 'true' });
     registry.register(consumer().consumer);
     registry.register(
@@ -113,15 +107,17 @@ describe('EventConsumerRunner', () => {
     await runner.onApplicationBootstrap();
 
     expect(subscribe).toHaveBeenCalledTimes(2);
-    const [first, second] = subscribe.mock.calls.map(([input]) => input as RabbitMqSubscription);
+    const [first, second] = subscribe.mock.calls.map(([input]) => input);
     expect(first).toMatchObject({
-      queue: 'jaja.orders.approve-payment',
-      routingKeys: ['order.placed'],
+      name: 'orders.approve-payment',
+      eventTypes: ['order.placed'],
+      mode: 'work',
       delayMs: 0,
     });
     expect(second).toMatchObject({
-      queue: 'jaja.orders.ship-order',
-      routingKeys: ['order.picked'],
+      name: 'orders.ship-order',
+      eventTypes: ['order.picked'],
+      mode: 'work',
       delayMs: 1_500,
     });
     expect(logged).toContainEqual({ level: 'log', text: '2 consumidor(es) assinado(s)' });
@@ -150,7 +146,7 @@ describe('EventConsumerRunner', () => {
     registry.register(approve);
     await runner.onApplicationBootstrap();
 
-    const { onMessage } = subscribe.mock.calls[0][0] as ConsumeMessageIn;
+    const { onMessage } = subscribe.mock.calls[0][0];
     const result = await onMessage(MESSAGE);
 
     expect(result.isOk).toBe(true);

@@ -32,7 +32,7 @@ Registro com nome, tipo ou espera inválidos MUST falhar com `EVENT_CONSUMER_INV
 - **THEN** o registro falha com `EVENT_CONSUMER_INVALID`
 
 ### Requirement: Fila própria por consumidor
-Ao iniciar, com o consumo ligado, o backend MUST assinar cada consumidor registrado numa fila durável com o nome `jaja.<nome do consumidor>`, ligada ao exchange de eventos com routing key igual ao tipo do evento assinado. Cada consumidor MUST receber a própria cópia de cada evento do tipo assinado, independentemente dos outros consumidores do mesmo tipo. Várias instâncias do backend MUST dividir as mensagens da mesma fila. O backend MUST registrar no log quantos consumidores assinou.
+Ao iniciar, com o consumo ligado, o backend MUST assinar cada consumidor registrado pela porta `BrokerSubscriber` com uma assinatura `work` de nome igual ao do consumidor, o tipo do evento assinado e a espera inicial dele. No RabbitMQ, essa assinatura vira uma fila durável com o nome `jaja.<nome do consumidor>`, ligada ao exchange de eventos com routing key igual ao tipo do evento assinado. Cada consumidor MUST receber a própria cópia de cada evento do tipo assinado, independentemente dos outros consumidores do mesmo tipo. Várias instâncias do backend MUST dividir as mensagens da mesma fila. O backend MUST registrar no log quantos consumidores assinou.
 
 #### Scenario: Dois consumidores do mesmo evento
 - **WHEN** os consumidores `orders.approve-payment` e `orders.notify-customer` assinam `order.placed` e um evento `order.placed` é publicado

@@ -1,5 +1,3 @@
-import { randomBytes } from 'node:crypto';
-import { hostname } from 'node:os';
 import {
   Inject,
   Injectable,
@@ -8,27 +6,27 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MESSAGE_CONSUMER, Result } from '@mentoria-360/shared';
-import type { BrokerMessage, MessageConsumer } from '@mentoria-360/shared';
+import { Result } from '@mentoria-360/shared';
+import type { BrokerMessage } from '@mentoria-360/shared';
 import { Observable, Subject } from 'rxjs';
-import type { RabbitMqSubscription } from '../rabbitmq/rabbitmq-message.consumer.js';
+import { BROKER_SUBSCRIBER } from '../broker/broker-subscriber.js';
+import type { BrokerSubscriber, BrokerSubscription } from '../broker/broker-subscriber.js';
 
-const QUEUE_PREFIX = 'jaja.live';
-// Every event published to the exchange.
-const ALL_EVENTS = '#';
+// Name of the subscription; the adapter makes one queue per instance out of it.
+export const LIVE_SUBSCRIPTION_NAME = 'live';
 
 /**
  * Live feed of the events of this backend instance: **one copy of each event
  * per instance**, only for live notices (e.g. the stream of an order), with no
  * delivery guarantee.
  *
- * On startup, when `LIVE_EVENTS_ENABLED` is not `"false"`, subscribes to a
- * transient queue of its own (`jaja.live.<host>.<pid>.<suffix>`, exclusive and
- * deleted with the connection) bound to every event (`#`), and emits each
- * message received in `events$`, in memory, to every subscriber of this
- * instance. Work queues split the messages between the instances; this queue
- * gives each instance its own copy, so the notice reaches the instance that
- * holds the open connection.
+ * On startup, when `LIVE_EVENTS_ENABLED` is not `"false"`, makes a `broadcast`
+ * subscription to every event (no event types) and emits each message received
+ * in `events$`, in memory, to every subscriber of this instance. `work`
+ * subscriptions split the messages between the instances; `broadcast` gives
+ * each instance its own copy, so the notice reaches the instance that holds the
+ * open connection. How that copy is made (e.g. a queue per instance) is up to
+ * the broker adapter.
  *
  * No idempotency, no retries and no discard: a message published while the
  * instance has no connection to the broker is lost by the feed (the outbox, the
@@ -45,54 +43,40 @@ export class LiveEventFeed implements OnApplicationBootstrap, OnModuleDestroy {
   readonly events$: Observable<BrokerMessage> = this.subject.asObservable();
 
   constructor(
-    @Inject(MESSAGE_CONSUMER) private readonly messageConsumer: MessageConsumer,
+    @Inject(BROKER_SUBSCRIBER) private readonly subscriber: BrokerSubscriber,
     config: ConfigService,
   ) {
     this.enabled = config.get<string>('LIVE_EVENTS_ENABLED')?.trim() !== 'false';
   }
 
   // The subscription does not wait for the broker. A failed one is a
-  // programming error (invalid or repeated queue) and stops the startup.
+  // programming error (invalid or repeated name) and stops the startup.
   async onApplicationBootstrap(): Promise<void> {
     if (!this.enabled) {
       this.logger.log('Feed de eventos ao vivo desligado (LIVE_EVENTS_ENABLED=false)');
       return;
     }
 
-    const queue = liveQueueName();
-    const subscription: RabbitMqSubscription = {
-      queue,
-      routingKeys: [ALL_EVENTS],
-      transient: true,
-      // A notice never fails: the broker always gets the confirmation.
+    const subscription: BrokerSubscription = {
+      name: LIVE_SUBSCRIPTION_NAME,
+      eventTypes: [],
+      mode: 'broadcast',
+      // A notice never fails.
       onMessage: async (message) => {
         this.subject.next(message);
         return Result.ok();
       },
     };
 
-    const subscribed = await this.messageConsumer.subscribe(subscription);
+    const subscribed = await this.subscriber.subscribe(subscription);
     if (subscribed.isFailure) {
-      throw new Error(
-        `Live event feed could not subscribe to ${queue}: ${subscribed.errors.join(', ')}`,
-      );
+      throw new Error(`Live event feed could not subscribe: ${subscribed.errors.join(', ')}`);
     }
-    this.logger.log(`Feed de eventos ao vivo assinado em ${queue}`);
+    this.logger.log('Feed de eventos ao vivo assinado');
   }
 
   // Ends the streams that are still open.
   onModuleDestroy(): void {
     this.subject.complete();
   }
-}
-
-// `jaja.live.<host>.<pid>.<6 random characters>`, only with `[a-z0-9.-]`.
-export function liveQueueName(host = hostname(), pid = process.pid): string {
-  const suffix = randomBytes(3).toString('hex');
-  const safeHost =
-    host
-      .toLowerCase()
-      .replace(/[^a-z0-9.-]+/g, '-')
-      .replace(/^[.-]+|[.-]+$/g, '') || 'host';
-  return `${QUEUE_PREFIX}.${safeHost}.${pid}.${suffix}`;
 }

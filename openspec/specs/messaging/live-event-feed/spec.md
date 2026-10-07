@@ -7,7 +7,7 @@ Define o feed de eventos ao vivo do backend do Jaja: cada instância do backend 
 ## Requirements
 
 ### Requirement: Cópia de todos os eventos por instância
-Com o feed ligado, cada instância do backend SHALL assinar, ao iniciar, uma fila transitória própria com nome no formato `jaja.live.<host>.<pid>.<sufixo aleatório>` (só letras minúsculas, dígitos, ponto e hífen), ligada ao exchange de eventos com a chave `#`. Cada evento publicado MUST chegar a **todas** as instâncias com o feed ligado, e não só a uma delas. O feed MUST entregar cada mensagem recebida, em memória, a todos os interessados da própria instância, e o backend MUST registrar no log a fila assinada.
+Com o feed ligado, cada instância do backend SHALL fazer, ao iniciar, uma assinatura de nome `live` no modo `broadcast`, sem tipos de evento (todos os eventos), pela porta `BrokerSubscriber`. O feed MUST NOT conhecer nomes de fila nem curingas do broker. No RabbitMQ, essa assinatura vira uma fila própria da instância com nome no formato `jaja.live.<host>.<pid>.<sufixo aleatório>` (só letras minúsculas, dígitos, ponto e hífen), ligada ao exchange de eventos com a chave `#`. Cada evento publicado MUST chegar a **todas** as instâncias com o feed ligado, e não só a uma delas. O feed MUST entregar cada mensagem recebida, em memória, a todos os interessados da própria instância, e o backend MUST registrar no log a assinatura do feed e a fila consumida.
 
 #### Scenario: Duas instâncias
 - **WHEN** duas instâncias do backend estão rodando com o feed ligado e um evento é publicado

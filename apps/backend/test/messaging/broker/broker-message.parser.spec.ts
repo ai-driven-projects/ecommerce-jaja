@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MessagingErrors } from '../../../src/messaging/messaging-errors.js';
-import { parseBrokerMessage } from '../../../src/messaging/rabbitmq/broker-message.parser.js';
+import { parseBrokerMessage } from '../../../src/messaging/broker/broker-message.parser.js';
 
 const BODY = {
   messageId: '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11',
@@ -22,6 +22,13 @@ describe('parseBrokerMessage', () => {
       occurredAt: new Date('2026-09-14T12:30:45.678Z'),
     });
     expect(result.instance.occurredAt).toBeInstanceOf(Date);
+  });
+
+  it('parses the same message received as text', () => {
+    const result = parseBrokerMessage(JSON.stringify(BODY));
+
+    expect(result.isOk).toBe(true);
+    expect(result.instance.messageId).toBe(BODY.messageId);
   });
 
   it('turns a missing metadata into an empty object', () => {

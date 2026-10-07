@@ -1,9 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BrokerMessage, ConsumeMessageIn, MessageConsumer, Result } from '@mentoria-360/shared';
+import { BrokerMessage, Result } from '@mentoria-360/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { RabbitMqSubscription } from '../../../src/messaging/rabbitmq/rabbitmq-message.consumer.js';
-import { LiveEventFeed, liveQueueName } from '../../../src/messaging/live/live-event-feed.js';
+import type {
+  BrokerSubscriber,
+  BrokerSubscription,
+} from '../../../src/messaging/broker/broker-subscriber.js';
+import { LiveEventFeed } from '../../../src/messaging/live/live-event-feed.js';
 
 const MESSAGE: BrokerMessage = {
   messageId: '7b0f1c1e-2a57-4d7e-9c3f-0e6f4a0b6a11',
@@ -13,18 +16,18 @@ const MESSAGE: BrokerMessage = {
   occurredAt: new Date('2026-09-17T12:00:00.000Z'),
 };
 
-class FakeMessageConsumer implements MessageConsumer {
-  readonly subscriptions: RabbitMqSubscription[] = [];
+class FakeBrokerSubscriber implements BrokerSubscriber {
+  readonly subscriptions: BrokerSubscription[] = [];
   result: Result<void> = Result.ok();
 
-  async subscribe(input: ConsumeMessageIn): Promise<Result<void>> {
-    this.subscriptions.push(input as RabbitMqSubscription);
+  async subscribe(input: BrokerSubscription): Promise<Result<void>> {
+    this.subscriptions.push(input);
     return this.result;
   }
 }
 
 function createFeed(env: Record<string, string | undefined> = {}) {
-  const consumer = new FakeMessageConsumer();
+  const consumer = new FakeBrokerSubscriber();
   const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   return { feed: new LiveEventFeed(consumer, config), consumer };
 }
@@ -55,7 +58,7 @@ describe('LiveEventFeed', () => {
   });
 
   it.each([undefined, 'true', 'anything'])(
-    'subscribes a transient jaja.live.* queue bound with # when the setting is %s',
+    'makes a broadcast subscription "live" to every event when the setting is %s',
     async (value) => {
       const { feed, consumer } = createFeed({ LIVE_EVENTS_ENABLED: value });
 
@@ -63,25 +66,11 @@ describe('LiveEventFeed', () => {
 
       expect(consumer.subscriptions).toHaveLength(1);
       const [subscription] = consumer.subscriptions;
-      expect(subscription.queue).toMatch(/^jaja\.live\./);
-      expect(subscription.queue).toMatch(/^[a-z0-9.-]+$/);
-      expect(subscription.queue).toMatch(new RegExp(`\\.${process.pid}\\.[a-z0-9]{6}$`));
-      expect(subscription.transient).toBe(true);
+      expect(subscription).toMatchObject({ name: 'live', eventTypes: [], mode: 'broadcast' });
       expect(subscription.delayMs).toBeUndefined();
-      expect(subscription.routingKeys).toEqual(['#']);
-      expect(logged.some((line) => line.includes(subscription.queue))).toBe(true);
+      expect(logged.some((line) => line.includes('Feed de eventos ao vivo assinado'))).toBe(true);
     },
   );
-
-  it('uses a different queue name on each start', () => {
-    expect(liveQueueName('host', 1)).not.toBe(liveQueueName('host', 1));
-  });
-
-  it('keeps only [a-z0-9.-] in the host of the queue name', () => {
-    expect(liveQueueName('Leo_MacBook Pro.local', 4242)).toMatch(
-      /^jaja\.live\.leo-macbook-pro\.local\.4242\.[a-z0-9]{6}$/,
-    );
-  });
 
   it('emits each delivered message in events$ and always confirms it', async () => {
     const { feed, consumer } = createFeed();
