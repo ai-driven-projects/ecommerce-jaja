@@ -47,11 +47,12 @@ export const setupSteps: WizardStep[] = [
   {
     id: 'env',
     label: 'Arquivos .env',
-    description: 'Cria .env do backend e do frontend a partir dos .env.example e confere as chaves',
+    description: 'Cria os .env a partir dos .env.example, acrescenta chaves novas e gera segredos sem valor',
     defaultSelected: true,
     run: async (ctx) => {
-      const { created, issues } = ensureEnvFiles(ctx);
-      const summary = created === 0 ? 'Arquivos .env já existiam' : `${created} arquivo(s) criado(s)`;
+      const { created, repaired, issues } = ensureEnvFiles(ctx);
+      const parts = [created > 0 ? `${created} arquivo(s) criado(s)` : null, repaired > 0 ? `${repaired} arquivo(s) completado(s)` : null].filter(Boolean);
+      const summary = parts.length > 0 ? parts.join(', ') : 'Arquivos .env em dia';
       return issues > 0 ? { status: 'warn', summary: `${summary}; ${issues} pendência(s) para preencher` } : { status: 'ok', summary };
     },
   },
@@ -113,7 +114,7 @@ export const setupSteps: WizardStep[] = [
   {
     id: 'build',
     label: 'Build',
-    description: 'npm run build (turbo) em todos os pacotes',
+    description: 'npm run build (turbo); se falhar, limpa .next/*.tsbuildinfo e tenta de novo',
     defaultSelected: true,
     requires: ['install', 'generate'],
     run: async (ctx) => ((await buildProject(ctx)) ? { status: 'ok', summary: 'Build concluído' } : { status: 'error', summary: 'Build falhou' }),

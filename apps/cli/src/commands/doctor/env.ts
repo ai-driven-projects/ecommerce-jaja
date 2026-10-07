@@ -28,10 +28,18 @@ export interface EnvDiff {
   placeholders: string[];
 }
 
-/** Compara o .env real com o .env.example: chaves faltando e valores não preenchidos. */
+/**
+ * Compara o .env real com o .env.example: chaves faltando e valores não preenchidos.
+ * Chave vazia também no template é opcional (ex.: chave de API que liga um recurso) e não conta.
+ */
 export function diffEnv(example: Record<string, string>, actual: Record<string, string>): EnvDiff {
   const missing = Object.keys(example).filter((key) => !(key in actual));
-  const placeholders = Object.keys(actual).filter((key) => key in example && isPlaceholder(actual[key] ?? ''));
+  const placeholders = Object.keys(actual).filter((key) => {
+    if (!(key in example)) return false;
+    const value = actual[key] ?? '';
+    if (value.trim() === '' && (example[key] ?? '').trim() === '') return false;
+    return isPlaceholder(value);
+  });
   return { missing, placeholders };
 }
 

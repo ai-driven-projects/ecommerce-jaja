@@ -26,6 +26,12 @@ describe('diffEnv', () => {
     const actual = parseEnv('DB_HOST=localhost\nJWT_SECRET=YOUR_SECRET_HERE');
     assert.deepEqual(diffEnv(example, actual), { missing: ['PORT'], placeholders: ['JWT_SECRET'] });
   });
+
+  it('não cobra valor de chave vazia também no template (opcional)', () => {
+    const example = parseEnv('GOOGLE_MAPS_API_KEY=\nDB_HOST=localhost');
+    const actual = parseEnv('GOOGLE_MAPS_API_KEY=\nDB_HOST=');
+    assert.deepEqual(diffEnv(example, actual), { missing: [], placeholders: ['DB_HOST'] });
+  });
 });
 
 describe('parseDatabaseUrl', () => {
