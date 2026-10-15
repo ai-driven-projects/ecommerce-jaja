@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/ui/shared/widgets/price_text.dart';
 import 'package:mobile/ui/shared/widgets/product_card.dart';
 
+import '../support/fake_image_loads.dart';
 import '../support/money.dart';
 import '../support/themed.dart';
 
@@ -91,22 +93,36 @@ void main() {
     });
 
     testWidgets('foto que falha cai na reserva', (tester) async {
-      // O cliente HTTP do `flutter_test` responde 400 a toda requisição; a
-      // resposta chega em tempo real, por isso o `runAsync`.
+      failImageLoad('https://cdn.jaja.test/cafe.png');
+      await tester.pumpWidget(
+        _card(
+          imageUrl: 'https://cdn.jaja.test/cafe.png',
+          emoji: '☕',
+          tint: ProductArtTint.peach,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CachedNetworkImage), findsOneWidget);
+      expect(find.text('☕'), findsOneWidget);
+      expect(_tintBehind(tester, '☕'), 0xFFFFF1E6);
+    });
+
+    testWidgets('enquanto a foto chega, área branca sem emoji', (tester) async {
+      holdImageLoad('https://cdn.jaja.test/cafe.png');
       await tester.pumpWidget(
         _card(imageUrl: 'https://cdn.jaja.test/cafe.png', emoji: '☕'),
       );
-      expect(find.byType(Image), findsOneWidget);
+      await tester.pumpAndSettle();
+
       expect(find.text('☕'), findsNothing);
-
-      for (var i = 0; i < 50 && find.text('☕').evaluate().isEmpty; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 20)),
-        );
-        await tester.pump();
-      }
-
-      expect(find.text('☕'), findsOneWidget);
+      final area = tester.widget<ColoredBox>(
+        find.descendant(
+          of: find.byType(CachedNetworkImage),
+          matching: find.byType(ColoredBox),
+        ),
+      );
+      expect(area.color.toARGB32(), 0xFFFFFFFF);
     });
   });
 

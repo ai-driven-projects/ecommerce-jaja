@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../modules/catalog/provider/catalog_repository.dart';
 import '../../modules/store/provider/store_repository.dart';
+import '../../ui/modules/catalog/view_models/home_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
+import '../catalog/api_catalog_repository.dart';
 import '../http/api_client.dart';
 import '../storage/key_value_store.dart';
 import '../storage/shared_preferences_key_value_store.dart';
@@ -24,6 +27,9 @@ void configureDependencies({required Uri apiBaseUrl}) {
   getIt.registerLazySingleton<StoreRepository>(
     () => ApiStoreRepository(getIt<Dio>(), getIt<KeyValueStore>()),
   );
+  getIt.registerLazySingleton<CatalogRepository>(
+    () => ApiCatalogRepository(getIt<Dio>()),
+  );
   registerViewModels();
 }
 
@@ -34,6 +40,9 @@ void configureDependencies({required Uri apiBaseUrl}) {
 void registerViewModels() {
   getIt.registerFactory<StoreSelectorViewModel>(
     () => StoreSelectorViewModel(getIt<StoreRepository>()),
+  );
+  getIt.registerFactory<HomeViewModel>(
+    () => HomeViewModel(getIt<CatalogRepository>()),
   );
 }
 

@@ -23,6 +23,14 @@ o value object `CityState` em `core/value_objects/`, o DTO de `GET /storefront/s
 `KeyValueStore` sobre `shared_preferences` (`lib/infra/storage/`), o `ApiStoreRepository` (`lib/infra/store/`),
 o primeiro ViewModel com `watch_it` e o seletor de loja no topo da aba Início (`lib/ui/modules/store/`), o
 `registerViewModels()` na DI e a regra E da barreira.
+Etapa 5: já existem o domínio do catálogo (`lib/modules/catalog/`: `Category`, `ProductSummary`,
+`ProductPage`, `ProductQuery`/`ProductSort` em `freezed`, `encodeProductQuery`/`decodeProductQuery`, as
+consultas da Início em `home_catalog.dart` e o contrato `CatalogRepository`), os DTOs de
+`GET /storefront/categories` e `GET /storefront/products` (`lib/infra/api/`), o `ApiCatalogRepository`
+(`lib/infra/catalog/`), a aba Início completa (`HomeViewModel`, `BlockState` e `categoryArtOf` em
+`lib/ui/modules/catalog/view_models/`, os widgets de `lib/ui/modules/catalog/widgets/`), as rotas
+`/home/product/:slug` (com a `ProductPage` provisória, widget homônimo da entidade; a etapa 7 a substitui) e
+`/search?…` com o filtro decodificado, o `ProductArt` com `cached_network_image` e a regra F da barreira.
 
 ## Arquitetura
 
@@ -118,6 +126,14 @@ test/             # espelha lib/ (nunca teste ao lado do código)
   `show WatchingStatefulWidget, watchPropertyValue`), nunca sem `show`, com `hide` nem trazendo `di`, `sl`
   ou `GetIt`: o `watch_it` reexporta o `get_it`, e sem o `show` o localizador entraria nas telas por fora da
   regra D. Qualquer diretiva fora disso faz o `flutter test` falhar com arquivo, linha e o import.
+- **`cached_network_image` só em `lib/ui/`** (regra F da barreira, `ImportRule.imagePackageConfinement`):
+  o cache de fotos abre banco e pasta do aparelho por baixo, então repositório e DTO transportam só a URL
+  (`thumbUrl`) e quem desenha a foto é o `ProductArt` (`CachedNetworkImage`: placeholder em branco, falha
+  cai na reserva com emoji). Qualquer arquivo fora de `lib/ui/` que importe o pacote faz o `flutter test`
+  falhar com arquivo, linha e o import. Nos testes nenhuma foto carrega de verdade: todo teste que monta um
+  card com `thumbUrl` chama `holdImageLoad(url)`/`failImageLoad(url)`
+  (`test/ui/shared/support/fake_image_loads.dart`) antes do `pumpWidget`, ou zera a URL com `copyWith`;
+  sem isso o cache do aparelho é acionado e o teste cai com `MissingPluginException` depois de terminar.
 - **ViewModels na DI:** `configureDependencies` registra a infraestrutura (lazy singletons) e termina chamando
   `registerViewModels()`, público, que registra cada ViewModel com `registerFactory`. Etapa nova acrescenta
   o seu ViewModel ali. Testes de app e de rotas registram o repositório fake com
@@ -139,6 +155,13 @@ test/             # espelha lib/ (nunca teste ao lado do código)
   redirecionado para `/home` e `NotFoundPage` para rota desconhecida. Em `ui/`, só o
   `AppNavigationShell` importa `go_router` (pelo `StatefulNavigationShell`); páginas recebem navegação por
   callback, como a `NotFoundPage`.
+- **Filtros de produtos têm uma codificação só:** `encodeProductQuery`/`decodeProductQuery`
+  (`lib/modules/catalog/model/product_query_params.dart`), com os nomes de chave que o
+  `StorefrontController` aceita (`category`, `brand`, `search`, `onSale`, `featured`, `sort`, `page`,
+  `pageSize`, `minPriceCents`, `maxPriceCents`), servem tanto ao `queryParameters` de
+  `GET /storefront/products` quanto à rota `/search?…` (`AppRoutes.searchLocation(ProductQuery)` ao ir e
+  `decodeProductQuery(state.uri.queryParameters)` no `builder` da rota). Nunca monte query string à mão nem
+  invente nome de parâmetro; valor inválido é ignorado em silêncio, como o controller e o web.
 - **Página provisória:** `Scaffold` + `SafeArea` + `PlaceholderBody(title:)`, na pasta `pages/` do domínio
   dono da aba (`catalog`, `cart`, `auth`). A etapa da funcionalidade troca a página; o `PlaceholderBody` sai
   quando não sobrar consumidor.
@@ -167,6 +190,13 @@ Todo bloco que mostra dado buscado da rede segue a mesma regra, sem variação p
   para falha de busca.
 - **Vazio:** mensagem curta com **uma ação** (ex.: "Ver catálogo").
 - "Tentar de novo" refaz só o que falhou; puxar a tela refaz tudo.
+- **Forma do bloco no ViewModel:** cada bloco remoto é um `BlockState<T>` (`sealed class` em
+  `lib/ui/modules/catalog/view_models/block_state.dart`: `BlockLoading`, `BlockFailed(failure)`,
+  `BlockLoaded(value)`), exposto como propriedade própria do ViewModel (não o `result` do `Command`),
+  observado com `watchPropertyValue` e consumido por `switch` exaustivo (a `HomeSection` é o molde:
+  skeleton, `StateErrorBanner` com "Tentar de novo", nada quando carregado e vazio, conteúdo). Tela nova
+  com bloco remoto reusa esse `sealed class`; com o segundo consumidor fora do catálogo, ele sobe para
+  `ui/shared/` sem mudar de forma.
 
 ## Convenções
 
@@ -233,6 +263,12 @@ Onde fica cada coisa do tema (`lib/ui/shared/theme/`):
 - **Tema:** só claro (`AppTheme.light()`, `themeMode: ThemeMode.light`, sem `darkTheme`), como o web.
 - **Preço:** `formatMoney(Money)` em `lib/ui/shared/formatters/` → `R$ 1.290,90`, idêntico ao
   `formatPrice` do web (espaço comum, nunca U+00A0). Nunca formate preço em `core/` nem à mão.
+- **Emoji e tom de categoria:** só por `categoryArtOf(rootSlug)`
+  (`lib/ui/modules/catalog/view_models/category_art.dart`, cópia de `category-art.ts` do web, chaveada pelo
+  slug da **raiz**), que devolve `CategoryArt(emoji, tint: ProductArtTint)` e `defaultCategoryArt`
+  (🛒/verde) para raiz desconhecida. Chips de categoria, reserva do card sem foto e cartões de categoria
+  passam por ela; nenhum widget mapeia slug para emoji ou cor por conta própria, e os tons continuam sendo
+  os `ProductArtTint` do tema (regra C).
 
 **Conflito conhecido:** `openspec/specs/shared/design-system` descreve um visual antigo (vermelho `#ec3013`,
 Archivo, IBM Plex Mono, cantos retos) que o web não usa mais. Vale o código do web (`globals.css`,
@@ -288,6 +324,17 @@ specs em `openspec/specs/<domínio>/`.
   (a mesma do web) via `StoreRepository.readChosenSlug`/`rememberChosenSlug`. A escolha **nunca vai para a
   API** — não muda catálogo, preço nem disponibilidade; só alimenta o seletor e a cidade/UF (`Store.place`,
   `CityState`) dos dados de entrega.
+- **Catálogo:** árvore de `GET /storefront/categories` e páginas de `GET /storefront/products` (públicos,
+  sem token), só pelo `CatalogRepository`. A Início usa exatamente as consultas do `StorefrontHome` do web
+  (`lib/modules/catalog/model/home_catalog.dart`): `homeFeaturedQuery` (`featured=true&sort=featured&
+  pageSize=12`), `homeOffersQuery` (`onSale=true&sort=discount&pageSize=8`) e até 12 categorias em destaque
+  por `highlightedCategories` (destaque com `productCount > 0`, em pré-ordem). Seção carregada e vazia
+  **some** (sem título nem "Ver tudo →"); só com os três blocos vazios entra o `EmptyState` "Nada por aqui.
+  Já já." com "Ver catálogo". A árvore de categorias do primeiro sucesso fica guardada **enquanto o app
+  está aberto** (`fetchCategories(refresh: true)` só ao puxar a tela; falha não é guardada); páginas de
+  produtos **nunca** são guardadas. Chip e cartão de categoria abrem a Buscar filtrada
+  (`onOpenSearch(ProductQuery)`), card de produto abre `/home/product/:slug` (`onOpenProduct(slug)`) — a
+  página só navega por callback.
 - **Dados de entrega:** `GET/PUT /me/customer` com endereço em texto, **sem mapa**. Ao salvar, preserve a
   `location` vinda do backend; cliente novo vai com `location: null`.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o

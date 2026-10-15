@@ -46,11 +46,18 @@ const bindingAllowedPrefixes = {'ui/', 'app/'};
 const bindingShowRequiredPrefixes = {'ui/'};
 const bindingForbiddenNames = {'di', 'sl', 'GetIt'};
 
+/// Regra F: o pacote de imagens de rede com cache, confinado a `lib/ui`. O
+/// cache traz banco e pasta do aparelho por baixo; repositório e DTO entregam
+/// só a URL, e quem desenha a foto é a UI.
+const imagePackages = {'cached_network_image'};
+const imageLayer = 'ui';
+
 enum ImportRule {
   purity,
   infraConfinement,
   locatorConfinement,
   bindingConfinement,
+  imagePackageConfinement,
 }
 
 /// Combinadores (`show`/`hide`) de um `import` ou `export`.
@@ -148,7 +155,7 @@ List<ImportViolation> scanDirectory(
 /// string não é diretiva e não conta. Cada regra só se aplica aos arquivos da
 /// sua camada (Regra A em `core`/`modules`, Regra B fora de `infra`, Regra D
 /// fora de `infra/di` e `app`, Regra E fora de `ui` e `app` — e dentro de `ui`
-/// olhando os combinadores).
+/// olhando os combinadores —, Regra F fora de `ui`).
 List<ImportViolation> scanSource({
   required String filePath,
   required String source,
@@ -279,6 +286,9 @@ bool _breaks(
       final shownNames = combinators.shownNames;
       if (shownNames == null || combinators.hidesNames) return true;
       return shownNames.any(bindingForbiddenNames.contains);
+    case ImportRule.imagePackageConfinement:
+      if (fromLayer == imageLayer) return false;
+      return target is PackageTarget && imagePackages.contains(target.package);
   }
 }
 

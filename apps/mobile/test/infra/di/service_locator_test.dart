@@ -1,11 +1,15 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/infra/catalog/api_catalog_repository.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/infra/storage/key_value_store.dart';
 import 'package:mobile/infra/store/api_store_repository.dart';
+import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
+import 'package:mobile/ui/modules/catalog/view_models/home_view_model.dart';
 import 'package:mobile/ui/modules/store/view_models/store_selector_view_model.dart';
 
+import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 
 void main() {
@@ -57,18 +61,44 @@ void main() {
 
       expect(identical(first, second), isFalse);
     });
+
+    test('registra o CatalogRepository da API como singleton: a árvore '
+        'guardada vale para o app inteiro', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      expect(getIt<CatalogRepository>(), isA<ApiCatalogRepository>());
+      expect(
+        identical(getIt<CatalogRepository>(), getIt<CatalogRepository>()),
+        isTrue,
+      );
+    });
+
+    test('o HomeViewModel é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final first = getIt<HomeViewModel>();
+      final second = getIt<HomeViewModel>();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      expect(identical(first, second), isFalse);
+    });
   });
 
   group('registerViewModels', () {
-    test('registra os ViewModels sobre o repositório já registrado, sem Dio '
-        'nem armazenamento', () {
+    test('registra os ViewModels sobre os repositórios já registrados, sem '
+        'Dio nem armazenamento', () {
       getIt.registerSingleton<StoreRepository>(FakeStoreRepository());
+      getIt.registerSingleton<CatalogRepository>(FakeCatalogRepository());
 
       registerViewModels();
 
-      final viewModel = getIt<StoreSelectorViewModel>();
-      addTearDown(viewModel.dispose);
-      expect(viewModel, isA<StoreSelectorViewModel>());
+      final storeSelector = getIt<StoreSelectorViewModel>();
+      final home = getIt<HomeViewModel>();
+      addTearDown(storeSelector.dispose);
+      addTearDown(home.dispose);
+      expect(storeSelector, isA<StoreSelectorViewModel>());
+      expect(home, isA<HomeViewModel>());
       expect(getIt.isRegistered<Dio>(), isFalse);
       expect(getIt.isRegistered<KeyValueStore>(), isFalse);
     });
@@ -81,6 +111,8 @@ void main() {
 
     expect(getIt.isRegistered<Dio>(), isFalse);
     expect(getIt.isRegistered<StoreRepository>(), isFalse);
+    expect(getIt.isRegistered<CatalogRepository>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
+    expect(getIt.isRegistered<HomeViewModel>(), isFalse);
   });
 }

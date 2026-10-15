@@ -107,6 +107,13 @@ extension AppTextStyles on TextTheme {
   /// Emoji do estado vazio (`text-[40px]` do `empty-list-state`).
   TextStyle get emptyEmoji => bodyLarge!.copyWith(fontSize: 40, height: 1);
 
+  /// Emoji do cartão de categoria da Início (`text-2xl leading-none`).
+  TextStyle get tileEmoji => bodyLarge!.copyWith(fontSize: 24, height: 1);
+
+  /// Legenda com contagem (`text-[12.5px] tabular-nums`: "12 produtos").
+  TextStyle get countCaption =>
+      bodySmall!.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
   // Troca o peso e o eixo `wght` juntos (fonte variável, ver acima).
   static TextStyle _withWeight(TextStyle style, FontWeight weight) =>
       style.copyWith(

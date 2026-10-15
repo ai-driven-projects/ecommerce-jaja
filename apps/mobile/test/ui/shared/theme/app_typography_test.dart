@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/ui/shared/theme/app_fonts.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
+import 'package:mobile/ui/shared/theme/app_typography.dart';
 
 double? _wght(TextStyle style) => style.fontVariations
     ?.firstWhere((variation) => variation.axis == 'wght')
@@ -68,4 +69,17 @@ void main() {
       expect(_wght(style), 700);
     }
   });
+
+  test(
+    'emoji do cartão de categoria em 24 e contagem em algarismos tabulares',
+    () {
+      expect(textTheme.tileEmoji.fontSize, 24);
+      expect(textTheme.tileEmoji.height, 1);
+      expect(textTheme.countCaption.fontSize, textTheme.bodySmall!.fontSize);
+      expect(
+        textTheme.countCaption.fontFeatures,
+        contains(const FontFeature.tabularFigures()),
+      );
+    },
+  );
 }

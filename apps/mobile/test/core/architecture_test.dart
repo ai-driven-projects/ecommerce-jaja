@@ -106,6 +106,34 @@ void main() {
       );
     });
 
+    test('cached_network_image só em lib/ui', () {
+      final scanned = dartFilesIn('lib').where(
+        (file) => imagePackages.any(
+          (package) => file.readAsStringSync().contains('package:$package/'),
+        ),
+      );
+      expect(
+        scanned,
+        isNotEmpty,
+        reason:
+            'Nenhum arquivo de lib importa cached_network_image — a barreira '
+            'não verificou nada.',
+      );
+
+      final violations = scanDirectory(
+        'lib',
+        rules: {ImportRule.imagePackageConfinement},
+      );
+
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'Pacote de imagens de rede fora de lib/ui:\n'
+            '${violations.join('\n')}',
+      );
+    });
+
     test('pages e widgets de lib/ui tiram cor, tipografia e raio do tema', () {
       final scanned = dartFilesIn(
         'lib/ui',
@@ -374,7 +402,7 @@ void main() {
       final violations = _scan(
         pagePath,
         "import 'package:flutter/material.dart';\n"
-            "import '$watchItUri' show WatchingWidget, watchPropertyValue;\n",
+        "import '$watchItUri' show WatchingWidget, watchPropertyValue;\n",
         ImportRule.bindingConfinement,
       );
 
@@ -385,7 +413,7 @@ void main() {
       final violations = _scan(
         pagePath,
         "import 'package:flutter/material.dart';\n"
-            "import '$watchItUri';\n",
+        "import '$watchItUri';\n",
         ImportRule.bindingConfinement,
       );
 
@@ -476,7 +504,7 @@ void main() {
       final violations = _scan(
         pagePath,
         "import 'package:flutter/material.dart';\n"
-            "import 'package:intl/intl.dart';\n",
+        "import 'package:intl/intl.dart';\n",
         ImportRule.bindingConfinement,
       );
 
@@ -490,6 +518,96 @@ void main() {
       );
 
       expect(violations.map((v) => v.rule), [ImportRule.bindingConfinement]);
+    });
+  });
+
+  group('Regra F: pacote de imagens de rede confinado', () {
+    const imageImport =
+        "import 'package:cached_network_image/cached_network_image.dart';";
+
+    test('cached_network_image num widget de lib/ui é aceito', () {
+      final violations = _scan(
+        'lib/ui/shared/widgets/x.dart',
+        "import 'package:flutter/material.dart';\n$imageImport\n",
+        ImportRule.imagePackageConfinement,
+      );
+
+      expect(violations, isEmpty);
+    });
+
+    test('cached_network_image em lib/infra/catalog é violação com arquivo e '
+        'linha', () {
+      final violations = _scan(
+        'lib/infra/catalog/x.dart',
+        "import 'package:dio/dio.dart';\n$imageImport\n",
+        ImportRule.imagePackageConfinement,
+      );
+
+      expect(violations, hasLength(1));
+      expect(violations.single.rule, ImportRule.imagePackageConfinement);
+      expect(
+        violations.single.toString(),
+        'lib/infra/catalog/x.dart:2 → $imageImport',
+      );
+    });
+
+    for (final filePath in [
+      'lib/app/x.dart',
+      'lib/modules/catalog/x.dart',
+      'lib/main_dev.dart',
+      '/projeto/apps/mobile/lib/infra/catalog/x.dart',
+    ]) {
+      test('cached_network_image em $filePath é violação', () {
+        final violations = _scan(
+          filePath,
+          '$imageImport\n',
+          ImportRule.imagePackageConfinement,
+        );
+
+        expect(violations, hasLength(1));
+        expect(violations.single.rule, ImportRule.imagePackageConfinement);
+      });
+    }
+
+    test('caminho absoluto de widget também é aceito', () {
+      final violations = _scan(
+        '/projeto/apps/mobile/lib/ui/modules/catalog/widgets/x.dart',
+        '$imageImport\n',
+        ImportRule.imagePackageConfinement,
+      );
+
+      expect(violations, isEmpty);
+    });
+
+    test('export do pacote fora de lib/ui também é pego', () {
+      final violations = _scan(
+        'lib/infra/catalog/x.dart',
+        "export 'package:cached_network_image/cached_network_image.dart';\n",
+        ImportRule.imagePackageConfinement,
+      );
+
+      expect(violations, hasLength(1));
+    });
+
+    test('a regra F não olha outros pacotes', () {
+      final violations = _scan(
+        'lib/infra/catalog/x.dart',
+        "import 'package:dio/dio.dart';\nimport 'package:intl/intl.dart';\n",
+        ImportRule.imagePackageConfinement,
+      );
+
+      expect(violations, isEmpty);
+    });
+
+    test('a regra F está no conjunto padrão', () {
+      final violations = scanSource(
+        filePath: 'lib/infra/catalog/x.dart',
+        source: '$imageImport\n',
+      );
+
+      expect(violations.map((v) => v.rule), [
+        ImportRule.imagePackageConfinement,
+      ]);
     });
   });
 
