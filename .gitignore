@@ -50,3 +50,6 @@ apps/infra/.env*
 !apps/infra/.env.example
 apps/infra/cdk.out/
 apps/infra/cdk.context.json
+
+# loops de desenvolvimento (CLI): logs, streams e travas de cada execução
+openspec/loops/*/.execucao/

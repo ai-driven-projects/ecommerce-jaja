@@ -7,6 +7,7 @@ import { Header } from './Header.js';
 import { JourneyScreen } from './JourneyScreen.js';
 import { Palette } from './Palette.js';
 import { RunScreen } from './RunScreen.js';
+import { SCREENS } from './screens.js';
 import { WizardScreen } from './WizardScreen.js';
 
 interface Props {
@@ -23,6 +24,7 @@ type Screen =
   | { kind: 'menu'; parent: Command | null }
   | { kind: 'wizard'; command: Command }
   | { kind: 'journey'; command: Command }
+  | { kind: 'screen'; command: Command }
   | { kind: 'run'; command: Command; selection?: string[]; abort: AbortController; result: CommandResult | null; key: number };
 
 export function App({ project, registry, version, yes, dryRun, options }: Props) {
@@ -34,6 +36,8 @@ export function App({ project, registry, version, yes, dryRun, options }: Props)
   const search = useCallback((query: string) => registry.filter(query), [registry]);
 
   useInput((_input, key) => {
+    // telas próprias cuidam das teclas (inclusive Esc) e chamam onExit para voltar
+    if (screen.kind === 'screen') return;
     if (screen.kind === 'run') {
       if (screen.result === null) {
         if (key.escape) screen.abort.abort();
@@ -52,6 +56,7 @@ export function App({ project, registry, version, yes, dryRun, options }: Props)
     if (command.kind === 'menu') push({ kind: 'menu', parent: command });
     else if (command.kind === 'wizard') push({ kind: 'wizard', command });
     else if (command.kind === 'journey') push({ kind: 'journey', command });
+    else if (command.kind === 'screen' && SCREENS[command.id]) push({ kind: 'screen', command });
     else push({ kind: 'run', command, abort: new AbortController(), result: null, key: Date.now() });
   };
 
@@ -78,6 +83,8 @@ export function App({ project, registry, version, yes, dryRun, options }: Props)
         />
       ) : screen.kind === 'wizard' ? (
         <WizardScreen command={screen.command} onRun={(selection) => runWizard(screen.command, selection)} />
+      ) : screen.kind === 'screen' ? (
+        (SCREENS[screen.command.id]?.({ project, onExit: pop }) ?? null)
       ) : screen.kind === 'journey' ? (
         <JourneyScreen command={screen.command} project={project} dryRun={dryRun} onRun={(selection) => runJourney(screen.command, selection)} />
       ) : (

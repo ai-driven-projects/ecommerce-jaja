@@ -8,7 +8,7 @@ describe('createCommands', () => {
     const registry = createRegistry(createCommands());
     assert.deepEqual(
       registry.roots().map((command) => command.id),
-      ['doctor', 'setup', 'db', 'broker', 'scrape', 'quality', 'clean', 'deploy', 'monitor'],
+      ['doctor', 'setup', 'db', 'broker', 'scrape', 'loops', 'quality', 'clean', 'deploy', 'monitor'],
     );
     assert.equal(registry.find('db:start')?.group, 'Banco');
     assert.deepEqual(
@@ -23,5 +23,10 @@ describe('createCommands', () => {
     );
     assert.equal(registry.find('broker:start')?.group, 'Mensageria');
     assert.equal(registry.find('broker:queues')?.group, 'Mensageria');
+    assert.equal(registry.find('loops')?.kind, 'screen');
+    assert.deepEqual(
+      registry.find('loops')?.children?.map((command) => command.id),
+      ['loops:new', 'loops:status', 'loops:start', 'loops:pause', 'loops:stop', 'loops:approve', 'loops:discard', 'loops:log'],
+    );
   });
 });

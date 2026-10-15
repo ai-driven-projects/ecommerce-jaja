@@ -3,8 +3,8 @@
 CLI de manutenção do projeto: setup local, banco, qualidade, limpeza, deploy e monitoramento.
 Interface no estilo paleta de comandos, construída com [Ink](https://github.com/vadimdemedes/ink).
 
-> **Estado atual.** Implementados: **Doctor**, **Setup**, **Banco de dados**, **Mensageria local** e o
-> **Scraper da Kalunga**. Qualidade, Limpeza, Deploy e Produção ainda são placeholders que apenas registram o
+> **Estado atual.** Implementados: **Doctor**, **Setup**, **Banco de dados**, **Mensageria local**, o
+> **Scraper da Kalunga** e os **Loops de desenvolvimento**. Qualidade, Limpeza, Deploy e Produção ainda são placeholders que apenas registram o
 > que farão e terminam com o aviso "Ainda não implementado".
 
 ## Uso
@@ -38,6 +38,7 @@ para uso inválido.
 | `db`      | 🐘 Banco de dados     | menu    | `db:status`, `db:start`, `db:stop`, `db:logs`, `db:generate`, `db:migrate`, `db:seed`, `db:reset`, `db:clear-orders`, `db:studio` |
 | `broker`  | 🐇 Mensageria local   | menu    | `broker:status`, `broker:start`, `broker:stop`, `broker:logs`, `broker:queues` (RabbitMQ do `docker-compose.yml`) |
 | `scrape`  | 🕷️ Scraper da Kalunga | menu    | `scrape:products`, `scrape:seed`, `scrape:categories`, `scrape:status` |
+| `loops`   | 🔁 Loops de desenvolvimento | tela | entregam um objetivo em etapas, uma change OpenSpec por etapa, com o Claude em segundo plano (`loops:new`, `loops:status`, `loops:start`, `loops:pause`, `loops:stop`, `loops:approve`, `loops:discard`, `loops:log`) |
 | `quality` | 🧪 Qualidade          | wizard  | lint, tipos, testes e build                                           |
 | `clean`   | 🧹 Limpeza            | wizard  | builds, caches, node_modules, lockfile e volumes locais (banco e RabbitMQ) |
 | `deploy`  | 🚀 Deploy             | jornada | passos por área (`@prep`, `@db`, `@backend`, `@frontend`, `@cicd`) com estado detectado |
@@ -46,6 +47,7 @@ para uso inválido.
 - **Wizard**: checklist das etapas; Espaço marca, `A` tudo/nada, Enter executa. Dependências (`requires`)
   entram automaticamente e o painel de progresso acompanha cada etapa.
 - **Menu**: lista de ações diretas.
+- **Tela**: uma interface própria (os loops); os filhos continuam acessíveis pelo id e pela busca.
 - **Jornada**: passos com estado detectado (feito, pendente, atenção, não verificado). Nada abre selecionado;
   `P` marca os pendentes, `R` detecta de novo. Em headless: `--steps <ids ou @área>`, `--pending`, `--all`.
 
@@ -192,6 +194,112 @@ requisições). Fontes usadas no site: `GET /apimenu/submenuTodasCategorias` (de
 `GET /apimenu/submenu/<id>` (grupos), `POST /api/obterDepartamentoFiltros` (listagem paginada, a
 mesma chamada que a página faz), a página `/prod/<slug>/<id>` e `GET /api/obterProdutoDetalhes/<id>`.
 
+## Loops de desenvolvimento
+
+Um loop entrega um objetivo grande em etapas, **uma change OpenSpec por etapa**, do início ao fim sem participação
+humana: em cada iteração o Claude estuda a etapa e propõe a change (a da etapa seguinte já vai sendo escrita em paralelo
+enquanto esta é implementada), implementa, o script verifica (build, lint, tipos, testes), o Claude corrige o que
+quebrar, arquiva, e o script commita. Precisa de `claude`, `openspec` e `git` no `PATH` (e dos comandos extras que o
+loop declarar).
+
+```bash
+npm run cli -- loops                                    # lista (na paleta: a tela dos loops)
+npm run cli -- loops:new --nome=pedidos-cancelamento --objetivo="Permitir cancelar pedidos não enviados"
+npm run cli -- loops:new --nome=entregas --specs=change-a,change-b   # de specs já criadas, nesta ordem
+npm run cli -- loops:approve --loop=pedidos-cancelamento
+npm run cli -- loops:start --loop=pedidos-cancelamento  # sobe o vigia em segundo plano
+npm run cli -- loops:status --loop=pedidos-cancelamento
+npm run cli -- loops:log --loop=pedidos-cancelamento --seguir
+npm run cli -- loops:pause --loop=pedidos-cancelamento  # ao fim do passo atual (--cancelar desfaz)
+npm run cli -- loops:stop --loop=pedidos-cancelamento --yes
+```
+
+Sem `--loop`, os comandos perguntam qual (ou usam o único possível). `loops:new` aceita `--modelo=<id>`.
+
+### A pasta do loop
+
+```
+openspec/loops/<nome>/
+  plano.md      o arquivo mestre: objetivo, regras do loop, fases e etapas, fora do escopo
+  loop.json     configuração, etapas aprovadas e progresso, iteração em andamento e totais
+  .execucao/    fora do git: eventos.jsonl, streams do Claude, logs das verificações, travas, relatórios
+```
+
+Só `plano.md` e `loop.json` são versionados. O `loop.json` entra no commit de cada entrega, então o progresso e os
+**totais acumulados** (tempo, custo, execuções, iterações, sessões do Claude, turnos, verificações, correções,
+recuperações, falhas, reinícios e commits) acompanham o repositório.
+
+No `plano.md`, cada fase é `## Fase N · nome` e cada etapa ``N. **Título** · `<loop>-NN-<assunto>` — descrição``
+(numeração contínua, uma change por etapa). Uma etapa ``N. **Título** · `<change>` · spec pronta — descrição`` aplica
+uma change que já existe, com qualquer nome: o loop não a propõe, só confere (`openspec validate`), commita e vai ao
+apply. A seção `## Regras` vai para o prompt de sistema de todas as sessões do loop.
+
+### Criar e aprovar
+
+`loops:new` (ou `n` na tela dos loops) pede o nome (kebab-case, vira o prefixo das changes) e a origem das etapas:
+**um objetivo** (várias linhas; `ctrl+d` envia) ou **specs já criadas** em `openspec/changes/` (digitar filtra, espaço
+marca na ordem, enter confirma; specs que já são etapa de outro loop não podem ser marcadas). Uma sessão do Claude, só
+de leitura, devolve as fases, as etapas e a configuração sugerida (pastas do commit, prefixo do commit, comandos de
+verificação). O loop nasce como **rascunho**: `a` aprova, `e` abre o `plano.md` no `$EDITOR` e `D` descarta. Editar o
+`plano.md` depois de aprovado bloqueia o loop até aprovar de novo (as etapas já entregues não podem ser removidas nem
+renomeadas).
+
+### Status e telas
+
+`rascunho` → `pendente` → `executando` → `aguardando` / `pausado` / `falhou` / `interrompido` → … → `concluído`.
+`aguardando` quer dizer que o loop precisa de uma pessoa: a tela mostra a causa e **o que fazer**, e `i` continua do
+passo em que parou. `executando` só vale com o vigia vivo: sem vigia (computador desligou) aparece como `interrompido`.
+Uma etapa conta como entregue quando a change dela está em `openspec/changes/archive/`, mesmo que arquivada fora do loop.
+
+- **Lista**: todos os loops com status, etapas, tempo, custo, execuções e quando rodaram; atualiza sozinha.
+  `enter` abre, `n` cria.
+- **Tela do loop**: barra com os totais; à esquerda as fases e etapas (`✔` entregue, `▶` em andamento, `✖` falhou,
+  `·` falta; abaixo de 100 colunas vira um resumo por fase); na área principal o progresso geral, a iteração atual e os
+  passos dela (`↻N` = recuperações), e o que o Claude está fazendo agora.
+- **Detalhes** (`d`, `esc` volta): log com filtro (`f`), sessões e ações do Claude, histórico com médias por passo,
+  falhas e recuperações com o relatório, e a configuração.
+
+| Tecla | Quando | O que faz |
+|-------|--------|-----------|
+| `i` | pendente, aguardando, pausado, interrompido, falhou | inicia ou continua (confere plano, `PATH`, trava e escopo limpo) |
+| `p` | executando | pausa ao fim do passo atual (de novo: cancela a pausa) |
+| `x` | executando | para agora, com confirmação; o passo interrompido é retomado ao continuar |
+| `a` / `e` / `D` | rascunho ou plano alterado | aprova, edita o plano, descarta o rascunho |
+
+### Execução e robustez
+
+- **Segundo plano:** iniciar sobe um **vigia** destacado do CLI. Fechar a tela, o CLI ou o terminal não para o loop; a
+  tela só lê os arquivos que ele grava (a cada 1 s). No macOS o vigia mantém o Mac acordado (`caffeinate -w`).
+- **PATH:** se um comando exigido não está no PATH do CLI, ele é procurado no do seu shell (`$SHELL -ilc`), e o vigia
+  sobe com esse PATH.
+- **Um processo por iteração** e **uma sessão nova do Claude por passo** (e por lote de tarefas do apply): nada acumula
+  memória nem contexto. O que passa de uma sessão para outra fica em arquivo (change, código, `loop.json`).
+- **Recuperação por agente:** quando um passo falha, o erro vai para uma sessão nova do Claude com o relatório da falha,
+  o `git status`/`diff` e o que o passo precisa entregar. Quem decide se resolveu é a **pós-condição** do passo,
+  conferida pelo motor (tarefas todas marcadas, change arquivada, verificações passando…): cumprida, o fluxo segue;
+  senão, o passo roda de novo (até `attemptsPerStep`). Erro de autenticação ou que depende de uma pessoa vai direto para
+  `aguardando`; bug do motor segue como crash. O mesmo erro depois de uma recuperação encerra as tentativas, e cada
+  iteração tem no máximo `recoveriesPerIteration` recuperações.
+- **Proteção:** uma correção ou recuperação que pula ou apaga testes ou silencia o analisador/lint (`skip`, `only`,
+  `eslint-disable`, `@ts-ignore`, `@ts-expect-error`…) é recusada e o loop fica `aguardando` com os arquivos e linhas.
+- **Crash** (falta de memória, processo morto): o vigia mata os filhos órfãos, espera 10 s, 1 min, 3 min, 5 min e
+  retoma o passo; desiste depois de `restarts` crashes seguidos sem entrega.
+- **Retomada exata:** o `loop.json` é gravado de forma atômica antes e depois de cada passo.
+- **Limites:** sessão do Claude 60 min, mas uma sessão 10 min sem nenhum sinal (fora de ferramenta em execução) é
+  encerrada e tentada de novo; verificação 15 min; limite de uso da API espera 10 min; o tempo é gravado a cada 60 s.
+- **Proposta antecipada:** quando o apply da etapa N começa, uma sessão em paralelo escreve a change da etapa N+1, só na
+  pasta OpenSpec dela. O commit da entrega de N a commita; na iteração dela, o propose só a revisa contra o que N
+  entregou. Se a sessão falhar ou o processo cair, a sobra não versionada é apagada e N+1 é proposta normalmente.
+- **Commits restritos:** só as pastas do escopo, os arquivos OpenSpec da change e a pasta do loop. O Claude não pode
+  commitar, instalar pacotes nem editar o motor (`apps/cli/src/loops`, `apps/cli/dist/loops`) ou o `loop.json`.
+
+Os limites mudam no `loop.json` (`config.limits`: `iterationsPerRun`, `fixes`, `continuations`, `attemptsPerStep`,
+`recoveriesPerIteration`, `tasksPerSession`, `restarts`, `sessionMin`, `sessionIdleMin`, `commandMin`); o modelo em
+`config.model`; ferramentas proibidas extras em `config.forbiddenTools`. Os passos (`config.steps`: `propose`,
+`baseline`, `commitProposal`, `apply`, `verifyChange`, `archive`, `commitDelivery`, e o opcional `briefing` antes do
+`propose`) ficam num registro em `src/loops/steps/registry.ts`, que aceita passos novos; cada passo declara a sua
+pós-condição. Os prompts ficam em `src/loops/prompts/*.md` (o build os copia para `dist/`).
+
 ## Estrutura
 
 ```
@@ -210,7 +318,18 @@ src/
     journey.ts        journey(), detecção de estado e seleções @pending/@publish/@área
     net.ts            isPortOpen, waitForPort, httpProbe
     project.ts        detecta raiz do monorepo, backend e frontend
+  loops/              motor dos loops de desenvolvimento (sem Ink)
+    loops.ts, plan.ts pasta do loop, plano mestre, aprovação e status
+    watcher.ts        vigia em segundo plano: uma iteração por processo, recuperação de crash
+    iteration.ts      uma iteração: passos, tentativas, retomada, relatório de falha
+    steps/            os passos da iteração e o registro deles
+    prompts/          o que o Claude recebe em cada passo
+    control.ts        conferir, iniciar, pausar, parar, aprovar, descartar
+    planner.ts        planejamento de um loop novo
+    recovery.ts       classificação do erro, assinatura e a sessão de recuperação
+    guard.ts          recusa correções que desligam verificações
   ui/                 telas Ink: App, Header, Palette, WizardScreen, JourneyScreen, RunScreen, prompts
+    loops/            lista, tela do loop, detalhes e novo loop (registradas em ui/screens.tsx)
   commands/
     index.ts          menu inicial
     placeholder.ts    etapas/ações "não implementado" usadas por todos os comandos
@@ -219,6 +338,7 @@ src/
     db/               db.commands.ts + lib.ts (docker compose, prisma, validação de credenciais)
     broker/           broker.commands.ts + lib.ts (portas e URLs sem senha, estado do serviço rabbitmq, ensureBrokerUp, credencial do painel e resumo das filas)
     quality/ clean/ deploy/ monitor/   placeholders
+    loops/            loops.commands.ts: loops (tela) e loops:new/status/start/pause/stop/approve/discard/log
     scrape/           scraper da Kalunga (scrape.commands.ts + kalunga/{api,client,parse,sampler,store,types}.ts)
                       e conversão para o seed do backend (kalunga/seed/{brands,categories,products}.ts)
 data/kalunga/         JSON gerado pelo scraper (categorias, marcas e índice)
@@ -234,5 +354,5 @@ npm run cli -w @jaja/cli          # tsx src/main.tsx
 npm run build -w @jaja/cli        # tsc → dist/
 npm run check-types -w @jaja/cli
 npm run lint -w @jaja/cli
-npm run test -w @jaja/cli         # node --test via tsx
+npm run test -w @jaja/cli         # node --test via tsx (src/**/*.test.ts e test/**/*.test.ts; o motor dos loops roda com claude e openspec falsos)
 ```

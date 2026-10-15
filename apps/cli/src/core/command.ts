@@ -143,8 +143,10 @@ export interface Command {
   /**
    * `action` (padrão): roda direto. `wizard`: mostra a checklist de `steps` e roda as escolhidas.
    * `menu`: abre a lista de `children`. `journey`: lista ordenada de passos com estado detectado.
+   * `screen`: na paleta abre uma tela própria (registrada em `ui/screens.tsx`); no headless roda `run`.
+   * Os `children` de um comando `screen` não aparecem como menu, mas continuam acessíveis pelo id e pela busca.
    */
-  kind?: 'action' | 'wizard' | 'menu' | 'journey';
+  kind?: 'action' | 'wizard' | 'menu' | 'journey' | 'screen';
   steps?: WizardStep[];
   /** Áreas de uma jornada, na ordem de exibição. */
   areas?: JourneyArea[];

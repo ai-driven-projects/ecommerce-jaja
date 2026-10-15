@@ -4,6 +4,7 @@ import { cleanWizard } from './clean/clean.wizard.js';
 import { dbMenu } from './db/db.commands.js';
 import { deployJourney } from './deploy/deploy.journey.js';
 import { doctorCommand } from './doctor/doctor.command.js';
+import { loopsCommand } from './loops/loops.commands.js';
 import { monitorCommand } from './monitor/monitor.command.js';
 import { qualityWizard } from './quality/quality.wizard.js';
 import { scrapeMenu } from './scrape/scrape.commands.js';
@@ -14,5 +15,5 @@ import { setupWizard } from './setup/setup.wizard.js';
  * ou uma ação direta. A paleta, o modo headless e o --help leem daqui; ids aninhados continuam acessíveis (ex.: `jaja db:start`).
  */
 export function createCommands(): Command[] {
-  return [doctorCommand, setupWizard, dbMenu, brokerMenu, scrapeMenu, qualityWizard, cleanWizard, deployJourney, monitorCommand];
+  return [doctorCommand, setupWizard, dbMenu, brokerMenu, scrapeMenu, loopsCommand, qualityWizard, cleanWizard, deployJourney, monitorCommand];
 }

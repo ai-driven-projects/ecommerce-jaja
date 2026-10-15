@@ -9,11 +9,11 @@
   },
   "scripts": {
     "cli": "tsx src/main.tsx",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node -e \"require('node:fs').cpSync('src/loops/prompts', 'dist/loops/prompts', { recursive: true })\"",
     "start": "node bin/jaja.js",
     "lint": "eslint src",
     "check-types": "tsc --noEmit -p tsconfig.json",
-    "test": "node --import tsx --test \"src/**/*.test.ts\""
+    "test": "node --import tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\""
   },
   "dependencies": {
     "@jaja/catalog": "*",

@@ -18,7 +18,7 @@ const { version } = require('../package.json') as { version: string };
 function printCommands(commands: Command[], indent = '  '): void {
   const width = Math.max(...commands.map((command) => command.id.length)) + 2;
   for (const command of commands) {
-    const kind = command.kind === 'wizard' ? chalk.dim(' (wizard)') : command.kind === 'menu' ? chalk.dim(' (menu)') : command.kind === 'journey' ? chalk.dim(' (jornada)') : '';
+    const kind = command.kind === 'wizard' ? chalk.dim(' (wizard)') : command.kind === 'menu' ? chalk.dim(' (menu)') : command.kind === 'journey' ? chalk.dim(' (jornada)') : command.kind === 'screen' ? chalk.dim(' (tela)') : '';
     console.log(`${indent}${chalk.cyan(command.id.padEnd(width))}${command.description}${kind}`);
     if (command.steps) {
       console.log(`${indent}${' '.repeat(width)}${chalk.dim(`etapas: ${command.steps.map((step) => step.id + (step.defaultSelected ? '' : '*')).join(', ')}`)}`);
