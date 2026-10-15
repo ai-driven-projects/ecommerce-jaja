@@ -117,18 +117,73 @@
       "commit": "7d51debd543475441429721ceabfac50b122b912"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 2,
       "phase": "Fundamentos",
       "title": "Tema da marca e componentes base",
-      "change": "mobile-app-02-tema-marca-mobile"
+      "change": "mobile-app-02-tema-marca-mobile",
+      "iteration": 2,
+      "deliveredAt": "2026-10-15T13:32:53.606Z",
+      "durationMs": 1497118,
+      "cost": 8.6674216,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 541185,
+          "cost": 2.3982284000000003,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 10211,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 338,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 904475,
+          "cost": 5.9316032000000005,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 12017,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 28606,
+          "cost": 0.33759,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 286,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
       "number": 3,
       "phase": "Fundamentos",
       "title": "HTTP, DI e shell de navegação",
-      "change": "mobile-app-03-infra-navegacao-mobile"
+      "change": "mobile-app-03-infra-navegacao-mobile",
+      "early": {
+        "title": "Planeja cliente HTTP, DI, entrypoints e shell de abas do app mobile",
+        "comparison": "A etapa 1 já deixou em lib/core os tipos de falha (rede, sessão, recusa com statusCode e codes, não encontrado, servidor) e a resolução de API_URL que nada usa ainda; falta o enum de códigos HTTP, reservado para esta etapa.\nO backend responde erro como ApiErrorResponse com os códigos em message; o web guarda esses códigos e traduz por um dicionário de ~180 entradas, quase todas de admin. Por isso aqui só entram as mensagens genéricas, e cada etapa traduz os códigos que usa.\nO app modelo da plataforma serviu de desenho para cliente, mapeador, DI, bootstrap e shell; o mapeador dele lida com 401/5xx, e aqui ele foi refeito sem Firebase, flavors nem o domínio de cursos.\nOs mockups e o web não têm barra de abas, então o tema da barra sai dos tokens da etapa 2. O lib/main.dart mínimo e o tema que a etapa 2 põe nele passam para lib/app.\nO flutter create só declara a permissão INTERNET nos manifestos de debug e profile; sem ela no manifesto principal, o app de produção não teria rede.",
+        "base": "adf5fa956b4bdfbf87d092c3d8791bd8fe109cb8",
+        "commit": "6153d78d178dbf8d2dcf1c9d47554783af57582e",
+        "at": "2026-10-15T13:32:53.594Z"
+      }
     },
     {
       "status": "pending",
@@ -215,84 +270,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 2,
-    "stage": 2,
-    "startCommit": "7d51debd543475441429721ceabfac50b122b912",
-    "startedAt": "2026-10-15T13:07:56.397Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 541185,
-        "cost": 2.3982284000000003,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 10211,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o tema da marca Jajá e os componentes base do app mobile",
-      "comparison": "A etapa 1 deixou apps/mobile com CLAUDE.md, lib/core e a barreira de imports, mas sem lib/ui, sem assets e com um MaterialApp sem tema. A regra de cor e estilo literal ainda não era verificada.\nA spec openspec/specs/shared/design-system está desatualizada (vermelho, Archivo, cantos retos) e contradiz o globals.css, o DESIGN.md e os componentes do web (laranja, Manrope, pílulas, raio 18). A change segue o código do web e registra o conflito.\nComo nada pode ser baixado, as fontes saem de cópias locais OFL: Manrope variável de um app instalado e Bricolage do app modelo da plataforma. A licença da Bricolage vem do zen-loop e a da Manrope é montada com o copyright lido da própria fonte.\nA API já envia discountPercent e unit no produto da vitrine, então o card recebe o desconto pronto. O cached_network_image e o mapa de arte por categoria ficam para a etapa 5, como manda o plano.\nA change tem cerca de 36 mil caracteres, 8 grupos de tarefas e `openspec validate --strict` passa.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 1593748,
-    "cost": 10.4198692,
+    "durationMs": 2539470,
+    "cost": 18.5294006,
     "runs": 1,
     "iterationsStarted": 2,
-    "iterationsDelivered": 1,
-    "claudeSessions": 12,
-    "turns": 149,
-    "checks": 17,
+    "iterationsDelivered": 2,
+    "claudeSessions": 19,
+    "turns": 270,
+    "checks": 20,
     "fixes": 3,
     "recoveries": 1,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 2
+    "commits": 4
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

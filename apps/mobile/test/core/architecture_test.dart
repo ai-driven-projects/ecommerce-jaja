@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/import_rules.dart';
+import 'support/inline_style_rules.dart';
 
 List<ImportViolation> _scan(String filePath, String source, ImportRule rule) =>
     scanSource(filePath: filePath, source: source, rules: {rule});
@@ -56,6 +57,27 @@ void main() {
         );
       },
     );
+
+    test('pages e widgets de lib/ui tiram cor, tipografia e raio do tema', () {
+      final scanned = dartFilesIn(
+        'lib/ui',
+      ).where((file) => isInlineStyleScoped(file.path));
+      expect(
+        scanned,
+        isNotEmpty,
+        reason: 'Nenhum arquivo .dart escaneado — a barreira não rodou.',
+      );
+
+      final violations = scanDirectoryForInlineStyle('lib/ui');
+
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'Estilo literal em pages/widgets (deveria vir do tema):\n'
+            '${violations.join('\n')}',
+      );
+    });
   });
 
   group('Regra A: pureza de core e modules', () {
@@ -237,8 +259,136 @@ void main() {
     });
   });
 
+  group('Regra C: estilo vindo do tema', () {
+    const widgetPath = 'lib/ui/shared/widgets/fake.dart';
+
+    List<InlineStyleViolation> scan(
+      String expression, {
+      String filePath = widgetPath,
+    }) => scanSourceForInlineStyle(
+      filePath: filePath,
+      source:
+          "import 'package:flutter/material.dart';\n"
+          'final value = $expression;\n',
+    );
+
+    for (final expression in [
+      'Color(0xFFFF6B00)',
+      'const Color(0xFFFF6B00)',
+      'Color.fromARGB(255, 255, 107, 0)',
+      'Color.fromRGBO(255, 107, 0, 1)',
+      'Colors.red',
+      'TextStyle(fontWeight: FontWeight.w800)',
+      'Theme.of(context).textTheme.bodySmall!.copyWith(fontSize: 12)',
+      'BorderRadius.circular(12)',
+      'const Radius.circular(8.5)',
+      'FilledButton.styleFrom(backgroundColor: color)',
+    ]) {
+      test('$expression é violação com arquivo, linha e trecho', () {
+        final violations = scan(expression);
+
+        expect(violations, hasLength(1));
+        expect(violations.single.filePath, widgetPath);
+        expect(violations.single.lineNumber, 2);
+        expect(violations.single.line, 'final value = $expression;');
+        expect(violations.single.remedy, isNotEmpty);
+        expect(
+          violations.single.toString(),
+          startsWith('$widgetPath:2 → final value = $expression;'),
+        );
+      });
+    }
+
+    test('cor literal numa página de módulo é violação', () {
+      final violations = scan(
+        'Container(color: Color(0xFFFF6B00))',
+        filePath: 'lib/ui/modules/catalog/pages/home_page.dart',
+      );
+
+      expect(violations, hasLength(1));
+    });
+
+    test('Colors.transparent e raio de token são aceitos', () {
+      expect(scan('Colors.transparent'), isEmpty);
+      expect(scan('BorderRadius.circular(AppRadius.xl)'), isEmpty);
+      expect(scan('Radius.circular(radius)'), isEmpty);
+    });
+
+    test('Colors.red em comentário ou em string não conta', () {
+      final violations = scanSourceForInlineStyle(
+        filePath: widgetPath,
+        source:
+            '// Colors.red\n'
+            '/* Color(0xFFFF0000) */\n'
+            "const exemplo = 'Colors.red';\n"
+            "const outro = '''\nTextStyle(fontSize: 12)\n''';\n",
+      );
+
+      expect(violations, isEmpty);
+    });
+
+    test('a pasta do tema fica fora da regra', () {
+      expect(
+        scan(
+          'Color(0xFFFF6B00)',
+          filePath: 'lib/ui/shared/theme/app_colors.dart',
+        ),
+        isEmpty,
+      );
+      expect(
+        scan(
+          'Color(0xFFFF6B00)',
+          filePath:
+              '/projeto/apps/mobile/lib/ui/shared/theme/brand_tokens.dart',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('arquivo de lib/ui fora de pages e widgets fica fora da regra', () {
+      expect(
+        scan(
+          'Colors.red',
+          filePath: 'lib/ui/shared/formatters/money_formatter.dart',
+        ),
+        isEmpty,
+      );
+      expect(
+        scan(
+          'Colors.red',
+          filePath: 'lib/ui/modules/catalog/view_models/home_view_model.dart',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('caminho absoluto de widget também é verificado', () {
+      expect(
+        scan(
+          'Colors.red',
+          filePath: '/projeto/apps/mobile/lib/ui/shared/widgets/fake.dart',
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('fonte que não parseia lança StateError em vez de passar vazia', () {
+      expect(
+        () => scanSourceForInlineStyle(
+          filePath: widgetPath,
+          source: 'final value = Container(;\n',
+        ),
+        throwsStateError,
+      );
+    });
+  });
+
   test('pasta inexistente lança StateError em vez de passar vazia', () {
     expect(() => dartFilesIn('lib/pasta-inexistente'), throwsStateError);
     expect(() => scanDirectory('lib/pasta-inexistente'), throwsStateError);
+    expect(
+      () => scanDirectoryForInlineStyle('lib/pasta-inexistente'),
+      throwsStateError,
+    );
   });
 }

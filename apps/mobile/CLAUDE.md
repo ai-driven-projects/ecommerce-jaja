@@ -13,6 +13,8 @@ reescreve para refletir o estado final.
 **Estado atual:** fundação. Existem o projeto Flutter (só Android e iOS, org `br.com.jaja`, nome exibido
 "Jajá"), um `lib/main.dart` mínimo com um `MaterialApp` vazio, e `lib/core` em construção (`Result`,
 `Command`, `AppFailure`; `Money` e ambiente a seguir). Ainda não há tema, rotas, DI, HTTP nem domínio.
+Etapa 2: já existem o tema claro da marca (`lib/ui/shared/theme/`, com as fontes em `assets/fonts/`), o
+`formatMoney` e os componentes base em `lib/ui/shared/widgets/`; o `main.dart` mínimo usa `AppTheme.light()`.
 
 ## Arquitetura
 
@@ -143,6 +145,35 @@ origem no comentário (`Color.lerp` é sRGB e daria outro resultado).
 Material 3 com tudo resolvido no `ThemeData` e num `ThemeExtension` de tokens da marca: **nenhuma cor
 (`Color(...)`, `Colors.*`), `TextStyle` ou raio literal em `pages/` e `widgets/`** (a barreira passa a
 verificar na etapa 2).
+
+**Regra C ativa** (`test/core/support/inline_style_rules.dart`, lida pelo `analyzer`): em arquivos sob
+`lib/ui` com uma pasta `pages/` ou `widgets/` no caminho, `flutter test` falha com arquivo, linha, trecho e
+remédio diante de `Color(...)`/`Color.fromARGB|fromRGBO|from`, `Colors.*` (exceto `Colors.transparent`),
+`TextStyle(...)`, argumento `fontSize:`, `Radius.circular`/`BorderRadius.circular` com número e qualquer
+`*.styleFrom(...)`. `lib/ui/shared/theme/` fica fora: é onde os literais moram. Espaçamento literal é
+permitido. Comentário e string não contam.
+
+Onde fica cada coisa do tema (`lib/ui/shared/theme/`):
+
+- **Cores e sombras:** `AppColors.<token>` (nome do token do `globals.css` em camelCase: `paper`, `ink`,
+  `inkSoft`, `brand`, `tintPeach`…) e o `ThemeExtension` `BrandTokens` com as mesmas cores e as sombras
+  `shadowCard`/`shadowBrand`/`shadowFloat`/`shadowBadge`. Nas telas, **sempre `context.tokens.<token>`**
+  (extensão de `brand_tokens.dart`) ou o `ColorScheme` — `AppColors` só no tema.
+- **Raios:** `AppRadius` com os nomes do `@theme` do web (`xs` 6, `sm` 8, `md` 10, `lg` 12, `xl` 14,
+  `xl2` 18, `xl3` 20, `xl4` 24, `pill` 999; no web `rounded-xl` = 14 e `rounded-2xl` = 18). Campo e área de
+  imagem 14, card 18. **Espaços:** `AppSpacing.s4`…`s48` (múltiplos de 4) mais `s10`, `s14`, `s18`.
+- **Tipografia:** `Theme.of(context).textTheme` (Manrope; títulos `displaySmall`/`headlineSmall`/
+  `titleLarge` em Bricolage 800). Tamanho fora da escala entra na extensão `AppTextStyles` de
+  `app_typography.dart`, nunca no widget; o widget só aplica `copyWith(color:)`. Fonte variável: todo estilo
+  passa `fontVariations` com o eixo `wght`.
+- **Botões:** `AppButtonStyles.of(variant:, size:, …)` e o widget `AppButton`; nada de `styleFrom`.
+- **Tema:** só claro (`AppTheme.light()`, `themeMode: ThemeMode.light`, sem `darkTheme`), como o web.
+- **Preço:** `formatMoney(Money)` em `lib/ui/shared/formatters/` → `R$ 1.290,90`, idêntico ao
+  `formatPrice` do web (espaço comum, nunca U+00A0). Nunca formate preço em `core/` nem à mão.
+
+**Conflito conhecido:** `openspec/specs/shared/design-system` descreve um visual antigo (vermelho `#ec3013`,
+Archivo, IBM Plex Mono, cantos retos) que o web não usa mais. Vale o código do web (`globals.css`,
+`DESIGN.md`, componentes); a spec do web não é alterada por este app.
 
 Padrões de app: **uma ação principal por tela**, carrinho como **aba própria** (não drawer), filtros em
 **bottom sheet**. Abas: Início, Buscar, Carrinho, Conta.
