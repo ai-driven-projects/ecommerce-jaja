@@ -4,7 +4,7 @@
 
 ## 1. Conferência e domínio `order`
 
-- [ ] 1.1 Conferir no código os nomes de "Dependências da etapa anterior" (sobretudo os da etapa 11); se algo divergir, seguir o código e registrar no `design.md`.
+- [ ] 1.1 Conferir no código os nomes de "Dependências da etapa anterior" (já revisados contra a etapa 11 entregue); se algo divergir, seguir o código e registrar no `design.md`.
 - [ ] 1.2 Criar `lib/modules/order/model/{placed_order,order_rules}.dart` (`PlacedOrder` com `number`, limites 100/200 com a origem) (Decisão 1).
 - [ ] 1.3 Criar `lib/modules/order/errors/order_errors.dart` com `OrderErrorCode`, `orderErrorFromCodes` e `isCustomerRejection` (Decisão 1).
 - [ ] 1.4 Criar `lib/modules/order/provider/order_repository.dart` com `placeOrder` (Decisão 1).
@@ -26,7 +26,7 @@
 
 - [ ] 3.1 Criar `lib/ui/modules/customer/view_models/delivery_address_line.dart` com `formatDeliveryAddress` e testes (com e sem complemento, CEP mascarado) em `test/ui/modules/customer/view_models/`.
 - [ ] 3.2 Criar `lib/ui/modules/order/view_models/checkout_view_model.dart` (Decisão 4) e registrá-lo com `registerFactory` em `registerViewModels()`.
-- [ ] 3.3 Testes de abertura em `test/ui/modules/order/view_models/checkout_view_model_test.dart` (`FakeCartRepository`, `FakeCustomerRepository`, `FakeAuthRepository`, `FakeOrderRepository`): `open()` chama `refresh()` uma vez e consulta o cadastro; "Quem recebe" inicial = nome da conta; mudança do carrinho chega pelo `changes`.
+- [ ] 3.3 Testes de abertura em `test/ui/modules/order/view_models/checkout_view_model_test.dart` (`FakeCartRepository`, `FakeCustomerRepository`, `FakeAuthRepository`, `FakeOrderRepository`): `open()` chama `refresh()` uma vez e consulta o cadastro (`fetchCalls` 1); "Quem recebe" inicial = nome da conta; mudança do carrinho chega pelo `changes`.
 - [ ] 3.4 Testes de `canConfirm` no mesmo arquivo: cada condição de bloqueio da spec (carregando, falha, vazio, `isSyncing`, indisponível, sem cadastro, cadastro falhou) desabilita; tudo pronto habilita; os dois avisos aparecem só no caso deles.
 - [ ] 3.5 Testes de `confirm`: envia o nome e as instruções digitados; sucesso devolve `PlacedOrder` e chama `refresh()`; `holdPlace` mantém `running` e um segundo `execute` não envia.
 - [ ] 3.6 Testes de falha: `ORDER_CUSTOMER_INACTIVE` → mensagem, `refresh()` e nova consulta do cadastro; `ORDER_CART_HAS_UNAVAILABLE_ITEMS` → `refresh()` sem consultar o cadastro; `removeLine` com falha preenche `failureMessage`.
@@ -44,9 +44,9 @@
 ## 5. Carrinho, dados de entrega e rotas
 
 - [ ] 5.1 Em `CartPage`, `onOpenCheckout` e o `_CheckoutBar` ligado (Decisão 7); em `cart_page_test.dart`: habilitado chama o callback; desabilitado com `isSyncing` e com indisponível.
-- [ ] 5.2 Em `DeliveryDetailsPage`, `onSaved` opcional chamado depois de "Dados salvos"; teste em `delivery_details_page_test.dart` (chamado no sucesso, não na recusa).
-- [ ] 5.3 Em `AppRoutes`, `checkout`, `checkoutDelivery`, `orderLocation` e as duas entradas em `sessionRequiredPaths`; em `app_router.dart`, as três rotas filhas na aba Carrinho e os callbacks (Decisão 3).
-- [ ] 5.4 Atualizar `session_redirect_test.dart` para a lista nova (dados de entrega, checkout e pedido) e testar `/cart/checkout/delivery` e `/cart/orders/x` como protegidas.
+- [ ] 5.2 Em `DeliveryDetailsPage`, `onSaved` opcional chamado no `_save` depois de "Dados salvos", sem mudar `onBack`; teste em `delivery_details_page_test.dart` (chamado no sucesso, não na recusa).
+- [ ] 5.3 Em `AppRoutes`, `checkout`, `checkoutDelivery`, `orderLocation` e as duas entradas em `sessionRequiredPaths`; em `app_router.dart`, as três rotas filhas na aba Carrinho e os callbacks, com a `DeliveryDetailsPage` da rota do checkout recebendo `onBack` e `onSaved` com `pop` (Decisão 3).
+- [ ] 5.4 Atualizar `session_redirect_test.dart`, que hoje exige `{'/account/delivery'}`, para a lista nova (dados de entrega, checkout e pedido) e testar `/cart/checkout/delivery` e `/cart/orders/x` como protegidas.
 - [ ] 5.5 Testes em `app_router_test.dart`: sem sessão "Finalizar pedido" → `/login?from=/cart/checkout`; com sessão abre o checkout na aba Carrinho; "Alterar" abre os dados de entrega e salvar volta ao checkout.
 - [ ] 5.6 Teste em `app_router_test.dart`: confirmar com sucesso leva a `/cart/orders/<id>` e voltar mostra a aba Carrinho, sem o checkout.
 

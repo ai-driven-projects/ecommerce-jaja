@@ -708,7 +708,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "4387fcdc0f3f7e27dd86d66ba836e6fb50a9fd41"
     },
     {
       "status": "pending",
@@ -746,22 +747,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 12,
+    "stage": 12,
+    "startCommit": "4387fcdc0f3f7e27dd86d66ba836e6fb50a9fd41",
+    "startedAt": "2026-10-15T18:39:46.067Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 107623,
+        "cost": 0.9647415999999999,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 31810,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja o checkout do app mobile",
+      "comparison": "- O plano cita POST /me/cart/orders, mas MyOrderController expõe só POST /me/orders (corpo lido: recipientName e deliveryInstructions; 201 com OrderDetailDTO; ORDER_* em 400). A change segue o controller e registra a divergência.\n- A aba Carrinho já tem \"Finalizar pedido · <total>\" fixo e desabilitado (_CheckoutBar com onPressed null); o SessionCartRepository da etapa 10 já oferece refresh(), remove com Result e o CartState com isSyncing e indisponíveis. O checkout reaproveita isso, sem esvaziar o carrinho por conta própria.\n- O checkout do web (checkout.page.tsx) mostra o login e o formulário de entrega dentro da página. No app, a sessão vem da guarda de rotas (sessionRequiredPaths, ainda vazia no código) e os dados de entrega reaproveitam a tela da etapa 11, aberta por cima do checkout.\n- A etapa 11 ainda está em obras: CustomerRepository.fetchMine, DeliveryDetailsPage, BlockState em ui/shared e as máscaras foram assumidos pela change dela e listados em \"Dependências da etapa anterior\".\n- O acompanhamento só existe na etapa 13, então o sucesso leva a uma página provisória em /cart/orders/:id; o domínio order nasce só com placeOrder e PlacedOrder(id).",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 20918876,
-    "cost": 173.65817249999998,
+    "durationMs": 21058753,
+    "cost": 174.62291409999997,
     "runs": 1,
-    "iterationsStarted": 11,
+    "iterationsStarted": 12,
     "iterationsDelivered": 11,
-    "claudeSessions": 104,
-    "turns": 2007,
-    "checks": 74,
+    "claudeSessions": 105,
+    "turns": 2019,
+    "checks": 77,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 27
+    "commits": 28
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

@@ -1,6 +1,6 @@
 ## Context
 
-Com sessão, o carrinho do app é o `SessionCartRepository` (etapa 10). Ele lê `/me/cart`, faz `refresh()` (remescla se houver itens locais, senão `GET /me/cart` na fila), `remove` com `Result` e `CartState` (`isRestoring`, `isSyncing`, `previewFailure`, `detail.hasUnavailableItems`). A aba Carrinho tem "Finalizar pedido · <total>" fixo e **desabilitado** (`_CheckoutBar` com `onPressed: null`). A etapa 11 entrega o domínio `customer` (`CustomerRepository.fetchMine` → `Customer?`, `404` = sem cadastro), a tela "Dados de entrega" em `/account/delivery` (em `sessionRequiredPaths`) e o `BlockState` em `ui/shared/`.
+Com sessão, o carrinho do app é o `SessionCartRepository` (etapa 10). Ele lê `/me/cart`, faz `refresh()` (remescla se houver itens locais, senão `GET /me/cart` na fila), `remove` com `Result` e `CartState` (`isRestoring`, `isSyncing`, `previewFailure`, `detail.hasUnavailableItems`). A aba Carrinho tem "Finalizar pedido · <total>" fixo e **desabilitado** (`_CheckoutBar` com `onPressed: null`). A etapa 11 entregou o domínio `customer` (`CustomerRepository.fetchMine` → `Customer?`, `404` = sem cadastro), a tela "Dados de entrega" em `/account/delivery` (em `sessionRequiredPaths`, aberta pela aba Conta com `context.go`) e o `BlockState` em `lib/ui/shared/view_models/`.
 
 Contrato (só leitura): `MyOrderController` e `order-http.ts` em `apps/backend/src/modules/orders/`. O pedido é **`POST /me/orders`** (`201` com `OrderDetailDTO`). Do corpo, o servidor só lê `recipientName` e `deliveryInstructions` quando são texto. `ORDER_NOT_FOUND` → `404`, `ORDER_ALREADY_EXISTS` → `409`, o resto → `400`, com os códigos sem repetição, parando na primeira regra. Limites: `ORDER_RECIPIENT_NAME_MAX_LENGTH = 100` (mínimo 2 no `order.entity.ts`) e `ORDER_DELIVERY_INSTRUCTIONS_MAX_LENGTH = 200` (`modules/orders/src/order/errors.ts`). Comportamento e textos: `checkout.page.tsx`, `order.api.ts`, `order.util.ts` (`formatOrderNumber`), `customer-delivery-summary.component.tsx` e `formatCustomerAddress` (`customer.util.ts`), `cart-drawer.component.tsx` (botão indisponível com `busy` ou indisponíveis) e as mensagens `ORDER_*` de `apps/frontend/src/shared/i18n/messages.pt.ts`.
 
@@ -29,7 +29,7 @@ Contrato (só leitura): `MyOrderController` e `order-http.ts` em `apps/backend/s
 ### 3. Rotas (`AppRoutes`, `app_router.dart`)
 - `checkout = '/cart/checkout'` (filha de `/cart`), `checkoutDelivery = '/cart/checkout/delivery'` (filha do checkout) e `orderLocation(id) = '/cart/orders/<id codificado>'` (filha de `/cart`, segmento `orders/:id`). `sessionRequiredPaths` ganha `checkout` e `'/cart/orders'`. O prefixo já cobre a rota dos dados de entrega abaixo do checkout.
 - A `CartPage` ganha `onOpenCheckout` (`context.go(AppRoutes.checkout)`). A guarda da etapa 8 leva a `/login?from=/cart/checkout` sem sessão e devolve ao checkout depois de entrar. Nenhuma tela checa a sessão.
-- No checkout, `onOpenDeliveryDetails` é `() => context.push(AppRoutes.checkoutDelivery)`, devolvendo o `Future` do `push`. A página espera o retorno e manda o ViewModel consultar o cadastro de novo. O `builder` dessa rota monta a mesma `DeliveryDetailsPage` da etapa 11, com `onSaved: () => context.pop()`.
+- No checkout, `onOpenDeliveryDetails` é `() => context.push(AppRoutes.checkoutDelivery)`, devolvendo o `Future` do `push`. A página espera o retorno e manda o ViewModel consultar o cadastro de novo. O `builder` dessa rota monta a mesma `DeliveryDetailsPage` da etapa 11, com `deliveryDetailsViewModelFactory: () => getIt<DeliveryDetailsViewModel>()`, `onBack: () => context.pop()` e `onSaved: () => context.pop()`. Os dois `pop` completam o `Future` do `push`.
 - Sucesso: `context.go(AppRoutes.orderLocation(id))`. O `go` remonta a pilha da aba como `/cart` → `/cart/orders/<id>`, então o checkout sai da pilha, voltar mostra o carrinho vazio e a aba não "lembra" do checkout.
 
 ### 4. `CheckoutViewModel` (`lib/ui/modules/order/view_models/`)
@@ -53,26 +53,29 @@ Contrato (só leitura): `MyOrderController` e `order-http.ts` em `apps/backend/s
 
 ### 7. Ajustes nas telas entregues
 - `CartPage`: o `_CheckoutBar` recebe `onPressed`. Ele é `null` com `state.isSyncing` ou `detail.hasUnavailableItems`; senão, chama `onOpenCheckout`. A classe da página passa a dizer que o botão abre o checkout.
-- `DeliveryDetailsPage`: ganha `VoidCallback? onSaved`, chamado depois do `SnackBar` "Dados salvos". Na rota da aba Conta, ele não é passado.
+- `DeliveryDetailsPage`: ganha `VoidCallback? onSaved`, chamado no `_save` depois do `SnackBar` "Dados salvos" (ramo `save.result is Ok`). O `onBack` obrigatório não muda. Na rota da aba Conta, `onSaved` não é passado.
 
 ### 8. DI, fakes e `CLAUDE.md`
 - `OrderRepository` → `ApiOrderRepository` (lazy singleton) e `CheckoutViewModel` (factory). `registerFakeDependencies` aceita `order:`.
 - `test/modules/order/support/fake_order_repository.dart`: `enqueuePlace`, `holdPlace` (com `Completer`) e `placeCalls`. `test/infra/api/support/order_json.dart`: o `OrderDetailDTO` de exemplo do `201` e as recusas.
-- `CLAUDE.md`, só acréscimos: "Etapa 12" no estado atual. Em "Regras de domínio", o item **Pedido** traz `POST /me/orders` (não `/me/cart/orders`), o corpo só com quem recebe e instruções, sem validação local, `mapOrderFailure`, o carrinho relido e nunca esvaziado pelo app, e as rotas da Decisão 3. Sai a frase "Finalizar pedido aparece desabilitado até a etapa 12": é descrição de estado, não regra.
+- `CLAUDE.md`, só acréscimos: "Etapa 12" no estado atual. Em "Regras de domínio", o item **Pedido** traz `POST /me/orders` (não `/me/cart/orders`), o corpo só com quem recebe e instruções, sem validação local, `mapOrderFailure`, o carrinho relido e nunca esvaziado pelo app, e as rotas da Decisão 3. Sai a frase de que "Finalizar pedido · <total>" aparece desabilitado até a etapa 12 ligar o checkout (regra do carrinho): é descrição de estado, não regra.
 
 ## Dependências da etapa anterior
 
-Assumidas da change `mobile-app-11-dados-entrega-mobile` (não conferidas no código, que estava em obras):
-- `lib/modules/customer/model/customer_entity.dart`: `Customer(id, cpf, phone, address)` e `CustomerAddress(zipCode, street, number, complement?, neighborhood, city, state, location?)`, com textos crus da API (CEP e telefone só com dígitos).
-- `lib/modules/customer/provider/customer_repository.dart`: `Future<Result<Customer?>> fetchMine()` (`null` = sem cadastro) e `saveMine(CustomerDraft)`, registrado na DI como `CustomerRepository` lazy singleton.
+Conferidas no código entregue pela change `mobile-app-11-dados-entrega-mobile` (arquivada em 2026-10-15):
+- `lib/modules/customer/model/customer_entity.dart`: `Customer(id, cpf, phone, address)`, `CustomerAddress(zipCode, street, number, complement?, neighborhood, city, state, location?)` e `CustomerLocation`, em `freezed`, com textos crus da API (CEP e telefone só com dígitos).
+- `lib/modules/customer/provider/customer_repository.dart`: `Future<Result<Customer?>> fetchMine()` (`Ok(null)` = sem cadastro) e `saveMine(CustomerDraft)`. Na DI, `CustomerRepository` → `ApiCustomerRepository` (lazy singleton). Nada é guardado entre chamadas: o checkout consulta pelo mesmo repositório.
+- `lib/modules/customer/usecase/load_delivery_details_use_case.dart`: `LoadDeliveryDetails` (cadastro + loja em vigor), factory em `registerViewModels()`. Só a tela "Dados de entrega" o usa; o checkout chama `fetchMine` direto, porque não precisa da loja.
 - `lib/ui/shared/view_models/block_state.dart`: `BlockLoading`, `BlockFailed(failure)` e `BlockLoaded(value)`.
-- `lib/ui/modules/customer/view_models/customer_masks.dart`: `formatPhoneInput` e `formatZipCodeInput`.
-- `lib/ui/modules/customer/pages/delivery_details_page.dart`: `DeliveryDetailsPage` com a fábrica `DeliveryDetailsViewModel` (`registerFactory`), o `SnackBar` "Dados salvos" no sucesso do `save`, e o `AppTextField` com `inputFormatters`.
-- `AppRoutes.deliveryDetails = '/account/delivery'` em `sessionRequiredPaths`. `session_redirect_test.dart` exige só essa rota.
-- `test/modules/customer/support/{customer_fixtures,fake_customer_repository}.dart` (`enqueueFetch`, `enqueueSave`) e `registerFakeDependencies(..., customer:)`.
-- Das etapas 8 a 10 (conferidas no código): `CartRepository` (`state`, `changes`, `remove` → `Result`, `refresh()`), `CartState` (`isRestoring`, `awaitsFirstPreview`, `isSyncing`, `previewFailure`, `lines`, `isEmpty`, `detail`), `CartPage` com `_CheckoutBar`, `checkoutLabel` e `cartViewModelFactory`/`onOpenProduct`/`onOpenSearch`, `CartSummary(detail, isSyncing)`, `AuthRepository.currentUser` (`AuthUser.name`), `BackendRejectionFailure(statusCode, codes)`, `runRequest`, `StateErrorBanner`, `EmptyState`, `AppButton`, `AppTextField`, `ProductArt`, `FakeCartRepository` e `FakeAuthRepository`.
+- `lib/ui/modules/customer/view_models/customer_masks.dart`: `formatCpfInput`, `formatPhoneInput` e `formatZipCodeInput` (`String → String`).
+- `lib/ui/modules/customer/pages/delivery_details_page.dart`: `DeliveryDetailsPage({required deliveryDetailsViewModelFactory, required onBack})`, com as constantes `title`, `errorTitle` e `savedMessage` ("Dados salvos"). O `_save` captura o `ScaffoldMessenger` e mostra "Dados salvos" quando `save.result is Ok`. `DeliveryDetailsViewModel(LoadDeliveryDetails, CustomerRepository, AuthRepository)` é `registerFactory`.
+- Rotas: `AppRoutes.deliveryDetails = '/account/delivery'` (`deliveryDetailsSegment = 'delivery'`, filha de `/account`; o `onBack` faz `pop` ou, sem pilha, `go(/account)`). `sessionRequiredPaths = {deliveryDetails}`, e `session_redirect_test.dart` exige exatamente esse conjunto. `requiresSession` aceita o caminho exato ou abaixo dele.
+- `AppTextField` com `inputFormatters` e `textCapitalization`.
+- Testes: `test/modules/customer/support/fake_customer_repository.dart` (`mine`, `fetchCalls`, `enqueueFetch`, `holdFetch`, `enqueueSave`, `holdSave`, `saveCalls`), `customer_fixtures.dart` (`fortalezaCustomer`, com complemento "Sala 3", e `fortalezaCustomerWithoutLocation`, sem complemento) e `registerFakeDependencies(..., customer:)` (padrão: sem cadastro).
+- A spec principal `mobile/mobile-navigation` ainda diz que nenhuma rota exige sessão: a etapa 11 mudou a guarda no código e em `mobile/mobile-customer`, mas não nessa spec.
+- Das etapas 8 a 10 (conferidas no código): `CartRepository` (`state`, `changes`, `remove` → `Result`, `refresh()`), `CartState` (`isRestoring`, `awaitsFirstPreview`, `isSyncing`, `previewFailure`, `lines`, `isEmpty`, `detail`), `CartPage` com `_CheckoutBar`, `checkoutLabel` e `cartViewModelFactory`/`onOpenProduct`/`onOpenSearch`, `CartSummary(detail, isSyncing)`, `AuthRepository.currentUser` (`AuthUser.name`), `BackendRejectionFailure(statusCode, codes)`, `runRequest`, `StateErrorBanner` (`failure`, `onRetry`, `title` opcional), `EmptyState`, `AppButton`, `AppTextField`, `ProductArt`, `FakeCartRepository` e `FakeAuthRepository`.
 
-Se um nome diferir, a aplicação segue o nome entregue e registra a diferença abaixo, com o prefixo do lote.
+Se um nome mudar até a aplicação, ela segue o código e registra a diferença abaixo, com o prefixo do lote.
 
 ## Decisões tomadas sem consulta
 
@@ -85,11 +88,11 @@ Se um nome diferir, a aplicação segue o nome entregue e registra a diferença 
 - **"Quem recebe" e instruções sem validação local**, como no web. O mínimo de 2 caracteres vem da API como `TEXT_TOO_SHORT`.
 - **Carrinho vazio no checkout** mostra o vazio padrão com "Voltar para a loja" (aba Início), como o link do web.
 - **"Finalizar pedido" da aba** fica desabilitado com mudança pendente ou indisponíveis, como o `cart-drawer` do web. A spec da aba dizia "desabilitada até o checkout existir".
-- **A spec `mobile-navigation` "Guarda de sessão"** perde a frase de que nenhuma rota exige sessão (a etapa 11 já tinha acrescentado uma).
+- **A spec `mobile-navigation` "Guarda de sessão"** perde a frase de que nenhuma rota exige sessão (no código, a etapa 11 já tinha acrescentado `/account/delivery`, sem atualizar essa spec) e passa a listar os dados de entrega, o checkout e o pedido.
 - A carga do carrinho feita pelo `refresh()` com o carrinho já exibido **não** mostra skeleton: o `SessionCartRepository` só sinaliza `isRestoring` antes da primeira resposta. O servidor confere tudo de novo na confirmação.
 
 ## Risks / Trade-offs
 
 - [Confirmar com o resumo ainda sendo relido] → o servidor lê o carrinho na hora e recusa com `ORDER_CART_*`, o app relê e mostra a mensagem.
 - [Toque duplo em "Confirmar"] → o `Command` em execução desabilita o botão, e um segundo `POST` receberia `ORDER_CART_EMPTY`.
-- [Nome assumido da etapa 11 diferente do entregue] → a tarefa 1.1 confere tudo antes de começar.
+- [Nome da etapa 11 mudar até a aplicação] → a tarefa 1.1 confere de novo antes de começar.
