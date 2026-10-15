@@ -1,0 +1,110 @@
+## Context
+
+A aba Carrinho é a `CartPage` provisória (`PlaceholderBody`), a barra de abas (`AppNavigationShell`, em `ui/shared/widgets/`) não conhece o carrinho e a `ProductDetailPage` tem o rodapé "Adicionar ao carrinho" com `onAddToCart: null`. O `KeyValueStore` (`readString`/`writeString`, nunca lança) já guarda a loja escolhida; o `Money` já tem `times` e `+`; o `runRequest` devolve `Result` e o `FakeHttpClientAdapter` simula o `dio` nos testes. A barreira de arquitetura já cobre `lib/modules` e `lib/infra` inteiros e confina o `shared_preferences` a `lib/infra/`: as pastas novas entram nela sem mudança.
+
+Regras do `CLAUDE.md` que moldam o desenho: estado global do carrinho mora num repositório em `infra/` exposto como `ChangeNotifier`/`Stream` (como a sessão da etapa 8); `provider/` só tem contrato que transporta tipo de domínio; regra de negócio copiada com a origem num comentário; preço sempre `Money`, formatado só na UI.
+
+Referência de comportamento (só leitura): `apps/frontend/src/modules/orders/data/{guest-cart-storage.util.ts,cart.util.ts,cart.api.ts,cart.context.tsx}`, `shared/components/store/{cart-drawer,quantity-stepper}.component.tsx`, o bloco "Adicionar" de `catalog/components/product-detail.component.tsx` e `shared/i18n/messages.pt.ts` (`CART_*`). Contrato: `CartController.preview` e `toGuestItems` (`apps/backend/src/modules/orders/{cart.controller,cart-http}.ts`: `200` sempre, itens normalizados no servidor, produto inexistente não volta como linha) e `CartDetailDTO`/`CartLineDTO` (`modules/orders/src/cart/dto/cart.dto.ts`). Regras: `modules/orders/src/cart/errors.ts`.
+
+## Goals / Non-Goals
+
+**Goals:** carrinho do visitante guardado no aparelho e precificado pela prévia; aba Carrinho real com linhas, resumo e estados; badge na aba; "Adicionar" do detalhe com quantidade, aviso e cartão de entrega.
+
+**Non-Goals (ficam para outras etapas):**
+- `/me/cart`, merge no login, volta ao anônimo vazio no logout e a escolha da fonte pela sessão — etapa 10. Nesta etapa o carrinho é o do visitante **mesmo com sessão**; o contrato `CartRepository` já é o que a etapa 10 vai implementar com as duas fontes.
+- Mensagens de erro do backend do carrinho (`CART_PRODUCT_NOT_FOUND` etc.) — etapa 10; a prévia nunca devolve `400`.
+- "Finalizar pedido" funcional e sessão obrigatória no checkout — etapa 12 (aqui o botão aparece desabilitado).
+- Varredura de textos e testes finais de DI/rotas — etapa 15.
+- Não entram em etapa nenhuma: o "+" nos cards das grades (o plano não o lista e o app tem uma ação principal por tela: o detalhe), sincronizar entre abas do navegador (não existe no app), descartar o carrinho legado `jaja.cart` do web (nunca existiu no app) e o "Entrega de bike · Saindo da <loja>" do cartão do web (o cartão do app fica só com a regra de frete).
+
+## Decisions
+
+### 1. Domínio (`lib/modules/cart/`)
+- `model/cart_entity.dart` (`freezed` v3): `CartItem` (`productId`, `quantity`), `CartLine` (`productId`, `slug`, `name`, `unit`, `rootCategorySlug`, `String? thumbUrl`, `Money price`, `Money? listPrice`, `quantity`, `isAvailable`, `Money? lineTotal`) e `CartDetail` (`lines`, `itemCount`, `subtotal`, `deliveryFee`, `total`, `freeDeliveryThreshold`, `missingForFreeDelivery`, `hasUnavailableItems`), com `CartDetail.empty()` (totais zero e o limite de frete, o `emptyCartDetail` do web).
+- `model/cart_rules.dart` (Dart puro, origem `cart/errors.ts` e `cart.util.ts` no comentário): `cartItemMaxQuantity = 99`, `cartMaxItems = 50`, `deliveryFee = Money 490`, `freeDeliveryThreshold = Money 7900`; `normalizeCartItems(Object?)` (o `normalizeItems` do web, item a item, sobre o JSON já decodificado; o id sai aparado e minúsculo); `addCartItem`, `setCartItemQuantity` e `removeCartItem`, puras, devolvendo `Result<List<CartItem>>` sem mudar a lista recebida, na mesma ordem de checagem do `cart.util.ts`. O id recebido também é aparado e posto em minúsculas, para casar com o que a API devolve (`toGuestItems` faz o mesmo).
+- `model/cart_state.dart` (classe imutável à mão): `items`, `detail` (última prévia bem-sucedida, `empty()` antes dela), `isRestoring`, `isSyncing`, `AppFailure? previewFailure`. Derivados: `count` (soma local das quantidades, o badge muda na hora), `lines` (linhas da prévia com a quantidade local aplicada e as ausentes ou zeradas fora, o `applyQuantities` do web), `quantityOf(productId)`, `isEmpty`, `awaitsFirstPreview` (tem itens, nenhuma linha, sem falha).
+- `errors/cart_errors.dart`: `enum CartErrorCode { quantityExceeded, itemsLimitExceeded, quantityInvalid }` com as mensagens de `messages.pt.ts` ("Limite de 99 unidades por produto.", "O carrinho aceita até 50 produtos diferentes.", "Quantidade inválida."); a falha é `ValidationFailure`.
+- `provider/cart_repository.dart`: `CartState get state`, `Stream<CartState> get changes` (broadcast), `Future<Result<void>> add(String productId, int quantity)`, `Future<Result<void>> setQuantity(String productId, int quantity)`, `Future<void> remove(String productId)` e `void refresh()`. Sem use case (regra 4).
+
+### 2. Armazenamento (`lib/infra/storage/` e `lib/infra/cart/`)
+- `KeyValueStore` ganha `Future<void> remove(String key)` (nunca lança), implementado no `SharedPreferencesKeyValueStore` e no `FakeKeyValueStore` (que respeita `failOnWrite`): o web apaga a chave quando o carrinho esvazia.
+- `guest_cart_storage.dart`: `GuestCartStorage(KeyValueStore)`, chave `jaja.guest-cart` (a do web). `read()` → `jsonDecode` + `normalizeCartItems`; texto ilegível ou ausente → lista vazia. `write(items)`: vazio → `remove`; senão o JSON `[{"productId","quantity"}]`. Mesmo conteúdo do último gravado não regrava.
+
+### 3. Prévia (`lib/infra/api/cart_dto.dart`)
+No molde de `storefront_product_detail_dto.dart` (casts estritos, `Money.fromCents` com `Failure` → `FormatException` com o nome do campo, extras ignorados, listas `List.unmodifiable`): `parseCartDetail(Object?)` e `encodeCartItems(List<CartItem>)` → `{"items": [...]}`. JSON de exemplo em `test/infra/api/support/cart_json.dart`.
+
+### 4. `GuestCartRepository` (`lib/infra/cart/`)
+`GuestCartRepository extends ChangeNotifier implements CartRepository`, recebendo `Dio`, `GuestCartStorage` e `previewDelay` (padrão 250 ms, o `PREVIEW_DELAY_MS` do web). Nasce com `isRestoring: true`.
+- `restore()` (uma vez, chamada pelo bootstrap sem esperar): lê o armazenamento, `isRestoring: false`, avisa e agenda a prévia. As ações esperam o `restore` terminar antes de aplicar a regra.
+- Cada mudança aceita: novo `items`, grava, `isSyncing: true`, avisa (`notifyListeners` + `changes`) e reagenda o `Timer` da prévia. Falha da regra devolve a `Failure` sem mudar nada nem avisar.
+- Prévia: cada disparo abre uma geração; lista vazia não chama a API (`detail: empty()`, `isSyncing: false`). `POST /cart/preview` via `runRequest`; resposta de geração antiga ou depois do `dispose` é descartada. `Ok`: mantém só os itens cujo id volta nas linhas (comparação em minúsculas) e regrava se algo saiu, `detail` novo, `previewFailure: null`. `Failure`: `previewFailure`, mantém `items` e o `detail` anterior. Nos dois, `isSyncing: false` e avisa.
+- `refresh()`: prévia imediata (cancela o `Timer`), usada pelo "Tentar de novo". `dispose()` cancela o `Timer` e fecha o `StreamController`.
+
+### 5. DI e bootstrap
+- `configureDependencies`: `GuestCartStorage` e `GuestCartRepository` lazy singletons (o repositório com `dispose`), e `CartRepository` apontando para a mesma instância (`() => getIt<GuestCartRepository>()`), como a sessão faz com `Session`/`AuthRepository`.
+- `createRootWidget`: depois do `restore()` da sessão, `unawaited(getIt<GuestCartRepository>().restore())`.
+- `registerViewModels()`: `CartViewModel(CartRepository)`; `ProductDetailViewModel` passa a receber também `CartRepository`.
+
+### 6. ViewModels
+- `CartViewModel` (`ui/modules/cart/view_models/`): `state` do repositório, atualizado por `changes` (cancela a assinatura no `dispose`); `changeQuantity: Command1<void, ({String productId, int quantity})>` e `remove: Command1<void, String>`; `retry()` chama `refresh()`; `failureMessage` da última ação que falhou, para o `SnackBar`. Usado pela página e pela barra.
+- `ProductDetailViewModel`: `quantity` (começa em 1) com `increment()`/`decrement()` presos a 1..99; `inCart` (`quantityOf(product.id)`, atualizado por `changes`); `addToCart: Command0<({int quantity, Money total})>` que chama `add(product.id, quantity)`; no `Ok`, `quantity` volta a 1 e o resultado leva a quantidade e o total para o aviso. `total` = `price.times(quantity)` (conta de dinheiro só no `Money`).
+
+### 7. Telas e widgets
+- `QuantityStepper` (`ui/shared/widgets/quantity_stepper.dart`, dois consumidores: linha e rodapé): `quantity`, `onDecrement`, `onIncrement` (`null` desabilita), `itemName` (rótulos "Diminuir quantidade de <nome>" / "Aumentar quantidade de <nome>", os `aria-label` do web), tamanhos `compact` e `large`; pílula com borda `line`, alvo de toque mínimo 44.
+- `CartPage` reescrita (`WatchingStatefulWidget`, molde da `HomePage`): `CartPage({cartViewModelFactory, onOpenProduct(String slug), onOpenSearch})`. Corpo em `ListView` padding 16 com título "Seu carrinho" (`headlineSmall`). Estados por ordem: `isRestoring` ou `awaitsFirstPreview` → skeleton de 3 linhas ("Carregando"); `isEmpty` → `EmptyState(emoji: '🛒', title: 'Seu carrinho está vazio.', message: 'Adicione itens para o escritório!', actionLabel: 'Ver produtos')`; `previewFailure` → `StateErrorBanner(title: 'Não foi possível carregar o carrinho.', onRetry: retry)` no lugar das linhas e do resumo; senão as linhas e o resumo. Textos como constantes públicas.
+- `widgets/cart_line_tile.dart`: `ProductArt(size: thumb)` 64×64 (`thumbUrl`, `categoryArtOf(rootCategorySlug)`), nome como link (`InkWell` com altura mínima 44, `titleSmall`) → `onOpenProduct(slug)`, unidade em `mutedInk`, `PriceText`, `QuantityStepper(compact)` ("−" em 1 remove; "+" `null` em 99), total da linha = `price.times(quantity)` local e `IconButton` de lixeira com `tooltip`/rótulo "Remover <nome> do carrinho". Indisponível: selo "Indisponível" (`danger` sobre `dangerSoft`, raio `pill`) e `AppButton(outline)` "Remover", sem stepper nem total.
+- `widgets/cart_summary.dart`: linhas "Subtotal", "Entrega" ("Grátis" em `success` negrito, ou o valor), "Faltam <valor> para a entrega grátis." (`bodySmall`, só com taxa > 0), "Total" em negrito; com `hasUnavailableItems`, "Remova os itens indisponíveis para continuar." em `danger`. Com `isSyncing`, o bloco fica com opacidade 0,5 e `Semantics(label: 'Atualizando')`.
+- Rodapé da página (fora do vazio, do skeleton e da falha): `AppButton(label: 'Finalizar pedido · <total>', size: xl, expand: true, onPressed: null)`.
+- Badge: `AppNavigationShell` ganha `int cartCount = 0` e envolve o ícone do Carrinho num `Badge` (`isLabelVisible: cartCount > 0`, rótulo `cartCount` ou "99+", cores `brand`/`onBrand`); `CartNavigationShell` (`ui/modules/cart/widgets/`, `WatchingStatefulWidget`) recebe `navigationShell` e `cartViewModelFactory` e monta o `AppNavigationShell(cartCount: state.count)`. Assim o widget compartilhado continua sem domínio.
+- `ProductDetailPage`: `onAddToCart` sai, entra `VoidCallback onOpenCart`. Rodapé: "Você já tem N no carrinho." (`bodySmall` negrito `inkSoft`, `Semantics(liveRegion)`) acima de uma linha com `QuantityStepper(large)` e `AppButton(xl, expand)` "Adicionar · <total>" / "Adicionando…" (`onPressed: null` enquanto roda). Sucesso: `SnackBar` "Adicionado ao carrinho" + "<n> un · <total>" com `SnackBarAction('Ver carrinho', onOpenCart)`; falha: `SnackBar` com a mensagem. `ScaffoldMessenger` capturado antes do `await`. Cartão de entrega entre o preço e a trilha: borda `line`, fundo `card`, raio `xl2`, ícone `Icons.local_shipping_outlined` em `brand`, "Entrega grátis acima de <freeDeliveryThreshold>" e "Abaixo disso, taxa fixa de <deliveryFee>" em `mutedInk`.
+- `PlaceholderBody` (e o teste dele) é apagado quando a `CartPage` era o último consumidor (regra do `CLAUDE.md`).
+
+### 8. Rotas (`lib/app/router/`)
+- `AppRoutes.cartProduct` (`/cart/product/:slug`) e `cartProductLocation(slug)`; rota filha `product/:slug` de `/cart` pelo helper `_productDetailPage(..., productLocation: AppRoutes.cartProductLocation)`.
+- O builder do shell passa a montar `CartNavigationShell(navigationShell: shell, cartViewModelFactory: () => getIt<CartViewModel>())`.
+- `CartPage`: `onOpenProduct: (slug) => context.go(AppRoutes.cartProductLocation(slug))`, `onOpenSearch: () => context.go(AppRoutes.search)`. As três rotas de produto passam `onOpenCart: () => context.go(AppRoutes.cart)`.
+- O carrinho não exige sessão: nada entra em `sessionRequiredPaths`.
+
+### 9. Testes e fakes
+- `test/modules/cart/support/cart_fixtures.dart`: ids em minúsculas; `canetaLine` (R$ 12,90, disponível), `tonerLine` (com `listPrice`), `unavailableLine`; `detailOf(lines, …)` monta um `CartDetail` coerente (entrega 490 abaixo de 7900).
+- `test/modules/cart/support/fake_cart_repository.dart`: `FakeCartRepository extends ChangeNotifier implements CartRepository`, com `state` programável (`emit(CartState)`), resultados programáveis de `add`/`setQuantity`, `holdAdd()` com `Completer` e chamadas gravadas; `add` de sucesso soma em `items` e emite, para o badge e o "Você já tem" mudarem nos testes.
+- `registerFakeDependencies` ganha `FakeCartRepository? cart` (padrão: vazio, restaurado) registrado como `CartRepository`; testes existentes não mudam de expectativa.
+- O `GuestCartRepository` é testado com `Dio` + `FakeHttpClientAdapter` + `GuestCartStorage(FakeKeyValueStore)`; os testes do atraso usam `testWidgets` e `tester.pump(Duration)`, como os do `SearchViewModel`; os outros, `previewDelay: Duration.zero` e `pumpEventQueue()`.
+- Fotos das linhas nos widget tests: as fixtures usam `thumbUrl: null`, exceto um teste com `holdImageLoad`.
+
+### 10. `CLAUDE.md`
+Só acréscimos: "Etapa 9" no estado atual; em "Regras de domínio › Carrinho", a chave `jaja.guest-cart`, a prévia com 250 ms e geração, a saída dos produtos que não voltam, o carrinho do visitante valendo mesmo com sessão até a etapa 10 e "Finalizar pedido" desabilitado até a etapa 12; na lista do tema, `QuantityStepper`; o `KeyValueStore.remove`.
+
+## Dependências da etapa anterior
+
+Assumido da change `mobile-app-08-sessao-mobile` (proposal, design e tasks), ainda em aplicação; se algo vier com outro nome, adaptar sem renomear o que existe e registrar abaixo:
+- `configureDependencies` registra `SessionStorage`, `SessionRepository`, `Session` e `AuthRepository` (lazy singletons, mesma instância), e `registerViewModels()` termina com `LoginViewModel`, `RegisterViewModel` e `AccountViewModel`; esta etapa acrescenta o carrinho depois deles.
+- `createRootWidget` chama `unawaited(getIt<SessionRepository>().restore())` depois de `configureDependencies`; o `restore()` do carrinho entra logo depois. `test/app/bootstrap_test.dart` chama `FlutterSecureStorage.setMockInitialValues({})`; aqui também `SharedPreferences.setMockInitialValues({})` se ainda não houver.
+- `buildAppRouter` tem `refreshListenable: getIt<Session>()`, o redirect `resolveSessionRedirect`, as rotas de nível superior `/splash`, `/login`, `/register`, e o shell continua um `StatefulShellRoute` com o ramo `/cart` montando `const CartPage()`; `AppRoutes.sessionRequiredPaths` vazio. Esta etapa só troca o builder do shell e o do ramo `/cart` e acrescenta a rota filha.
+- `registerFakeDependencies({storeRepository, catalogRepository, auth})`, com a sessão fake `anonymous` por padrão; esta etapa acrescenta `cart`.
+- A `AccountPage` deixa de usar o `PlaceholderBody`; a `CartPage` fica como o último consumidor.
+- `CLAUDE.md` com o "Etapa 8" no estado atual; os acréscimos desta etapa vêm depois dele.
+- Das etapas 1 a 7 (conferido no código): `KeyValueStore`/`SharedPreferencesKeyValueStore`/`FakeKeyValueStore(initialValues, failOnRead, failOnWrite)`, `Money.{fromCents, times, +}`, `runRequest`, `FakeHttpClientAdapter`, `Command0/1`, `ProductDetailPage({slug, productDetailViewModelFactory, onBack, onOpenSearch, onOpenProduct, onAddToCart})` com `_AddToCartBar` privado, `ProductDetailViewModel(CatalogRepository)` com `start(slug)`/`product`, helper `_productDetailPage(context, state, productLocation:)` no router, `AppNavigationShell(navigationShell)`, `ProductArt(size: ProductArtSize.thumb)`, `categoryArtOf`, `PriceText`, `AppButton(variant, size, expand, icon)`, `EmptyState(emoji:)`, `StateErrorBanner(title:)`, `SkeletonBox`, `holdImageLoad`, `context.tokens` (`brand`, `onBrand`, `line`, `card`, `mutedInk`, `inkSoft`, `danger`, `success`), `AppRadius.xl2`.
+
+## Decisões tomadas sem consulta
+
+- Com sessão, o app continua usando o carrinho do visitante até a etapa 10 (que troca a fonte e faz o merge); não há aviso disso na UI.
+- O badge e o "Você já tem N" usam a soma local das quantidades (muda na hora); o web usa o `itemCount` da prévia quando ela está em dia, que dá o mesmo número depois de a prévia tirar os produtos inexistentes.
+- O total da linha é `preço da prévia × quantidade local` (o mesmo que a API calcula), para acompanhar o "+" na hora; subtotal, entrega e total vêm só da prévia e ficam sinalizados "Atualizando" até ela voltar.
+- Falha da prévia vira o banner padrão "Não foi possível carregar o carrinho." no lugar das linhas e do resumo (padrão único de estados), em vez do toaster do web.
+- Produto que some da prévia sai do carrinho em silêncio, como o web.
+- "Finalizar pedido · <total>" aparece desabilitado até a etapa 12, no molde do "Adicionar ao carrinho" da etapa 7.
+- O estado vazio ganha a ação "Ver produtos" (abre a Buscar sem filtros), exigida pelo padrão de estados; a mensagem é a da gaveta do web.
+- O nome da linha abre o produto numa pilha própria da aba Carrinho (`/cart/product/:slug`), como Início e Buscar, em vez de trocar de aba.
+- O "+" nos cards das grades não entra (fora do texto do plano; o detalhe é a ação de incluir).
+- O `KeyValueStore` ganha `remove`, para o carrinho vazio apagar a chave como o web.
+- Mesma chave do web (`jaja.guest-cart`), como a etapa 4 fez com a loja escolhida.
+- Nenhuma lacuna de API encontrada: `apps/mobile/docs/lacunas-da-api.md` não é criado nesta etapa.
+
+## Risks / Trade-offs
+
+- [Prévia a cada mudança com rede lenta] → atraso de 250 ms e geração descartam pedidos superados; a quantidade e o badge não esperam a rede.
+- [Corrida entre `restore` e a primeira ação] → as ações esperam o `restore` terminar; teste com armazenamento lento cobre.
+- [`ProductDetailViewModel` com dois repositórios] → é só leitura do estado e uma ação; continua sem use case (regra 4) e os testes usam os dois fakes.
+- [Etapa 10 trocar o repositório] → a UI depende só do `CartRepository`; a etapa 10 reimplementa o contrato sem mexer nas telas.
+- [Nomes da etapa 8 mudarem até a aplicação] → a seção "Dependências da etapa anterior" lista o que foi assumido; o lote 1 começa por ela.
