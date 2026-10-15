@@ -6,7 +6,9 @@ import '../../modules/cart/provider/cart_repository.dart';
 import '../../modules/catalog/provider/catalog_repository.dart';
 import '../../modules/customer/provider/customer_repository.dart';
 import '../../modules/customer/usecase/load_delivery_details_use_case.dart';
+import '../../modules/order/provider/order_live_source.dart';
 import '../../modules/order/provider/order_repository.dart';
+import '../../modules/order/usecase/live_order_feed.dart';
 import '../../modules/store/provider/store_repository.dart';
 import '../../ui/modules/auth/view_models/account_view_model.dart';
 import '../../ui/modules/auth/view_models/login_view_model.dart';
@@ -31,6 +33,7 @@ import '../catalog/api_catalog_repository.dart';
 import '../customer/api_customer_repository.dart';
 import '../http/api_client.dart';
 import '../http/auth_interceptor.dart';
+import '../order/api_order_live_source.dart';
 import '../order/api_order_repository.dart';
 import '../storage/key_value_store.dart';
 import '../storage/shared_preferences_key_value_store.dart';
@@ -105,6 +108,9 @@ void configureDependencies({required Uri apiBaseUrl}) {
   getIt.registerLazySingleton<OrderRepository>(
     () => ApiOrderRepository(getIt<Dio>()),
   );
+  getIt.registerLazySingleton<OrderLiveSource>(
+    () => ApiOrderLiveSource(getIt<Dio>()),
+  );
   registerViewModels();
 }
 
@@ -162,8 +168,15 @@ void registerViewModels() {
       getIt<OrderRepository>(),
     ),
   );
+  // Um feed por tela: guarda o estado de uma conexão.
+  getIt.registerFactory<LiveOrderFeed>(
+    () => LiveOrderFeed(getIt<OrderLiveSource>()),
+  );
   getIt.registerFactory<OrderTrackingViewModel>(
-    () => OrderTrackingViewModel(getIt<OrderRepository>()),
+    () => OrderTrackingViewModel(
+      getIt<OrderRepository>(),
+      getIt<LiveOrderFeed>(),
+    ),
   );
 }
 

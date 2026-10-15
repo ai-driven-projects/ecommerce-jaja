@@ -13,9 +13,15 @@ import 'order_timeline_step.dart';
 /// Cartão "Status do pedido", de `order-tracking.component.tsx`: os cinco
 /// passos na ordem de [OrderStatus], com a hora `HH:MM:SS` (no fuso do
 /// aparelho) de cada passo concluído, "Em andamento…" no atual e
-/// "Aguardando" nos pendentes, e o aviso de entregue no fim.
+/// "Aguardando" nos pendentes, e o aviso de entregue no fim. O passo para o
+/// qual [isHighlighted] responde `true` recebe o destaque ao passar a
+/// concluído.
 class OrderTimeline extends StatelessWidget {
-  const OrderTimeline({super.key, required this.order});
+  const OrderTimeline({
+    super.key,
+    required this.order,
+    this.isHighlighted = _noHighlight,
+  });
 
   static const String title = 'Status do pedido';
   static const String currentDetail = 'Em andamento…';
@@ -29,6 +35,11 @@ class OrderTimeline extends StatelessWidget {
 
   final OrderDetail order;
 
+  /// O `isHighlighted` do ViewModel.
+  final bool Function(OrderStatus step) isHighlighted;
+
+  static bool _noHighlight(OrderStatus step) => false;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -40,11 +51,14 @@ class OrderTimeline extends StatelessWidget {
       children: [
         for (final (index, step) in steps.indexed)
           OrderTimelineStep(
-            key: ValueKey(step),
+            // Com o estado na chave, o passo remonta ao mudar e o destaque
+            // roda uma vez.
+            key: ValueKey((step, orderStepState(order.status, step))),
             title: orderStatusLabel(step),
             detail: _detailOf(step),
             state: orderStepState(order.status, step),
             isLast: index == steps.length - 1,
+            highlight: isHighlighted(step),
           ),
         if (isOrderFinished(order.status))
           Semantics(

@@ -831,7 +831,7 @@
       "commit": "32396e999ca450eab3d4e43230b9af6e792739ec"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 14,
       "phase": "Pedido",
       "title": "Acompanhamento ao vivo",
@@ -842,7 +842,55 @@
         "base": "cd08b588a7fa9e50b9f2f930460351dec27abe6d",
         "commit": "639df8b3a84dc4381eb08fa69a8b1bfc4f26fb61",
         "at": "2026-10-15T19:23:55.906Z"
-      }
+      },
+      "iteration": 14,
+      "deliveredAt": "2026-10-15T19:42:28.840Z",
+      "durationMs": 1109367,
+      "cost": 7.6648689999999995,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 62920,
+          "cost": 0.6469416,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 32290,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 396,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 951959,
+          "cost": 6.6716374,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 32779,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 28910,
+          "cost": 0.34629,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 113,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
@@ -852,84 +900,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 14,
-    "stage": 14,
-    "startCommit": "32396e999ca450eab3d4e43230b9af6e792739ec",
-    "startedAt": "2026-10-15T19:23:59.402Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 62920,
-        "cost": 0.6469416,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 32290,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o acompanhamento ao vivo do pedido no app mobile",
-      "comparison": "- Na etapa 13 o pedido só muda ao puxar a tela, e o indicador ao vivo, a releitura sem skeleton e o destaque do passo ficaram explicitamente para esta etapa.\n- O backend confere o dono antes de abrir o SSE, então 401 e 404 chegam como JSON comum; aberto, o stream manda `order` (sem dados do pedido) e `ping` a cada 20 s.\n- O web (`event-stream.util.ts`, `use-my-order.hook.ts`, `coalesced-read.util.ts`) relê o pedido ao conectar e a cada aviso, com leitura agrupada, espera de 1 s a 10 s e 401/403/404 como recusa final; a change copia isso, com a reconexão em Dart puro (`LiveOrderFeed`).\n- O cliente dio tem `receiveTimeout` de 10 s, que derrubaria o stream entre dois `ping`: a fonte de avisos usa `ResponseType.stream` e `receiveTimeout` zero só nessa requisição.\n- As abas usam `StatefulShellRoute.indexedStack`, que mantém a página montada: além do `AppLifecycleListener`, a tela para o stream quando a aba sai de vista (`TickerMode`).\n- Não há pacote de relógio falso entre os permitidos: o tempo é controlado por um `wait` injetado (`FakeDelay`), e o `FakeHttpClientAdapter` ganha resposta em stream.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 23661370,
-    "cost": 195.94486429999995,
+    "durationMs": 24675527,
+    "cost": 204.64311109999997,
     "runs": 1,
     "iterationsStarted": 14,
-    "iterationsDelivered": 13,
-    "claudeSessions": 121,
-    "turns": 2338,
-    "checks": 89,
+    "iterationsDelivered": 14,
+    "claudeSessions": 128,
+    "turns": 2467,
+    "checks": 92,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 33
+    "commits": 34
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

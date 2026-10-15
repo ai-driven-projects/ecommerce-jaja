@@ -6,6 +6,7 @@ import 'package:mobile/core/errors/app_failure.dart';
 import 'package:mobile/core/result.dart';
 import 'package:mobile/modules/order/model/order_entity.dart';
 import 'package:mobile/modules/order/model/order_status.dart';
+import 'package:mobile/modules/order/usecase/live_order_feed.dart';
 import 'package:mobile/ui/modules/order/pages/order_tracking_page.dart';
 import 'package:mobile/ui/modules/order/view_models/order_formatters.dart';
 import 'package:mobile/ui/modules/order/view_models/order_tracking_view_model.dart';
@@ -19,6 +20,7 @@ import 'package:mobile/ui/shared/formatters/money_formatter.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
 import 'package:mobile/ui/shared/widgets/state_error_banner.dart';
 
+import '../../../../modules/order/support/fake_order_live_source.dart';
 import '../../../../modules/order/support/fake_order_repository.dart';
 import '../../../../modules/order/support/order_fixtures.dart';
 import '../../../shared/support/money.dart';
@@ -69,8 +71,11 @@ Future<FakeOrderRepository> _pumpPage(
     MaterialApp(
       theme: AppTheme.light(),
       home: OrderTrackingPage(
-        orderTrackingViewModelFactory: () =>
-            OrderTrackingViewModel(orders, now: () => _now),
+        orderTrackingViewModelFactory: () => OrderTrackingViewModel(
+          orders,
+          LiveOrderFeed(FakeOrderLiveSource()),
+          now: () => _now,
+        ),
         orderId: fakePlacedOrderId,
         onBackToStore: onBackToStore ?? () {},
       ),

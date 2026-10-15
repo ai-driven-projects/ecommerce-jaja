@@ -4,6 +4,7 @@ import 'package:mobile/modules/auth/provider/auth_repository.dart';
 import 'package:mobile/modules/cart/provider/cart_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/customer/provider/customer_repository.dart';
+import 'package:mobile/modules/order/provider/order_live_source.dart';
 import 'package:mobile/modules/order/provider/order_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 
@@ -12,6 +13,7 @@ import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/customer/support/fake_customer_repository.dart';
+import '../../modules/order/support/fake_order_live_source.dart';
 import '../../modules/order/support/fake_order_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 import '../../modules/store/support/store_fixtures.dart';
@@ -29,6 +31,8 @@ import '../../modules/store/support/store_fixtures.dart';
 /// [FakeCustomerRepository] de [customer] (padrão: sem cadastro), registrado
 /// como `CustomerRepository`. Os pedidos são o [FakeOrderRepository] de
 /// [order] (padrão: todo pedido é aceito), registrado como `OrderRepository`.
+/// Os avisos ao vivo são o [FakeOrderLiveSource] de [liveSource] (padrão:
+/// conexões abertas sem eventos), registrado como `OrderLiveSource`.
 ///
 /// O catálogo padrão são as fixtures do seed sem foto: a Início monta os
 /// cards logo ao abrir, e uma foto de verdade acionaria o cache do aparelho,
@@ -40,6 +44,7 @@ FakeStoreRepository registerFakeDependencies({
   FakeCartRepository? cart,
   FakeCustomerRepository? customer,
   FakeOrderRepository? order,
+  FakeOrderLiveSource? liveSource,
 }) {
   final repository =
       storeRepository ??
@@ -61,6 +66,9 @@ FakeStoreRepository registerFakeDependencies({
     customer ?? FakeCustomerRepository(),
   );
   getIt.registerSingleton<OrderRepository>(order ?? FakeOrderRepository());
+  getIt.registerSingleton<OrderLiveSource>(
+    liveSource ?? FakeOrderLiveSource(),
+  );
   registerViewModels();
   return repository;
 }

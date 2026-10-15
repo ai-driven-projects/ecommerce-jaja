@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../modules/order/model/order_progress.dart';
+import '../../../shared/theme/app_radius.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
 
@@ -8,6 +9,10 @@ import '../../../shared/theme/brand_tokens.dart';
 /// `order-tracking.component.tsx`: concluído (círculo verde com ✓), atual
 /// (borda da marca com o ponto) ou pendente (borda neutra e título
 /// atenuado), com a linha até o passo seguinte quando não é o último.
+///
+/// Com [highlight], o fundo vai de `successSoft` a transparente uma vez, ao
+/// montar (`animate-step-done` do web); com as animações desligadas no
+/// aparelho, nada é desenhado.
 class OrderTimelineStep extends StatelessWidget {
   const OrderTimelineStep({
     super.key,
@@ -15,7 +20,14 @@ class OrderTimelineStep extends StatelessWidget {
     required this.detail,
     required this.state,
     required this.isLast,
+    this.highlight = false,
   });
+
+  /// `--animate-step-done: step-done 1.6s ease-out` do `globals.css`.
+  static const Duration highlightDuration = Duration(milliseconds: 1600);
+
+  /// Fundo do destaque, para os testes o acharem.
+  static const Key highlightKey = ValueKey('order-timeline-step-highlight');
 
   /// Lado do círculo (`size-[26px]` do web), também a altura mínima da linha.
   static const double markerSize = 26;
@@ -29,8 +41,32 @@ class OrderTimelineStep extends StatelessWidget {
   final OrderStepState state;
   final bool isLast;
 
+  /// Passo concluído com a tela aberta.
+  final bool highlight;
+
   @override
   Widget build(BuildContext context) {
+    final content = _content(context);
+    if (!highlight || MediaQuery.disableAnimationsOf(context)) return content;
+
+    final soft = context.tokens.successSoft;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 1, end: 0),
+      duration: highlightDuration,
+      curve: Curves.easeOut,
+      child: content,
+      builder: (context, opacity, child) => DecoratedBox(
+        key: highlightKey,
+        decoration: BoxDecoration(
+          color: soft.withValues(alpha: soft.a * opacity),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context) {
     final tokens = context.tokens;
     final textTheme = Theme.of(context).textTheme;
     final done = state == OrderStepState.done;

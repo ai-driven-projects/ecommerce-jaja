@@ -3,6 +3,7 @@ import 'package:watch_it/watch_it.dart'
     show WatchingStatefulWidget, watchPropertyValue;
 
 import '../../../../modules/order/model/order_entity.dart';
+import '../../../../modules/order/model/order_live_status.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/view_models/block_state.dart';
 import '../../../shared/widgets/empty_state.dart';
@@ -18,7 +19,11 @@ import '../widgets/order_tracking_skeleton.dart';
 /// aba Carrinho: o skeleton na carga, o cabeçalho, a linha do tempo, os
 /// itens com os totais e as instruções (quando existem). Puxar a tela relê o
 /// pedido. O `404` mostra "Pedido não encontrado." com "Voltar para a loja";
-/// outra falha, o banner com "Tentar de novo". Sem atualização ao vivo.
+/// outra falha, o banner com "Tentar de novo".
+///
+/// O pedido também avança sozinho pelo stream de avisos do ViewModel, só
+/// com a tela à vista: a aba escondida pelo `indexedStack` (`TickerMode`
+/// desligado) e o app em segundo plano desligam o stream; a volta religa.
 class OrderTrackingPage extends WatchingStatefulWidget {
   const OrderTrackingPage({
     super.key,
@@ -46,24 +51,60 @@ class OrderTrackingPage extends WatchingStatefulWidget {
 
 class _OrderTrackingPageState extends State<OrderTrackingPage> {
   late final OrderTrackingViewModel _viewModel;
+  late final AppLifecycleListener _lifecycle;
+  bool _tabVisible = true;
+  bool _appVisible = true;
 
   @override
   void initState() {
     super.initState();
     _viewModel = widget.orderTrackingViewModelFactory();
+    final state = WidgetsBinding.instance.lifecycleState;
+    _appVisible = state == null || _isVisible(state);
+    // Pelo estado, e não por `onHide`/`onShow`: o binding pode pular os
+    // estados intermediários (ex.: do estado desconhecido direto a `paused`).
+    _lifecycle = AppLifecycleListener(
+      onStateChange: (state) => _setAppVisible(_isVisible(state)),
+    );
     _viewModel.start(widget.orderId);
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tabVisible = TickerMode.valuesOf(context).enabled;
+    _syncActive();
+  }
+
+  @override
   void dispose() {
+    _lifecycle.dispose();
     _viewModel.dispose();
     super.dispose();
   }
+
+  static bool _isVisible(AppLifecycleState state) => switch (state) {
+    AppLifecycleState.resumed || AppLifecycleState.inactive => true,
+    AppLifecycleState.hidden ||
+    AppLifecycleState.paused ||
+    AppLifecycleState.detached => false,
+  };
+
+  void _setAppVisible(bool visible) {
+    _appVisible = visible;
+    _syncActive();
+  }
+
+  void _syncActive() => _viewModel.setActive(_tabVisible && _appVisible);
 
   @override
   Widget build(BuildContext context) {
     final order = watchPropertyValue(
       (OrderTrackingViewModel vm) => vm.order,
+      target: _viewModel,
+    );
+    final live = watchPropertyValue(
+      (OrderTrackingViewModel vm) => vm.live,
       target: _viewModel,
     );
     // Derivado de [order], observado acima.
@@ -87,7 +128,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
           onRetry: _viewModel.load,
         ),
       ],
-      BlockLoaded(:final value) => _loaded(value),
+      BlockLoaded(:final value) => _loaded(value, live),
     };
 
     return Scaffold(
@@ -103,12 +144,12 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     );
   }
 
-  List<Widget> _loaded(OrderDetail order) {
+  List<Widget> _loaded(OrderDetail order, OrderLiveStatus live) {
     final instructions = order.deliveryInstructions;
     return [
-      OrderHeader(order: order, now: _viewModel.now()),
+      OrderHeader(order: order, now: _viewModel.now(), live: live),
       const SizedBox(height: AppSpacing.s20),
-      OrderTimeline(order: order),
+      OrderTimeline(order: order, isHighlighted: _viewModel.isHighlighted),
       const SizedBox(height: AppSpacing.s16),
       OrderItemsCard(order: order),
       if (instructions != null && instructions.isNotEmpty) ...[

@@ -13,6 +13,7 @@ import 'package:mobile/infra/catalog/api_catalog_repository.dart';
 import 'package:mobile/infra/customer/api_customer_repository.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/infra/http/auth_interceptor.dart';
+import 'package:mobile/infra/order/api_order_live_source.dart';
 import 'package:mobile/infra/order/api_order_repository.dart';
 import 'package:mobile/infra/storage/key_value_store.dart';
 import 'package:mobile/infra/store/api_store_repository.dart';
@@ -21,7 +22,9 @@ import 'package:mobile/modules/cart/provider/cart_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/customer/provider/customer_repository.dart';
 import 'package:mobile/modules/customer/usecase/load_delivery_details_use_case.dart';
+import 'package:mobile/modules/order/provider/order_live_source.dart';
 import 'package:mobile/modules/order/provider/order_repository.dart';
+import 'package:mobile/modules/order/usecase/live_order_feed.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 import 'package:mobile/ui/modules/auth/view_models/account_view_model.dart';
 import 'package:mobile/ui/modules/auth/view_models/login_view_model.dart';
@@ -39,6 +42,7 @@ import '../../modules/auth/support/fake_auth_repository.dart';
 import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/customer/support/fake_customer_repository.dart';
+import '../../modules/order/support/fake_order_live_source.dart';
 import '../../modules/order/support/fake_order_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 
@@ -229,6 +233,25 @@ void main() {
       );
     });
 
+    test('registra o OrderLiveSource da API como singleton', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      expect(getIt<OrderLiveSource>(), isA<ApiOrderLiveSource>());
+      expect(
+        identical(getIt<OrderLiveSource>(), getIt<OrderLiveSource>()),
+        isTrue,
+      );
+    });
+
+    test('o LiveOrderFeed é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      expect(
+        identical(getIt<LiveOrderFeed>(), getIt<LiveOrderFeed>()),
+        isFalse,
+      );
+    });
+
     test('o LoadDeliveryDetails é uma instância nova a cada pedido', () {
       configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
 
@@ -272,6 +295,7 @@ void main() {
       getIt.registerSingleton<CartRepository>(cart);
       getIt.registerSingleton<CustomerRepository>(FakeCustomerRepository());
       getIt.registerSingleton<OrderRepository>(FakeOrderRepository());
+      getIt.registerSingleton<OrderLiveSource>(FakeOrderLiveSource());
 
       registerViewModels();
 
@@ -318,6 +342,7 @@ void main() {
       expect(account, isA<AccountViewModel>());
       expect(cartViewModel, isA<CartViewModel>());
       expect(getIt<LoadDeliveryDetails>(), isA<LoadDeliveryDetails>());
+      expect(getIt<LiveOrderFeed>(), isA<LiveOrderFeed>());
       expect(getIt.isRegistered<Dio>(), isFalse);
       expect(getIt.isRegistered<KeyValueStore>(), isFalse);
     });
@@ -340,6 +365,8 @@ void main() {
     expect(getIt.isRegistered<CartRepository>(), isFalse);
     expect(getIt.isRegistered<CustomerRepository>(), isFalse);
     expect(getIt.isRegistered<OrderRepository>(), isFalse);
+    expect(getIt.isRegistered<OrderLiveSource>(), isFalse);
+    expect(getIt.isRegistered<LiveOrderFeed>(), isFalse);
     expect(getIt.isRegistered<LoadDeliveryDetails>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
     expect(getIt.isRegistered<HomeViewModel>(), isFalse);

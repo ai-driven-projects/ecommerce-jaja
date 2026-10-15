@@ -3,9 +3,11 @@ import 'package:mobile/core/errors/app_failure.dart';
 import 'package:mobile/core/result.dart';
 import 'package:mobile/modules/order/model/order_entity.dart';
 import 'package:mobile/modules/order/model/order_status.dart';
+import 'package:mobile/modules/order/usecase/live_order_feed.dart';
 import 'package:mobile/ui/modules/order/view_models/order_tracking_view_model.dart';
 import 'package:mobile/ui/shared/view_models/block_state.dart';
 
+import '../../../../modules/order/support/fake_order_live_source.dart';
 import '../../../../modules/order/support/fake_order_repository.dart';
 import '../../../../modules/order/support/order_fixtures.dart';
 
@@ -24,13 +26,17 @@ const _serverDown = ServerFailure(
 Matcher _loadedWith(OrderDetail value) => isA<BlockLoaded<OrderDetail>>()
     .having((block) => block.value, 'value', value);
 
+/// Feed sobre conexões que ficam abertas sem eventos: o acompanhamento ao
+/// vivo é testado em `order_tracking_view_model_live_test.dart`.
+LiveOrderFeed _inertFeed() => LiveOrderFeed(FakeOrderLiveSource());
+
 void main() {
   late FakeOrderRepository orders;
   late OrderTrackingViewModel viewModel;
 
   setUp(() {
     orders = FakeOrderRepository();
-    viewModel = OrderTrackingViewModel(orders);
+    viewModel = OrderTrackingViewModel(orders, _inertFeed());
   });
 
   tearDown(() => viewModel.dispose());
@@ -58,14 +64,17 @@ void main() {
       },
     );
 
-    test('avisa os ouvintes ao começar e ao terminar', () async {
-      var notifications = 0;
-      viewModel.addListener(() => notifications++);
+    test(
+      'avisa os ouvintes ao começar, ao terminar e ao abrir o stream',
+      () async {
+        var notifications = 0;
+        viewModel.addListener(() => notifications++);
 
-      await viewModel.start(fakePlacedOrderId);
+        await viewModel.start(fakePlacedOrderId);
 
-      expect(notifications, 2);
-    });
+        expect(notifications, 3);
+      },
+    );
 
     test('404 vira isNotFound', () async {
       orders.enqueueFind(const Failure(_notFound));
@@ -148,7 +157,7 @@ void main() {
 
     test('resposta que chega depois do dispose não avisa ninguém', () async {
       final hold = orders.holdFind();
-      final disposed = OrderTrackingViewModel(orders);
+      final disposed = OrderTrackingViewModel(orders, _inertFeed());
       var notifications = 0;
       final started = disposed.start(fakePlacedOrderId);
       disposed
@@ -165,7 +174,11 @@ void main() {
   group('now', () {
     test('usa o relógio injetado', () {
       final clock = DateTime(2026, 10, 15, 9, 3);
-      final withClock = OrderTrackingViewModel(orders, now: () => clock);
+      final withClock = OrderTrackingViewModel(
+        orders,
+        _inertFeed(),
+        now: () => clock,
+      );
       addTearDown(withClock.dispose);
 
       expect(withClock.now(), clock);

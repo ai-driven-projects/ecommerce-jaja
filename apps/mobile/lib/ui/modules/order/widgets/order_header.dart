@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 
 import '../../../../modules/order/model/order_entity.dart';
+import '../../../../modules/order/model/order_live_status.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/app_typography.dart';
 import '../../../shared/theme/brand_tokens.dart';
 import '../view_models/order_formatters.dart';
+import 'order_live_indicator.dart';
 import 'order_status_badge.dart';
 
 /// Cabeçalho do acompanhamento, de `order-tracking.component.tsx`: "Pedido
 /// #`<número>`" com o selo do status, "Feito hoje às…" (ou a data), o
 /// endereço copiado no pedido em uma linha e "Quem recebe". As datas do
 /// pedido (UTC) são mostradas no fuso do aparelho; [now] é o relógio do
-/// ViewModel.
+/// ViewModel. Ao lado do selo, o [OrderLiveIndicator] da situação [live] do
+/// stream; o selo é uma região viva, como o `aria-live` do web.
 class OrderHeader extends StatelessWidget {
-  const OrderHeader({super.key, required this.order, required this.now});
+  const OrderHeader({
+    super.key,
+    required this.order,
+    required this.now,
+    this.live = OrderLiveStatus.off,
+  });
 
   static String title(String number) => 'Pedido #$number';
 
@@ -21,6 +29,9 @@ class OrderHeader extends StatelessWidget {
 
   final OrderDetail order;
   final DateTime now;
+
+  /// Situação do stream de avisos; [OrderLiveStatus.off] esconde o indicador.
+  final OrderLiveStatus live;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +54,11 @@ class OrderHeader extends StatelessWidget {
                 style: textTheme.productTitle.copyWith(color: tokens.ink),
               ),
             ),
-            OrderStatusBadge(status: order.status),
+            Semantics(
+              liveRegion: true,
+              child: OrderStatusBadge(status: order.status),
+            ),
+            OrderLiveIndicator(status: live),
           ],
         ),
         const SizedBox(height: AppSpacing.s4),

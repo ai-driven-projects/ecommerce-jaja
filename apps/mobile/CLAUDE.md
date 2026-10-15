@@ -88,6 +88,13 @@ Etapa 13: já existem o acompanhamento do pedido (`GET /me/orders/:id`): no dom�
 e os widgets `OrderStatusBadge`, `OrderHeader`, `OrderTimeline`/`OrderTimelineStep`, `OrderItemsCard`,
 `OrderInstructionsCard` e `OrderTrackingSkeleton`. A rota `/cart/orders/:id` monta a `OrderTrackingPage`;
 a `OrderPlacedPage` provisória foi apagada. Ainda sem SSE (etapa 14).
+Etapa 14: já existe o acompanhamento ao vivo (`GET /me/orders/:id/stream`): no domínio, o `OrderLiveStatus`,
+o contrato `OrderLiveSource` (`OrderStreamSignal`: `OrderStreamOpened`, `OrderStreamNotice`,
+`OrderStreamRefused`) e o caso de uso `LiveOrderFeed` com `orderStreamRetryDelay` (`lib/modules/order/`); o
+`EventStreamParser` (`lib/infra/http/`) e o `ApiOrderLiveSource` (`lib/infra/order/`); no
+`OrderTrackingViewModel`, `live`, a releitura silenciosa coalescida, `setActive` e o destaque do passo
+(`openedStatus`, `isHighlighted`); na tela, o `OrderLiveIndicator` ("Ao vivo"/"Reconectando…") e o
+`setActive` ligado à aba (`TickerMode`) e ao ciclo de vida do app (`AppLifecycleListener`).
 
 ## Arquitetura
 
@@ -537,6 +544,22 @@ specs em `openspec/specs/<domínio>/`.
     UI**, logo antes do formatador. Os formatadores (`formatOrderTime`, `formatOrderTimeWithSeconds`,
     `formatOrderPlacedAt(placedAt, now)`, `formatOrderAddress`) recebem a data **já local**, sem `intl` de
     data, e o "agora" vem do relógio injetado no ViewModel (`now()`).
+  - **Ao vivo:** o stream é aberto **só** pelo `ApiOrderLiveSource` (`lib/infra/order/`), com
+    `ResponseType.stream`, `Accept: text/event-stream` e `receiveTimeout: Duration.zero` (os 10 s do cliente
+    derrubariam a conexão entre dois `ping`), o Bearer pelo `AuthInterceptor` e **nunca token na URL**; o
+    corpo passa por `utf8.decoder` e pelo `EventStreamParser` (`lib/infra/http/`). O stream da fonte nunca
+    emite erro: `401`/`403`/`404` viram `OrderStreamRefused` (sem nova tentativa), o resto é queda.
+  - A reconexão é do caso de uso `LiveOrderFeed` (`lib/modules/order/usecase/`, Dart puro, `registerFactory`,
+    um por tela), com a espera de `orderStreamRetryDelay` (1, 2, 4, 8 e 10 s; volta a 1 s depois de
+    conectar) e `wait` injetado: nos testes, o `FakeDelay` e o `FakeOrderLiveSource` de
+    `test/modules/order/support/` são o relógio e a rede, sem `fake_async`.
+  - Cada aviso (e cada conexão) relê o pedido por `findMine` **sem skeleton**, coalescido (no máximo uma
+    leitura em andamento e uma pendente); falha da releitura fica em silêncio, salvo `404`.
+  - O stream fica aberto só com a tela **ativa**: a página chama `setActive(abaVisível && appVisível)` pela
+    aba (`TickerMode.valuesOf(context).enabled`, já que o `indexedStack` mantém a página montada) e pelo
+    `AppLifecycleListener`; pedido entregue, `404`, aba escondida, segundo plano e `dispose` fecham o stream,
+    e a volta reabre com uma releitura. Testes de rotas acessam as conexões com
+    `registerFakeDependencies(liveSource: FakeOrderLiveSource())`.
 - **Ambiente:** `lib/main_dev.dart` e `lib/main_prod.dart`, URL da API por `--dart-define=API_URL` (padrão de
   dev `http://localhost:4000`; produção sem `API_URL` é falha de configuração), resolvida em
   `core/env/`. `adb reverse tcp:4000 tcp:4000` documentado no README e no Makefile. Sem Firebase e sem

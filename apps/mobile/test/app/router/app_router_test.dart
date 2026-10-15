@@ -40,6 +40,7 @@ import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/customer/support/customer_fixtures.dart';
 import '../../modules/customer/support/fake_customer_repository.dart';
+import '../../modules/order/support/fake_order_live_source.dart';
 import '../../modules/order/support/fake_order_repository.dart';
 import '../../ui/shared/support/money.dart';
 import '../support/fake_dependencies.dart';
@@ -90,6 +91,18 @@ _useCheckout(WidgetTester tester) async {
     order: orders,
   );
   return (orders: orders, customers: customers);
+}
+
+/// Sessão da [ana] com avisos ao vivo de um [FakeOrderLiveSource] próprio,
+/// antes de montar o app. Devolve o fake dos avisos.
+Future<FakeOrderLiveSource> _useLiveOrder() async {
+  final live = FakeOrderLiveSource();
+  await resetDependencies();
+  registerFakeDependencies(
+    auth: FakeAuthRepository(currentUser: ana),
+    liveSource: live,
+  );
+  return live;
 }
 
 Finder get _openCheckoutButton =>
@@ -629,6 +642,53 @@ void main() {
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(_bar(tester).selectedIndex, 2);
       expect(_location(router), AppRoutes.orderLocation(fakePlacedOrderId));
+    });
+
+    testWidgets('com o acompanhamento aberto, ir para a Início fecha a '
+        'conexão ao vivo e voltar à aba Carrinho abre uma nova', (
+      tester,
+    ) async {
+      final live = await _useLiveOrder();
+      await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.orderLocation(fakePlacedOrderId),
+      );
+
+      expect(live.connections, hasLength(1));
+      expect(live.last.orderId, fakePlacedOrderId);
+      expect(live.last.isCancelled, isFalse);
+
+      await _tapTab(tester, 'Início');
+
+      expect(_bar(tester).selectedIndex, 0);
+      expect(live.connections, hasLength(1));
+      expect(live.last.isCancelled, isTrue);
+
+      await _tapTab(tester, 'Carrinho');
+
+      expect(find.byType(OrderTrackingPage), findsOneWidget);
+      expect(live.connections, hasLength(2));
+      expect(live.last.orderId, fakePlacedOrderId);
+      expect(live.last.isCancelled, isFalse);
+    });
+
+    testWidgets('voltar do acompanhamento para o carrinho fecha a conexão ao '
+        'vivo e não abre outra', (tester) async {
+      final live = await _useLiveOrder();
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.orderLocation(fakePlacedOrderId),
+      );
+
+      expect(live.connections, hasLength(1));
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OrderTrackingPage), findsNothing);
+      expect(_location(router), AppRoutes.cart);
+      expect(live.connections, hasLength(1));
+      expect(live.last.isCancelled, isTrue);
     });
   });
 
