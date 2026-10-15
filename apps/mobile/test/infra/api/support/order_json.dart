@@ -1,0 +1,96 @@
+// JSON do `201` de `POST /me/orders` (`OrderDetailDTO` em
+// `modules/orders/src/order/dto/order.dto.ts`): um pedido recém-criado com
+// duas linhas, entregue no cadastro de Fortaleza. O app só lê o `id`; o resto
+// vem a mais e fica para a etapa 13.
+
+const placedOrderId = '3f1c9a52-7b1e-4c2d-9e8f-0a1b2c3d4e5f';
+
+const placedOrderJson = <String, Object?>{
+  'id': placedOrderId,
+  'customerId': '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c01',
+  'status': 'PLACED',
+  'items': [
+    {
+      'productId': '0c6a3e1f-2b4d-4e8a-9f10-1a2b3c4d5e01',
+      'name': 'Banana prata',
+      'unit': 'kg',
+      'thumbUrl': null,
+      'unitPriceCents': 699,
+      'quantity': 2,
+      'lineTotalCents': 1398,
+    },
+    {
+      'productId': '0c6a3e1f-2b4d-4e8a-9f10-1a2b3c4d5e02',
+      'name': 'Leite integral 1 L',
+      'unit': 'un',
+      'thumbUrl': null,
+      'unitPriceCents': 549,
+      'quantity': 1,
+      'lineTotalCents': 549,
+    },
+  ],
+  'deliveryAddress': {
+    'zipCode': '60150160',
+    'street': 'Avenida Santos Dumont',
+    'number': '1500',
+    'complement': 'Sala 3',
+    'neighborhood': 'Aldeota',
+    'city': 'Fortaleza',
+    'state': 'CE',
+  },
+  'recipientName': 'Maria Souza',
+  'deliveryInstructions': null,
+  'itemCount': 3,
+  'subtotalCents': 1947,
+  'deliveryFeeCents': 799,
+  'totalCents': 2746,
+  'placedAt': '2026-10-15T12:00:00.000Z',
+  'paymentApprovedAt': null,
+  'pickingStartedAt': null,
+  'outForDeliveryAt': null,
+  'deliveredAt': null,
+};
+
+/// Pedido válido sem o [field].
+Map<String, Object?> placedOrderWithout(String field) =>
+    Map.of(placedOrderJson)..remove(field);
+
+/// Pedido válido com o [field] trocado por [value].
+Map<String, Object?> placedOrderWith(String field, Object? value) => {
+  ...placedOrderJson,
+  field: value,
+};
+
+// Recusas de `POST /me/orders` (`throwOrderFailure` em
+// `apps/backend/src/modules/orders/order-http.ts`): `ApiErrorResponse` com os
+// códigos em `message`, sem repetição. `ORDER_NOT_FOUND` vem com `404`,
+// `ORDER_ALREADY_EXISTS` com `409` e o resto com `400`.
+
+/// Corpo de uma recusa com o [statusCode] e os [codes].
+Map<String, Object?> orderRejectionJson(int statusCode, List<String> codes) => {
+  'statusCode': statusCode,
+  'error': switch (statusCode) {
+    401 => 'Unauthorized',
+    404 => 'Not Found',
+    409 => 'Conflict',
+    _ => 'Bad Request',
+  },
+  'message': codes,
+};
+
+final customerRequiredJson = orderRejectionJson(400, [
+  'ORDER_CUSTOMER_REQUIRED',
+]);
+
+final customerInactiveJson = orderRejectionJson(400, [
+  'ORDER_CUSTOMER_INACTIVE',
+]);
+
+final cartHasUnavailableItemsJson = orderRejectionJson(400, [
+  'ORDER_CART_HAS_UNAVAILABLE_ITEMS',
+]);
+
+final textTooShortJson = orderRejectionJson(400, ['TEXT_TOO_SHORT']);
+
+/// Recusa com um código que o app não conhece.
+final unknownOrderRejectionJson = orderRejectionJson(400, ['ALGO_NOVO']);

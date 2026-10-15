@@ -712,7 +712,7 @@
       "commit": "4387fcdc0f3f7e27dd86d66ba836e6fb50a9fd41"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 12,
       "phase": "Pedido",
       "title": "Checkout",
@@ -723,7 +723,55 @@
         "base": "0ce55f0bf6209a10f92664d94d0052b9c9a6915f",
         "commit": "ff2ccfeef4632c8c31c506f2a86ff4cd0941e731",
         "at": "2026-10-15T18:39:42.424Z"
-      }
+      },
+      "iteration": 12,
+      "deliveredAt": "2026-10-15T19:03:56.769Z",
+      "durationMs": 1450614,
+      "cost": 9.836835,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 107623,
+          "cost": 0.9647415999999999,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 31810,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 382,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1248038,
+          "cost": 8.4595176,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 29307,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 33316,
+          "cost": 0.4125758,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 138,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
@@ -747,84 +795,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 12,
-    "stage": 12,
-    "startCommit": "4387fcdc0f3f7e27dd86d66ba836e6fb50a9fd41",
-    "startedAt": "2026-10-15T18:39:46.067Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 107623,
-        "cost": 0.9647415999999999,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 31810,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o checkout do app mobile",
-      "comparison": "- O plano cita POST /me/cart/orders, mas MyOrderController expõe só POST /me/orders (corpo lido: recipientName e deliveryInstructions; 201 com OrderDetailDTO; ORDER_* em 400). A change segue o controller e registra a divergência.\n- A aba Carrinho já tem \"Finalizar pedido · <total>\" fixo e desabilitado (_CheckoutBar com onPressed null); o SessionCartRepository da etapa 10 já oferece refresh(), remove com Result e o CartState com isSyncing e indisponíveis. O checkout reaproveita isso, sem esvaziar o carrinho por conta própria.\n- O checkout do web (checkout.page.tsx) mostra o login e o formulário de entrega dentro da página. No app, a sessão vem da guarda de rotas (sessionRequiredPaths, ainda vazia no código) e os dados de entrega reaproveitam a tela da etapa 11, aberta por cima do checkout.\n- A etapa 11 ainda está em obras: CustomerRepository.fetchMine, DeliveryDetailsPage, BlockState em ui/shared e as máscaras foram assumidos pela change dela e listados em \"Dependências da etapa anterior\".\n- O acompanhamento só existe na etapa 13, então o sucesso leva a uma página provisória em /cart/orders/:id; o domínio order nasce só com placeOrder e PlacedOrder(id).",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 21058753,
-    "cost": 174.62291409999997,
+    "durationMs": 22369934,
+    "cost": 185.3572739,
     "runs": 1,
     "iterationsStarted": 12,
-    "iterationsDelivered": 11,
-    "claudeSessions": 105,
-    "turns": 2019,
-    "checks": 77,
+    "iterationsDelivered": 12,
+    "claudeSessions": 113,
+    "turns": 2176,
+    "checks": 80,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 28
+    "commits": 29
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

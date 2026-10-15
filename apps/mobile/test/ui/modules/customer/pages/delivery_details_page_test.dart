@@ -31,11 +31,13 @@ const _serverDown = ServerFailure(
 
 /// Monta a página como a rota faz, com a "Ana Souza" na sessão e a Paulista
 /// (São Paulo/SP) como primeira loja. A tela é alta para o formulário inteiro
-/// caber sem rolar.
+/// caber sem rolar. Devolve os callbacks chamados, na ordem; `withOnSaved`
+/// passa o `onSaved`, como a rota do checkout.
 Future<List<String>> _pumpPage(
   WidgetTester tester,
   FakeCustomerRepository customers, {
   bool settle = true,
+  bool withOnSaved = false,
 }) async {
   tester.view.physicalSize = const Size(800, 2400);
   tester.view.devicePixelRatio = 1;
@@ -54,6 +56,7 @@ Future<List<String>> _pumpPage(
           auth,
         ),
         onBack: () => backs.add('back'),
+        onSaved: withOnSaved ? () => backs.add('saved') : null,
       ),
     ),
   );
@@ -278,6 +281,34 @@ void main() {
       expect(find.text(_serverDownMessage), findsOneWidget);
       expect(_textOf(tester, AddressFields.numberLabel), '1600');
       expect(_button(DeliveryDetailsPage.discardLabel), findsOneWidget);
+    });
+
+    testWidgets('com "onSaved", salvar com sucesso o chama depois de "Dados '
+        'salvos"', (tester) async {
+      final customers = FakeCustomerRepository(mine: fortalezaCustomer);
+      final calls = await _pumpPage(tester, customers, withOnSaved: true);
+
+      await tester.enterText(_input(AddressFields.numberLabel), '1600');
+      await tester.pump();
+      await tester.tap(_button(DeliveryDetailsPage.saveLabel));
+      await tester.pump();
+
+      expect(find.text(DeliveryDetailsPage.savedMessage), findsOneWidget);
+      expect(calls, ['saved']);
+    });
+
+    testWidgets('com "onSaved", a recusa não o chama', (tester) async {
+      final customers = FakeCustomerRepository(mine: fortalezaCustomer)
+        ..enqueueSave(const Failure<Customer>(_serverDown));
+      final calls = await _pumpPage(tester, customers, withOnSaved: true);
+
+      await tester.enterText(_input(AddressFields.numberLabel), '1600');
+      await tester.pump();
+      await tester.tap(_button(DeliveryDetailsPage.saveLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_serverDownMessage), findsOneWidget);
+      expect(calls, isEmpty);
     });
 
     testWidgets('voltar chama o callback', (tester) async {

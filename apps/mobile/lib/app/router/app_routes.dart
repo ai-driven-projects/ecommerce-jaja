@@ -31,9 +31,34 @@ abstract final class AppRoutes {
   /// O trecho de [deliveryDetails] relativo a [account], para a rota filha.
   static const String deliveryDetailsSegment = 'delivery';
 
-  /// Rotas que exigem sessão; sem sessão, levam a "Entrar". As etapas de
-  /// checkout e pedido acrescentam as suas.
-  static const Set<String> sessionRequiredPaths = {deliveryDetails};
+  /// "Finalizar pedido", na pilha da aba Carrinho; exige sessão.
+  static const String checkout = '$cart/$checkoutSegment';
+
+  /// O trecho de [checkout] relativo a [cart], para a rota filha.
+  static const String checkoutSegment = 'checkout';
+
+  /// Dados de entrega abertos pelo checkout, na pilha dele; salvar volta ao
+  /// checkout. Fica abaixo de [checkout], que já exige sessão.
+  static const String checkoutDelivery = '$checkout/$checkoutDeliverySegment';
+
+  /// O trecho de [checkoutDelivery] relativo a [checkout], para a rota filha.
+  static const String checkoutDeliverySegment = 'delivery';
+
+  /// Pedidos da conta, na pilha da aba Carrinho; exigem sessão.
+  static const String orders = '$cart/orders';
+
+  /// O trecho do pedido relativo a [cart], para a rota filha.
+  static const String orderSegment = 'orders/:id';
+
+  static String orderLocation(String id) =>
+      '$orders/${Uri.encodeComponent(id)}';
+
+  /// Rotas que exigem sessão; sem sessão, levam a "Entrar".
+  static const Set<String> sessionRequiredPaths = {
+    deliveryDetails,
+    checkout,
+    orders,
+  };
 
   /// Se [path] é uma das [sessionRequiredPaths] ou fica abaixo de uma delas.
   static bool requiresSession(String path) => sessionRequiredPaths.any(

@@ -28,6 +28,7 @@ class DeliveryDetailsPage extends WatchingStatefulWidget {
     super.key,
     required this.deliveryDetailsViewModelFactory,
     required this.onBack,
+    this.onSaved,
   });
 
   static const String title = 'Dados de entrega';
@@ -46,6 +47,10 @@ class DeliveryDetailsPage extends WatchingStatefulWidget {
 
   /// Volta à aba Conta.
   final VoidCallback onBack;
+
+  /// Chamado depois de "Dados salvos"; a rota do checkout volta a ele. Na aba
+  /// Conta não é passado, e a tela continua aberta.
+  final VoidCallback? onSaved;
 
   @override
   State<DeliveryDetailsPage> createState() => _DeliveryDetailsPageState();
@@ -95,6 +100,7 @@ class _DeliveryDetailsPageState extends State<DeliveryDetailsPage> {
       messenger.showSnackBar(
         const SnackBar(content: Text(DeliveryDetailsPage.savedMessage)),
       );
+      widget.onSaved?.call();
     } else if (_viewModel.formError case final message?) {
       messenger.showSnackBar(SnackBar(content: Text(message)));
     }

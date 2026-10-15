@@ -46,6 +46,7 @@ final _singleCaneta = canetaLine.copyWith(quantity: 1, lineTotal: money(1290));
 class _Navigation {
   final List<String> products = [];
   int searches = 0;
+  int checkouts = 0;
 }
 
 Future<_Navigation> _pumpPage(
@@ -61,6 +62,7 @@ Future<_Navigation> _pumpPage(
         cartViewModelFactory: () => CartViewModel(repository),
         onOpenProduct: navigation.products.add,
         onOpenSearch: () => navigation.searches++,
+        onOpenCheckout: () => navigation.checkouts++,
       ),
     ),
   );
@@ -203,8 +205,9 @@ void main() {
     expect(find.text(CartPage.mergeErrorTitle), findsNothing);
   });
 
-  testWidgets('mostra as linhas na ordem, o resumo e "Finalizar pedido" '
-      'desabilitado', (tester) async {
+  testWidgets('mostra as linhas na ordem, o resumo e "Finalizar pedido"', (
+    tester,
+  ) async {
     await _pumpPage(tester, FakeCartRepository(state: stateOf([canetaLine])));
 
     expect(find.byType(CartLineTile), findsOneWidget);
@@ -216,7 +219,52 @@ void main() {
       findsOneWidget,
     );
     expect(_checkoutButton, findsOneWidget);
+  });
+
+  testWidgets('"Finalizar pedido" habilitado abre o checkout', (tester) async {
+    final navigation = await _pumpPage(
+      tester,
+      FakeCartRepository(state: stateOf([canetaLine])),
+    );
+
+    expect(tester.widget<AppButton>(_checkoutButton).onPressed, isNotNull);
+    await tester.tap(_checkoutButton);
+
+    expect(navigation.checkouts, 1);
+  });
+
+  testWidgets('com mudança pendente, "Finalizar pedido" fica desabilitado', (
+    tester,
+  ) async {
+    final navigation = await _pumpPage(
+      tester,
+      FakeCartRepository(
+        state: stateOf([canetaLine]).copyWith(isSyncing: true),
+      ),
+    );
+
     expect(tester.widget<AppButton>(_checkoutButton).onPressed, isNull);
+    await tester.tap(_checkoutButton, warnIfMissed: false);
+
+    expect(navigation.checkouts, 0);
+  });
+
+  testWidgets('com linha indisponível, "Finalizar pedido" fica desabilitado', (
+    tester,
+  ) async {
+    final navigation = await _pumpPage(
+      tester,
+      FakeCartRepository(state: stateOf([canetaLine, unavailableLine])),
+    );
+
+    final button = find.ancestor(
+      of: find.textContaining('Finalizar pedido · '),
+      matching: find.byType(AppButton),
+    );
+    expect(tester.widget<AppButton>(button).onPressed, isNull);
+    await tester.tap(button, warnIfMissed: false);
+
+    expect(navigation.checkouts, 0);
   });
 
   testWidgets('as linhas seguem a ordem de inclusão', (tester) async {

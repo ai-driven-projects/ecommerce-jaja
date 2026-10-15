@@ -6,6 +6,7 @@ import '../../modules/cart/provider/cart_repository.dart';
 import '../../modules/catalog/provider/catalog_repository.dart';
 import '../../modules/customer/provider/customer_repository.dart';
 import '../../modules/customer/usecase/load_delivery_details_use_case.dart';
+import '../../modules/order/provider/order_repository.dart';
 import '../../modules/store/provider/store_repository.dart';
 import '../../ui/modules/auth/view_models/account_view_model.dart';
 import '../../ui/modules/auth/view_models/login_view_model.dart';
@@ -15,6 +16,7 @@ import '../../ui/modules/catalog/view_models/home_view_model.dart';
 import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/customer/view_models/delivery_details_view_model.dart';
+import '../../ui/modules/order/view_models/checkout_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../auth/secure_session_storage.dart';
 import '../auth/session.dart';
@@ -28,6 +30,7 @@ import '../catalog/api_catalog_repository.dart';
 import '../customer/api_customer_repository.dart';
 import '../http/api_client.dart';
 import '../http/auth_interceptor.dart';
+import '../order/api_order_repository.dart';
 import '../storage/key_value_store.dart';
 import '../storage/shared_preferences_key_value_store.dart';
 import '../store/api_store_repository.dart';
@@ -98,6 +101,9 @@ void configureDependencies({required Uri apiBaseUrl}) {
   getIt.registerLazySingleton<CustomerRepository>(
     () => ApiCustomerRepository(getIt<Dio>()),
   );
+  getIt.registerLazySingleton<OrderRepository>(
+    () => ApiOrderRepository(getIt<Dio>()),
+  );
   registerViewModels();
 }
 
@@ -145,6 +151,14 @@ void registerViewModels() {
       getIt<LoadDeliveryDetails>(),
       getIt<CustomerRepository>(),
       getIt<AuthRepository>(),
+    ),
+  );
+  getIt.registerFactory<CheckoutViewModel>(
+    () => CheckoutViewModel(
+      getIt<CartRepository>(),
+      getIt<CustomerRepository>(),
+      getIt<AuthRepository>(),
+      getIt<OrderRepository>(),
     ),
   );
 }

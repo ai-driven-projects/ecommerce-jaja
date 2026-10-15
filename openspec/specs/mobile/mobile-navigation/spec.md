@@ -60,7 +60,7 @@ Enquanto a sessão ainda não foi lida, o app SHALL mostrar uma tela de abertura
 - **THEN** a tela de abertura aparece sem a barra de abas e, quando a sessão é confirmada, a aba Início é exibida
 
 ### Requirement: Guarda de sessão
-O app SHALL ter uma lista de rotas que exigem sessão; sem sessão, abrir uma delas MUST levar a "Entrar" com o destino em `from` (caminho e query da rota pedida). Nesta etapa nenhuma rota exige sessão: as etapas de dados de entrega, checkout e pedido acrescentam as suas. Com sessão, abrir "Entrar" ou "Criar conta" MUST levar direto ao destino de `from`, o que também conclui o acesso depois de entrar ou criar conta. Só destinos relativos iniciados por `/` (não por `//`) e fora das telas de abertura e de acesso MUST ser aceitos; qualquer outro valor, ou a falta dele, MUST levar à aba Início. Quando a sessão termina numa rota que exige sessão, o app MUST levar a "Entrar" com essa rota como destino.
+O app SHALL ter uma lista de rotas que exigem sessão; sem sessão, abrir uma delas MUST levar a "Entrar" com o destino em `from` (caminho e query da rota pedida). Exigem sessão os dados de entrega, o checkout e a página do pedido, e o que fica abaixo de cada uma delas. Com sessão, abrir "Entrar" ou "Criar conta" MUST levar direto ao destino de `from`, o que também conclui o acesso depois de entrar ou criar conta. Só destinos relativos iniciados por `/` (não por `//`) e fora das telas de abertura e de acesso MUST ser aceitos; qualquer outro valor, ou a falta dele, MUST levar à aba Início. Quando a sessão termina numa rota que exige sessão, o app MUST levar a "Entrar" com essa rota como destino.
 
 #### Scenario: Já autenticado
 - **WHEN** com sessão ativa o app navega para `/login?from=/search?category=escolar`
@@ -71,8 +71,8 @@ O app SHALL ter uma lista de rotas que exigem sessão; sem sessão, abrir uma de
 - **THEN** a aba Início é exibida
 
 #### Scenario: Rota protegida sem sessão
-- **WHEN** sem sessão, o app abre uma rota da lista que exige sessão, `/x?y=1`
-- **THEN** a tela "Entrar" aparece com `from=/x?y=1`
+- **WHEN** sem sessão, o app abre o checkout
+- **THEN** a tela "Entrar" aparece com `from` apontando para o checkout
 
 ### Requirement: Rota do produto no carrinho
 A rota do produto na pilha da aba Carrinho SHALL ser `/cart/product/<slug>`, com a barra de abas visível e a aba Carrinho selecionada, e MUST abrir a página do produto daquele slug; voltar MUST retornar à aba Carrinho. Um produto aberto a partir desse produto MUST entrar na mesma pilha.

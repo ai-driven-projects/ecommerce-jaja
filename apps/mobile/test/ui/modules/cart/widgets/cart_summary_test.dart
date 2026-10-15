@@ -92,4 +92,53 @@ void main() {
       findsNothing,
     );
   });
+
+  group('checkout', () {
+    testWidgets('"Entrega de bike", sem quanto falta e com o total', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themed(
+          CartSummary.checkout(
+            detail: detailOf([canetaLine]),
+            isSyncing: false,
+          ),
+        ),
+      );
+
+      expect(find.text(CartSummary.checkoutDeliveryLabel), findsOneWidget);
+      expect(find.text(CartSummary.deliveryLabel), findsNothing);
+      expect(find.text('R\$ 4,90'), findsOneWidget);
+      expect(find.textContaining('Faltam'), findsNothing);
+      expect(find.text('R\$ 30,70'), findsOneWidget);
+    });
+
+    testWidgets('com linha indisponível não mostra o aviso da aba', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        themed(
+          CartSummary.checkout(
+            detail: detailOf([canetaLine, unavailableLine]),
+            isSyncing: false,
+          ),
+        ),
+      );
+
+      expect(find.text(CartSummary.unavailableWarning), findsNothing);
+    });
+
+    testWidgets('isSyncing também anuncia "Atualizando"', (tester) async {
+      await tester.pumpWidget(
+        themed(
+          CartSummary.checkout(detail: detailOf([canetaLine]), isSyncing: true),
+        ),
+      );
+
+      expect(
+        find.bySemanticsLabel(RegExp(CartSummary.syncingLabel)),
+        findsOneWidget,
+      );
+    });
+  });
 }

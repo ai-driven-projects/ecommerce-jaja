@@ -20,14 +20,16 @@ import '../widgets/cart_summary.dart';
 /// Aba Carrinho: "Seu carrinho" e, conforme o estado, o skeleton das linhas
 /// (abertura do app, primeira prévia ou carga da conta), o banner do carrinho
 /// que não carregou, o vazio com "Ver produtos" ou as linhas com o resumo e
-/// "Finalizar pedido", desabilitado até o checkout existir. Fora do skeleton,
-/// a mescla que falhou aparece no topo. A navegação sai por callback.
+/// "Finalizar pedido", que abre o checkout (desabilitado com mudança não
+/// confirmada ou linha indisponível). Fora do skeleton, a mescla que falhou
+/// aparece no topo. A navegação sai por callback.
 class CartPage extends WatchingStatefulWidget {
   const CartPage({
     super.key,
     required this.cartViewModelFactory,
     required this.onOpenProduct,
     required this.onOpenSearch,
+    required this.onOpenCheckout,
   });
 
   static const String title = 'Seu carrinho';
@@ -50,6 +52,9 @@ class CartPage extends WatchingStatefulWidget {
 
   /// Abre a aba Buscar sem filtros.
   final VoidCallback onOpenSearch;
+
+  /// Abre o checkout na pilha da aba (a guarda leva a "Entrar" sem sessão).
+  final VoidCallback onOpenCheckout;
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -131,7 +136,12 @@ class _CartPageState extends State<CartPage> {
         ),
       ),
       bottomNavigationBar: showsLines
-          ? _CheckoutBar(label: CartPage.checkoutLabel(state.detail.total))
+          ? _CheckoutBar(
+              label: CartPage.checkoutLabel(state.detail.total),
+              onPressed: state.isSyncing || state.detail.hasUnavailableItems
+                  ? null
+                  : widget.onOpenCheckout,
+            )
           : null,
     );
   }
@@ -180,9 +190,12 @@ class _CartPageState extends State<CartPage> {
 
 /// Rodapé com a ação principal, no molde do "Adicionar" do produto.
 class _CheckoutBar extends StatelessWidget {
-  const _CheckoutBar({required this.label});
+  const _CheckoutBar({required this.label, required this.onPressed});
 
   final String label;
+
+  /// `null` deixa a ação desabilitada.
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +213,7 @@ class _CheckoutBar extends StatelessWidget {
             label: label,
             size: AppButtonSize.xl,
             expand: true,
-            onPressed: null,
+            onPressed: onPressed,
           ),
         ),
       ),

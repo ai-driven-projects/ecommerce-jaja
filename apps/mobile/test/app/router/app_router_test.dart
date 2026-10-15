@@ -22,6 +22,10 @@ import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/catalog/widgets/filters_sheet.dart';
 import 'package:mobile/ui/modules/catalog/widgets/product_grid.dart';
 import 'package:mobile/ui/modules/customer/pages/delivery_details_page.dart';
+import 'package:mobile/ui/modules/customer/widgets/address_fields.dart';
+import 'package:mobile/ui/modules/order/pages/checkout_page.dart';
+import 'package:mobile/ui/modules/order/pages/order_placed_page.dart';
+import 'package:mobile/ui/modules/order/widgets/delivery_step.dart';
 import 'package:mobile/ui/shared/pages/splash_page.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
 import 'package:mobile/ui/shared/widgets/app_button.dart';
@@ -34,6 +38,10 @@ import '../../modules/cart/support/cart_fixtures.dart';
 import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
+import '../../modules/customer/support/customer_fixtures.dart';
+import '../../modules/customer/support/fake_customer_repository.dart';
+import '../../modules/order/support/fake_order_repository.dart';
+import '../../ui/shared/support/money.dart';
 import '../support/fake_dependencies.dart';
 
 Future<GoRouter> _pumpRouter(
@@ -62,6 +70,30 @@ Future<void> _useCart(FakeCartRepository cart) async {
   await resetDependencies();
   registerFakeDependencies(cart: cart);
 }
+
+/// Carrinho pronto para o checkout (uma linha, 2 × caneta, total R\$ 30,70),
+/// com a sessão da [ana] e o cadastro de Fortaleza, antes de montar o app.
+/// Devolve os fakes de pedido e de cadastro.
+Future<({FakeOrderRepository orders, FakeCustomerRepository customers})>
+_useCheckout(WidgetTester tester) async {
+  // Alta para o formulário dos dados de entrega caber sem rolar.
+  tester.view.physicalSize = const Size(800, 2400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  final orders = FakeOrderRepository();
+  final customers = FakeCustomerRepository(mine: fortalezaCustomer);
+  await resetDependencies();
+  registerFakeDependencies(
+    auth: FakeAuthRepository(currentUser: ana),
+    cart: FakeCartRepository(state: stateOf([canetaLine])),
+    customer: customers,
+    order: orders,
+  );
+  return (orders: orders, customers: customers);
+}
+
+Finder get _openCheckoutButton =>
+    find.widgetWithText(AppButton, CartPage.checkoutLabel(money(3070)));
 
 FakeAuthRepository get _session => getIt<Session>() as FakeAuthRepository;
 
@@ -93,6 +125,13 @@ Future<GoRouter> _openLoginFromAccount(WidgetTester tester) async {
 
 String _location(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.path;
+
+/// Caminho da tela do topo: a rota aberta com `push` não muda o
+/// [_location], que continua sendo o da rota de base.
+String _topLocation(GoRouter router) {
+  final top = router.routerDelegate.currentConfiguration.lastOrNull;
+  return top is ImperativeRouteMatch ? top.matches.uri.path : _location(router);
+}
 
 /// Caminho e query da localização atual, como a aba a guarda.
 String _fullLocation(GoRouter router) =>
@@ -442,6 +481,115 @@ void main() {
         tester.widget<SearchPage>(find.byType(SearchPage)).initialQuery,
         const ProductQuery(),
       );
+    });
+  });
+
+  group('checkout', () {
+    testWidgets('sem sessão, "Finalizar pedido" leva a "Entrar" com o '
+        'checkout como destino e, depois de entrar, abre o checkout', (
+      tester,
+    ) async {
+      await _useCart(FakeCartRepository(state: stateOf([canetaLine])));
+      final router = await _pumpRouter(tester, initialLocation: AppRoutes.cart);
+
+      await tester.tap(_openCheckoutButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(CheckoutPage), findsNothing);
+      expect(_fullLocation(router), '/login?from=%2Fcart%2Fcheckout');
+
+      await _signIn(tester);
+
+      expect(find.byType(LoginPage), findsNothing);
+      expect(find.byType(CheckoutPage), findsOneWidget);
+      expect(_location(router), AppRoutes.checkout);
+    });
+
+    testWidgets('com sessão, "Finalizar pedido" abre o checkout na pilha da '
+        'aba Carrinho', (tester) async {
+      await _useCheckout(tester);
+      final router = await _pumpRouter(tester, initialLocation: AppRoutes.cart);
+
+      await tester.tap(_openCheckoutButton);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CheckoutPage), findsOneWidget);
+      expect(find.text(CheckoutPage.title), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_location(router), AppRoutes.checkout);
+    });
+
+    testWidgets('"Alterar" abre os dados de entrega na pilha do checkout, e '
+        'salvar volta ao checkout com o endereço novo', (tester) async {
+      final fakes = await _useCheckout(tester);
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.checkout,
+      );
+      expect(fakes.customers.fetchCalls, 1);
+
+      await tester.tap(find.text(DeliveryStep.editAction));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DeliveryDetailsPage), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_topLocation(router), AppRoutes.checkoutDelivery);
+
+      await _enterText(tester, AddressFields.numberLabel, '1600');
+      await tester.pump();
+      await tester.tap(
+        find.widgetWithText(AppButton, DeliveryDetailsPage.saveLabel),
+      );
+      await tester.pumpAndSettle();
+
+      expect(fakes.customers.saveCalls.single.number, '1600');
+      expect(find.byType(DeliveryDetailsPage), findsNothing);
+      expect(find.byType(CheckoutPage), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_topLocation(router), AppRoutes.checkout);
+      expect(fakes.customers.fetchCalls, 3);
+      expect(
+        find.textContaining('Avenida Santos Dumont, 1600 · '),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('confirmar com sucesso leva ao pedido na aba Carrinho, e '
+        'voltar mostra o carrinho, sem o checkout', (tester) async {
+      final fakes = await _useCheckout(tester);
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.checkout,
+      );
+
+      await tester.tap(
+        find.widgetWithText(AppButton, CheckoutPage.confirmLabel(money(3070))),
+      );
+      await tester.pumpAndSettle();
+
+      expect(fakes.orders.placeCalls, hasLength(1));
+      expect(_location(router), AppRoutes.orderLocation(fakePlacedOrderId));
+      expect(find.byType(OrderPlacedPage), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(OrderPlacedPage),
+          matching: find.text(OrderPlacedPage.title(fakePlacedOrderId)),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(CheckoutPage), findsNothing);
+      expect(_bar(tester).selectedIndex, 2);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OrderPlacedPage), findsNothing);
+      expect(find.byType(CheckoutPage), findsNothing);
+      expect(find.byType(CartPage), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_location(router), AppRoutes.cart);
     });
   });
 

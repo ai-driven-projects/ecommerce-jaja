@@ -71,6 +71,14 @@ Etapa 11: já existem os dados de entrega (`GET/PUT /me/customer`): os VOs `Cpf`
 `DeliveryDetailsViewModel` e as máscaras (`lib/ui/modules/customer/`), o item "Dados de entrega" na aba
 Conta (rota `/account/delivery`, `AppRoutes.deliveryDetails`), `inputFormatters` e `textCapitalization` no
 `AppTextField`, e o `BlockState` em `lib/ui/shared/view_models/`.
+Etapa 12: já existem o fechamento do pedido (`POST /me/orders`): o domínio `lib/modules/order/` (`PlacedOrder`
+com `number`, os limites de `order_rules.dart`, `OrderErrorCode` com `orderErrorFromCodes`/
+`isCustomerRejection` e o contrato `OrderRepository.placeOrder`), o DTO `order_dto.dart` e o
+`ApiOrderRepository` com `mapOrderFailure` (`lib/infra/order/`), o `CheckoutViewModel`, a `CheckoutPage`, os
+widgets dos passos e a `OrderPlacedPage` provisória (`lib/ui/modules/order/`), o `formatDeliveryAddress`
+(`lib/ui/modules/customer/view_models/`), o `CartSummary.checkout`, o `onSaved` da `DeliveryDetailsPage`, o
+"Finalizar pedido" da aba Carrinho ligado e as rotas `/cart/checkout`, `/cart/checkout/delivery` e
+`/cart/orders/:id`.
 
 ## Arquitetura
 
@@ -430,7 +438,8 @@ specs em `openspec/specs/<domínio>/`.
     `CART_ITEMS_LIMIT_EXCEEDED`, `CART_ITEM_QUANTITY_INVALID` com os textos das regras, e `404` →
     "Produto indisponível."; recusa sem código conhecido mantém "Não foi possível concluir. Tente
     novamente."; `load` e `merge` não traduzem. As mensagens chegam à UI pelo `failure.message`.
-  - "Finalizar pedido · <total>" aparece **desabilitado** até a etapa 12 ligar o checkout.
+  - "Finalizar pedido · <total>" fica **desabilitado** com mudança pendente (`isSyncing`) ou com itens
+    indisponíveis, como o `cart-drawer` do web; senão abre o checkout.
   - No detalhe do produto, o rodapé tem o `QuantityStepper` (1 a 99) e "Adicionar · <total>"
     ("Adicionando…" enquanto inclui); o sucesso mostra o aviso "Adicionado ao carrinho" com "Ver carrinho"
     (abre a aba Carrinho) e volta a quantidade a 1. Isso substitui o botão desabilitado da etapa 7.
@@ -486,6 +495,24 @@ specs em `openspec/specs/<domínio>/`.
     vão ao campo por `customerFieldErrorsFromCodes` (código desconhecido fica na mensagem genérica).
   - A rota `/account/delivery` está em `sessionRequiredPaths`: sem sessão, vai ao login com o destino no
     `from`.
+- **Pedido:** o fechamento é **`POST /me/orders`** (não `/me/cart/orders`), só pelo `OrderRepository`. O
+  servidor monta o pedido do carrinho da conta e do cadastro; o corpo leva **só** `recipientName` e
+  `deliveryInstructions`, **como digitados** (o servidor apara e aplica o padrão), **sem validação local**:
+  os limites de `order_rules.dart` (100 e 200, de `modules/orders/src/order/errors.ts`) só viram `maxLength`
+  dos campos, e o mínimo vem da API como `TEXT_TOO_SHORT`. "Quem recebe" começa com o nome da conta.
+  - Recusas traduzidas por `mapOrderFailure` (`lib/infra/order/`) com `OrderErrorCode`
+    (`orderErrorFromCodes`, primeiro código conhecido, textos do `messages.pt.ts` do web); sem código
+    conhecido, `401`, `5xx` e rede passam como vieram. Recusa com código `ORDER_CUSTOMER_*`
+    (`isCustomerRejection`) consulta o cadastro de novo.
+  - O checkout exige o carrinho exibido, sem mudança pendente nem indisponíveis, e o cadastro de entrega;
+    senão "Confirmar pedido · <total>" fica desabilitado, com o aviso do caso. Depois do `POST`, com
+    sucesso ou falha, o carrinho é **relido** (`refresh()`); o app **nunca esvazia** o carrinho por conta
+    própria (quem esvazia é o servidor).
+  - Rotas na pilha da aba Carrinho: `/cart/checkout` (`AppRoutes.checkout`, aberta por `go`),
+    `/cart/checkout/delivery` (a `DeliveryDetailsPage` da etapa 11 por `push`, com `onBack` e `onSaved`
+    fazendo `pop`, e o checkout consulta o cadastro na volta) e `/cart/orders/:id`
+    (`AppRoutes.orderLocation`, aberta por `go` no sucesso, que tira o checkout da pilha). O checkout e o
+    pedido estão em `sessionRequiredPaths` (`checkout` e `orders`); nenhuma tela checa a sessão.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o
   Bearer no cabeçalho (**nunca token na URL**). O evento só avisa para buscar o pedido de novo; `ping` é
   ignorado; reconexão com espera crescente de 1 s a 10 s; para ao sair da tela e em segundo plano, retoma ao

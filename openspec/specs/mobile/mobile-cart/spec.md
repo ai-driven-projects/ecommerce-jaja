@@ -67,7 +67,7 @@ A aba Carrinho SHALL mostrar, na ordem de inclusão, cada linha com a foto do pr
 - **THEN** a linha mostra "Indisponível" e "Remover", sem "−", "+" nem total
 
 ### Requirement: Resumo e entrega do carrinho
-Abaixo das linhas, a aba SHALL mostrar o subtotal, a entrega ("Grátis" quando a taxa é 0, senão o valor), "Faltam <valor> para a entrega grátis." enquanto a entrega é cobrada, o total, todos da prévia, e a ação principal "Finalizar pedido · <total>", visível e desabilitada até o checkout existir. Com linhas indisponíveis, MUST aparecer "Remova os itens indisponíveis para continuar.". Enquanto uma mudança não foi confirmada por uma prévia, os valores MUST ser sinalizados como em atualização.
+Abaixo das linhas, a aba SHALL mostrar o subtotal, a entrega ("Grátis" quando a taxa é 0, senão o valor), "Faltam <valor> para a entrega grátis." enquanto a entrega é cobrada, o total, todos da prévia, e a ação principal "Finalizar pedido · <total>", que abre o checkout na pilha da aba. A ação MUST ficar desabilitada enquanto uma mudança não foi confirmada e enquanto houver linha indisponível. Com linhas indisponíveis, MUST aparecer "Remova os itens indisponíveis para continuar.". Enquanto uma mudança não foi confirmada por uma prévia, os valores MUST ser sinalizados como em atualização.
 
 #### Scenario: Entrega cobrada
 - **WHEN** a prévia devolve subtotal 2580, entrega 490, total 3070 e faltam 5320 centavos
@@ -76,6 +76,14 @@ Abaixo das linhas, a aba SHALL mostrar o subtotal, a entrega ("Grátis" quando a
 #### Scenario: Entrega grátis
 - **WHEN** a prévia devolve subtotal 7900 e entrega 0
 - **THEN** a entrega aparece como "Grátis" e o aviso de quanto falta não aparece
+
+#### Scenario: Abrir o checkout
+- **WHEN** o carrinho tem linhas disponíveis, sem mudança pendente, e a pessoa toca em "Finalizar pedido · R$ 30,70"
+- **THEN** o checkout é aberto (passando por "Entrar" quando não há sessão)
+
+#### Scenario: Linha indisponível bloqueia
+- **WHEN** a prévia devolve uma linha com `isAvailable: false`
+- **THEN** "Finalizar pedido" fica desabilitado e aparece "Remova os itens indisponíveis para continuar."
 
 ### Requirement: Estados da aba Carrinho
 Com itens guardados e nenhuma linha ainda (abertura do app ou primeira prévia), a aba SHALL mostrar um skeleton das linhas. Se a prévia falhar, MUST mostrar o banner "Não foi possível carregar o carrinho." com a mensagem da falha e "Tentar de novo", que pede a prévia de novo. Sem itens, MUST mostrar o estado vazio "Seu carrinho está vazio." com "Adicione itens para o escritório!" e a única ação "Ver produtos", que abre a aba Buscar sem filtros.

@@ -144,11 +144,26 @@ void main() {
       );
     });
 
-    test('só os dados de entrega exigem sessão nesta etapa', () {
-      expect(AppRoutes.sessionRequiredPaths, {'/account/delivery'});
+    test('exigem sessão os dados de entrega, o checkout e o pedido', () {
+      expect(AppRoutes.sessionRequiredPaths, {
+        '/account/delivery',
+        '/cart/checkout',
+        '/cart/orders',
+      });
       expect(AppRoutes.deliveryDetails, '/account/delivery');
+      expect(AppRoutes.checkout, '/cart/checkout');
+      expect(AppRoutes.checkoutDelivery, '/cart/checkout/delivery');
+      expect(AppRoutes.orderLocation('a b'), '/cart/orders/a%20b');
       expect(AppRoutes.requiresSession(AppRoutes.deliveryDetails), isTrue);
+      expect(AppRoutes.requiresSession(AppRoutes.checkout), isTrue);
+      expect(AppRoutes.requiresSession('/cart/checkout/delivery'), isTrue);
+      expect(AppRoutes.requiresSession('/cart/orders/x'), isTrue);
       expect(AppRoutes.requiresSession(AppRoutes.account), isFalse);
+      expect(AppRoutes.requiresSession(AppRoutes.cart), isFalse);
+      expect(
+        AppRoutes.requiresSession(AppRoutes.cartProductLocation('caneta')),
+        isFalse,
+      );
     });
 
     test('sem sessão, os dados de entrega levam a "Entrar" com o destino', () {
@@ -161,5 +176,23 @@ void main() {
         isNull,
       );
     });
+
+    test(
+      'sem sessão, o checkout e o pedido levam a "Entrar" com o destino',
+      () {
+        expect(
+          _redirect(SessionStatus.anonymous, '/cart/checkout/delivery'),
+          '/login?from=%2Fcart%2Fcheckout%2Fdelivery',
+        );
+        expect(
+          _redirect(SessionStatus.anonymous, '/cart/orders/x'),
+          '/login?from=%2Fcart%2Forders%2Fx',
+        );
+        expect(
+          _redirect(SessionStatus.authenticated, '/cart/orders/x'),
+          isNull,
+        );
+      },
+    );
   });
 }

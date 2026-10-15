@@ -11,11 +11,23 @@ import '../../../shared/theme/brand_tokens.dart';
 /// grátis enquanto ela é cobrada e o total, todos da última prévia. Com
 /// [isSyncing] (mudança ainda não confirmada), os valores ficam atenuados e
 /// anunciados como "Atualizando".
+///
+/// [CartSummary.checkout] é o resumo do checkout (`checkout.page.tsx`):
+/// "Entrega de bike", sem quanto falta para a entrega grátis e sem o aviso de
+/// indisponíveis (o checkout tem o seu, abaixo do botão).
 class CartSummary extends StatelessWidget {
-  const CartSummary({super.key, required this.detail, required this.isSyncing});
+  const CartSummary({super.key, required this.detail, required this.isSyncing})
+    : _checkout = false;
+
+  const CartSummary.checkout({
+    super.key,
+    required this.detail,
+    required this.isSyncing,
+  }) : _checkout = true;
 
   static const String subtotalLabel = 'Subtotal';
   static const String deliveryLabel = 'Entrega';
+  static const String checkoutDeliveryLabel = 'Entrega de bike';
   static const String freeDeliveryLabel = 'Grátis';
   static const String totalLabel = 'Total';
   static const String syncingLabel = 'Atualizando';
@@ -27,6 +39,7 @@ class CartSummary extends StatelessWidget {
 
   final CartDetail detail;
   final bool isSyncing;
+  final bool _checkout;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +61,10 @@ class CartSummary extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.s8),
         _row(
-          Text(deliveryLabel, style: labelStyle),
+          Text(
+            _checkout ? checkoutDeliveryLabel : deliveryLabel,
+            style: labelStyle,
+          ),
           isFree
               ? Text(
                   freeDeliveryLabel,
@@ -56,7 +72,7 @@ class CartSummary extends StatelessWidget {
                 )
               : Text(formatMoney(detail.deliveryFee), style: valueStyle),
         ),
-        if (!isFree) ...[
+        if (!isFree && !_checkout) ...[
           const SizedBox(height: AppSpacing.s8),
           Text(
             missingForFreeDelivery(detail.missingForFreeDelivery),
@@ -91,7 +107,7 @@ class CartSummary extends StatelessWidget {
           )
         else
           values,
-        if (detail.hasUnavailableItems) ...[
+        if (detail.hasUnavailableItems && !_checkout) ...[
           const SizedBox(height: AppSpacing.s12),
           Text(
             unavailableWarning,

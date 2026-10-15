@@ -22,6 +22,9 @@ import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/customer/pages/delivery_details_page.dart';
 import '../../ui/modules/customer/view_models/delivery_details_view_model.dart';
+import '../../ui/modules/order/pages/checkout_page.dart';
+import '../../ui/modules/order/pages/order_placed_page.dart';
+import '../../ui/modules/order/view_models/checkout_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../../ui/shared/pages/not_found_page.dart';
 import '../../ui/shared/pages/splash_page.dart';
@@ -147,6 +150,7 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
                   onOpenProduct: (slug) =>
                       context.go(AppRoutes.cartProductLocation(slug)),
                   onOpenSearch: () => context.go(AppRoutes.search),
+                  onOpenCheckout: () => context.go(AppRoutes.checkout),
                 ),
                 routes: [
                   // Filha de /cart: fica na pilha da aba Carrinho, e voltar
@@ -157,6 +161,42 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
                       context,
                       state,
                       productLocation: AppRoutes.cartProductLocation,
+                    ),
+                  ),
+                  // Filha de /cart; exige sessão (guarda). Os dados de entrega
+                  // entram com `push` e os dois `pop` completam o `Future`,
+                  // para o checkout consultar o cadastro de novo. O pedido
+                  // criado entra com `go`, que tira o checkout da pilha.
+                  GoRoute(
+                    path: AppRoutes.checkoutSegment,
+                    builder: (context, state) => CheckoutPage(
+                      checkoutViewModelFactory: () =>
+                          getIt<CheckoutViewModel>(),
+                      onOpenDeliveryDetails: () =>
+                          context.push(AppRoutes.checkoutDelivery),
+                      onOpenStore: () => context.go(AppRoutes.home),
+                      onOrderPlaced: (id) =>
+                          context.go(AppRoutes.orderLocation(id)),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: AppRoutes.checkoutDeliverySegment,
+                        builder: (context, state) => DeliveryDetailsPage(
+                          deliveryDetailsViewModelFactory: () =>
+                              getIt<DeliveryDetailsViewModel>(),
+                          onBack: () => context.pop(),
+                          onSaved: () => context.pop(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Filha de /cart; exige sessão (guarda). Voltar mostra o
+                  // carrinho.
+                  GoRoute(
+                    path: AppRoutes.orderSegment,
+                    builder: (context, state) => OrderPlacedPage(
+                      orderId: state.pathParameters['id']!,
+                      onBackToStore: () => context.go(AppRoutes.home),
                     ),
                   ),
                 ],
