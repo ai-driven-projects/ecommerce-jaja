@@ -81,10 +81,3 @@ Uma recusa de `POST /me/orders` SHALL mostrar a mensagem do primeiro código con
 #### Scenario: Cadastro inativo
 - **WHEN** o cliente confirma e a API responde `400` com `ORDER_CUSTOMER_INACTIVE`
 - **THEN** aparece "Seu cadastro está inativo. Fale com o atendimento.", o cadastro e o carrinho são consultados de novo e nenhum pedido é criado
-
-### Requirement: Página do pedido provisória
-Até o acompanhamento existir, a rota do pedido SHALL ficar na pilha da aba Carrinho, exigir sessão e mostrar "Pedido #<número> recebido", "Pagamento simulado em andamento." e a única ação "Voltar para a loja", que abre a aba Início. Voltar MUST levar à aba Carrinho, e não ao checkout.
-
-#### Scenario: Depois de confirmar
-- **WHEN** o pedido `3f1c9a52-…` acaba de ser criado e o cliente toca em voltar
-- **THEN** a página mostrou "Pedido #3F1C9A52 recebido" e a aba Carrinho aparece vazia

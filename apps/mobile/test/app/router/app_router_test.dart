@@ -24,7 +24,7 @@ import 'package:mobile/ui/modules/catalog/widgets/product_grid.dart';
 import 'package:mobile/ui/modules/customer/pages/delivery_details_page.dart';
 import 'package:mobile/ui/modules/customer/widgets/address_fields.dart';
 import 'package:mobile/ui/modules/order/pages/checkout_page.dart';
-import 'package:mobile/ui/modules/order/pages/order_placed_page.dart';
+import 'package:mobile/ui/modules/order/pages/order_tracking_page.dart';
 import 'package:mobile/ui/modules/order/widgets/delivery_step.dart';
 import 'package:mobile/ui/shared/pages/splash_page.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
@@ -571,11 +571,11 @@ void main() {
 
       expect(fakes.orders.placeCalls, hasLength(1));
       expect(_location(router), AppRoutes.orderLocation(fakePlacedOrderId));
-      expect(find.byType(OrderPlacedPage), findsOneWidget);
+      expect(find.byType(OrderTrackingPage), findsOneWidget);
       expect(
         find.descendant(
-          of: find.byType(OrderPlacedPage),
-          matching: find.text(OrderPlacedPage.title(fakePlacedOrderId)),
+          of: find.byType(OrderTrackingPage),
+          matching: find.text('Pedido #3F1C9A52'),
         ),
         findsOneWidget,
       );
@@ -585,11 +585,50 @@ void main() {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      expect(find.byType(OrderPlacedPage), findsNothing);
+      expect(find.byType(OrderTrackingPage), findsNothing);
       expect(find.byType(CheckoutPage), findsNothing);
       expect(find.byType(CartPage), findsOneWidget);
       expect(_bar(tester).selectedIndex, 2);
       expect(_location(router), AppRoutes.cart);
+    });
+    testWidgets('/cart/orders/<id> sem sessão leva a "Entrar" com o destino '
+        'e, depois de entrar, abre o acompanhamento na aba Carrinho', (
+      tester,
+    ) async {
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.orderLocation(fakePlacedOrderId),
+      );
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(OrderTrackingPage), findsNothing);
+      expect(
+        _fullLocation(router),
+        '/login?from=%2Fcart%2Forders%2F$fakePlacedOrderId',
+      );
+
+      await _signIn(tester);
+
+      expect(find.byType(LoginPage), findsNothing);
+      expect(find.byType(OrderTrackingPage), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_location(router), AppRoutes.orderLocation(fakePlacedOrderId));
+    });
+
+    testWidgets('com sessão, /cart/orders/<id> abre o acompanhamento com a '
+        'aba Carrinho selecionada', (tester) async {
+      final fakes = await _useCheckout(tester);
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.orderLocation(fakePlacedOrderId),
+      );
+
+      expect(fakes.orders.findCalls, [fakePlacedOrderId]);
+      expect(find.byType(OrderTrackingPage), findsOneWidget);
+      expect(find.text('Pedido #3F1C9A52'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_location(router), AppRoutes.orderLocation(fakePlacedOrderId));
     });
   });
 

@@ -23,8 +23,9 @@ import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/customer/pages/delivery_details_page.dart';
 import '../../ui/modules/customer/view_models/delivery_details_view_model.dart';
 import '../../ui/modules/order/pages/checkout_page.dart';
-import '../../ui/modules/order/pages/order_placed_page.dart';
+import '../../ui/modules/order/pages/order_tracking_page.dart';
 import '../../ui/modules/order/view_models/checkout_view_model.dart';
+import '../../ui/modules/order/view_models/order_tracking_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../../ui/shared/pages/not_found_page.dart';
 import '../../ui/shared/pages/splash_page.dart';
@@ -190,11 +191,13 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
                       ),
                     ],
                   ),
-                  // Filha de /cart; exige sessão (guarda). Voltar mostra o
-                  // carrinho.
+                  // Filha de /cart; exige sessão (guarda). Acompanhamento do
+                  // pedido; voltar mostra o carrinho.
                   GoRoute(
                     path: AppRoutes.orderSegment,
-                    builder: (context, state) => OrderPlacedPage(
+                    builder: (context, state) => OrderTrackingPage(
+                      orderTrackingViewModelFactory: () =>
+                          getIt<OrderTrackingViewModel>(),
                       orderId: state.pathParameters['id']!,
                       onBackToStore: () => context.go(AppRoutes.home),
                     ),

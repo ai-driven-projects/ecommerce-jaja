@@ -1,7 +1,7 @@
 // JSON do `201` de `POST /me/orders` (`OrderDetailDTO` em
 // `modules/orders/src/order/dto/order.dto.ts`): um pedido recém-criado com
-// duas linhas, entregue no cadastro de Fortaleza. O app só lê o `id`; o resto
-// vem a mais e fica para a etapa 13.
+// duas linhas, entregue no cadastro de Fortaleza. O fechamento só lê o `id`;
+// o `200` de `GET /me/orders/:id` traz o mesmo pedido ([orderDetailJson]).
 
 const placedOrderId = '3f1c9a52-7b1e-4c2d-9e8f-0a1b2c3d4e5f';
 
@@ -51,6 +51,41 @@ const placedOrderJson = <String, Object?>{
   'deliveredAt': null,
 };
 
+/// `200` de `GET /me/orders/:id`: o mesmo pedido do [placedOrderJson],
+/// `PLACED`, sem instruções e com os passos seguintes ainda sem data.
+const orderDetailJson = placedOrderJson;
+
+/// Pedido com o pagamento aprovado às 12:01:30 UTC; separação e entrega
+/// ainda sem data.
+final orderPaymentApprovedJson = <String, Object?>{
+  ...orderDetailJson,
+  'status': 'PAYMENT_APPROVED',
+  'paymentApprovedAt': '2026-10-15T12:01:30.000Z',
+};
+
+/// Pedido entregue, com a data de cada passo preenchida.
+final orderDeliveredJson = <String, Object?>{
+  ...orderDetailJson,
+  'status': 'DELIVERED',
+  'paymentApprovedAt': '2026-10-15T12:01:30.000Z',
+  'pickingStartedAt': '2026-10-15T12:05:00.000Z',
+  'outForDeliveryAt': '2026-10-15T12:20:00.000Z',
+  'deliveredAt': '2026-10-15T12:41:07.000Z',
+};
+
+/// Pedido com entrega grátis: total igual ao subtotal.
+final orderFreeDeliveryJson = <String, Object?>{
+  ...orderDetailJson,
+  'deliveryFeeCents': 0,
+  'totalCents': 1947,
+};
+
+/// Pedido com instruções de entrega.
+final orderWithInstructionsJson = <String, Object?>{
+  ...orderDetailJson,
+  'deliveryInstructions': 'Portão azul, tocar o interfone.',
+};
+
 /// Pedido válido sem o [field].
 Map<String, Object?> placedOrderWithout(String field) =>
     Map.of(placedOrderJson)..remove(field);
@@ -89,6 +124,10 @@ final customerInactiveJson = orderRejectionJson(400, [
 final cartHasUnavailableItemsJson = orderRejectionJson(400, [
   'ORDER_CART_HAS_UNAVAILABLE_ITEMS',
 ]);
+
+/// `404` de `GET /me/orders/:id`: pedido ausente, apagado, de outra conta ou
+/// com id malformado.
+final orderNotFoundJson = orderRejectionJson(404, ['ORDER_NOT_FOUND']);
 
 final textTooShortJson = orderRejectionJson(400, ['TEXT_TOO_SHORT']);
 

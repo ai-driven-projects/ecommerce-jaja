@@ -17,6 +17,7 @@ import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/customer/view_models/delivery_details_view_model.dart';
 import '../../ui/modules/order/view_models/checkout_view_model.dart';
+import '../../ui/modules/order/view_models/order_tracking_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../auth/secure_session_storage.dart';
 import '../auth/session.dart';
@@ -160,6 +161,9 @@ void registerViewModels() {
       getIt<AuthRepository>(),
       getIt<OrderRepository>(),
     ),
+  );
+  getIt.registerFactory<OrderTrackingViewModel>(
+    () => OrderTrackingViewModel(getIt<OrderRepository>()),
   );
 }
 

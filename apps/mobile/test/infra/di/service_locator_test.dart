@@ -32,6 +32,7 @@ import 'package:mobile/ui/modules/catalog/view_models/product_detail_view_model.
 import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/customer/view_models/delivery_details_view_model.dart';
 import 'package:mobile/ui/modules/order/view_models/checkout_view_model.dart';
+import 'package:mobile/ui/modules/order/view_models/order_tracking_view_model.dart';
 import 'package:mobile/ui/modules/store/view_models/store_selector_view_model.dart';
 
 import '../../modules/auth/support/fake_auth_repository.dart';
@@ -302,6 +303,12 @@ void main() {
       addTearDown(otherCheckout.dispose);
       expect(checkout, isA<CheckoutViewModel>());
       expect(identical(checkout, otherCheckout), isFalse);
+      final tracking = getIt<OrderTrackingViewModel>();
+      final otherTracking = getIt<OrderTrackingViewModel>();
+      addTearDown(tracking.dispose);
+      addTearDown(otherTracking.dispose);
+      expect(tracking, isA<OrderTrackingViewModel>());
+      expect(identical(tracking, otherTracking), isFalse);
       expect(storeSelector, isA<StoreSelectorViewModel>());
       expect(home, isA<HomeViewModel>());
       expect(search, isA<SearchViewModel>());
@@ -343,5 +350,6 @@ void main() {
     expect(getIt.isRegistered<AccountViewModel>(), isFalse);
     expect(getIt.isRegistered<CartViewModel>(), isFalse);
     expect(getIt.isRegistered<CheckoutViewModel>(), isFalse);
+    expect(getIt.isRegistered<OrderTrackingViewModel>(), isFalse);
   });
 }

@@ -5,8 +5,11 @@ import 'package:mobile/core/result.dart';
 import 'package:mobile/infra/http/api_client.dart';
 import 'package:mobile/infra/order/api_order_repository.dart';
 import 'package:mobile/modules/order/errors/order_errors.dart';
+import 'package:mobile/modules/order/model/order_entity.dart';
+import 'package:mobile/modules/order/model/order_status.dart';
 import 'package:mobile/modules/order/model/placed_order.dart';
 
+import '../../modules/order/support/order_fixtures.dart';
 import '../api/support/order_json.dart';
 import '../http/support/fake_http_client_adapter.dart';
 
@@ -152,6 +155,95 @@ void main() {
       expect(
         failure.message,
         'Não foi possível falar com o servidor. Tente novamente.',
+      );
+    });
+  });
+
+  group('findMine', () {
+    test('faz GET /me/orders/<id>', () async {
+      adapter.enqueueResponse(body: orderDetailJson);
+
+      await repository.findMine(placedOrderId);
+
+      final request = adapter.requests.single;
+      expect(request.method, 'GET');
+      expect(
+        request.uri.toString(),
+        'http://localhost:4000/me/orders/$placedOrderId',
+      );
+    });
+
+    test('codifica o id com caractere especial no caminho', () async {
+      adapter.enqueueResponse(statusCode: 404, body: orderNotFoundJson);
+
+      await repository.findMine('a/b c?');
+
+      expect(
+        adapter.requests.single.uri.toString(),
+        'http://localhost:4000/me/orders/a%2Fb%20c%3F',
+      );
+    });
+
+    test('200 vira Ok(OrderDetail) com o pedido lido', () async {
+      adapter.enqueueResponse(body: orderPaymentApprovedJson);
+
+      final result = await repository.findMine(placedOrderId);
+
+      expect(result, isA<Ok<OrderDetail>>());
+      expect(
+        (result as Ok<OrderDetail>).value,
+        fakeOrderDetail(
+          id: placedOrderId,
+          status: OrderStatus.paymentApproved,
+          paymentApprovedAt: DateTime.utc(2026, 10, 15, 12, 1, 30),
+        ),
+      );
+    });
+
+    test('404 vira NotFoundFailure', () async {
+      adapter.enqueueResponse(statusCode: 404, body: orderNotFoundJson);
+
+      final failure = failureOf(await repository.findMine(placedOrderId));
+
+      expect(failure, isA<NotFoundFailure>());
+    });
+
+    test('401 mantém a falha de sessão', () async {
+      adapter.enqueueResponse(
+        statusCode: 401,
+        body: orderRejectionJson(401, []),
+      );
+
+      expect(
+        failureOf(await repository.findMine(placedOrderId)),
+        isA<SessionFailure>(),
+      );
+    });
+
+    test('500 mantém a falha do servidor', () async {
+      adapter.enqueueResponse(statusCode: 500, body: 'Internal Server Error');
+
+      expect(
+        failureOf(await repository.findMine(placedOrderId)),
+        isA<ServerFailure>(),
+      );
+    });
+
+    test('falha de rede mantém a falha de rede', () async {
+      adapter.enqueueError(DioExceptionType.connectionError);
+
+      expect(
+        failureOf(await repository.findMine(placedOrderId)),
+        isA<NetworkFailure>(),
+      );
+    });
+
+    test('corpo fora do formato vira falha inesperada', () async {
+      adapter.enqueueResponse(body: placedOrderWith('status', 'CANCELLED'));
+
+      expect(
+        failureOf(await repository.findMine(placedOrderId)),
+        isA<UnexpectedFailure>(),
       );
     });
   });

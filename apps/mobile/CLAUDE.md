@@ -79,6 +79,15 @@ widgets dos passos e a `OrderPlacedPage` provisória (`lib/ui/modules/order/`), 
 (`lib/ui/modules/customer/view_models/`), o `CartSummary.checkout`, o `onSaved` da `DeliveryDetailsPage`, o
 "Finalizar pedido" da aba Carrinho ligado e as rotas `/cart/checkout`, `/cart/checkout/delivery` e
 `/cart/orders/:id`.
+Etapa 13: já existem o acompanhamento do pedido (`GET /me/orders/:id`): no domínio `lib/modules/order/`, o
+`OrderDetail` (`freezed`, com itens, endereço copiado, totais em `Money`, datas em UTC e `dateOf`), o
+`OrderStatus`, o `orderNumberOf`, o `order_progress.dart` (`orderStepState`, `isOrderFinished`) e o
+`OrderRepository.findMine`; o `parseOrderDetail` em `order_dto.dart` e o `findMine` do
+`ApiOrderRepository`; em `lib/ui/modules/order/`, os formatadores `order_formatters.dart`, o
+`OrderTrackingViewModel`, a `OrderTrackingPage` (puxar para atualizar, "Pedido não encontrado." e o banner)
+e os widgets `OrderStatusBadge`, `OrderHeader`, `OrderTimeline`/`OrderTimelineStep`, `OrderItemsCard`,
+`OrderInstructionsCard` e `OrderTrackingSkeleton`. A rota `/cart/orders/:id` monta a `OrderTrackingPage`;
+a `OrderPlacedPage` provisória foi apagada. Ainda sem SSE (etapa 14).
 
 ## Arquitetura
 
@@ -517,6 +526,17 @@ specs em `openspec/specs/<domínio>/`.
   Bearer no cabeçalho (**nunca token na URL**). O evento só avisa para buscar o pedido de novo; `ping` é
   ignorado; reconexão com espera crescente de 1 s a 10 s; para ao sair da tela e em segundo plano, retoma ao
   voltar. Status: `PLACED → PAYMENT_APPROVED → PICKING → OUT_FOR_DELIVERY → DELIVERED`, com os rótulos do web.
+  - Leitura **só** por `OrderRepository.findMine` (`GET /me/orders/<id codificado>`), na rota
+    `/cart/orders/:id` (sessão pela guarda). `404` (`NotFoundFailure`: inexistente, de outra conta ou id
+    malformado) é o estado vazio "Pedido não encontrado." com "Voltar para a loja" (aba Início); outra
+    falha, o banner com "Tentar de novo". Puxar a tela relê o pedido com o skeleton.
+  - Passos, rótulos e tons do selo **copiados** de `order-status.util.ts` (`OrderStatus.values` é a
+    sequência; `orderStepState` e `isOrderFinished` em `order_progress.dart`, `orderStatusLabel` na UI);
+    status desconhecido no JSON é erro de parsing, nunca um passo inventado.
+  - Datas: o modelo guarda **UTC**; a conversão para o fuso do aparelho (`.toLocal()`) acontece **só na
+    UI**, logo antes do formatador. Os formatadores (`formatOrderTime`, `formatOrderTimeWithSeconds`,
+    `formatOrderPlacedAt(placedAt, now)`, `formatOrderAddress`) recebem a data **já local**, sem `intl` de
+    data, e o "agora" vem do relógio injetado no ViewModel (`now()`).
 - **Ambiente:** `lib/main_dev.dart` e `lib/main_prod.dart`, URL da API por `--dart-define=API_URL` (padrão de
   dev `http://localhost:4000`; produção sem `API_URL` é falha de configuração), resolvida em
   `core/env/`. `adb reverse tcp:4000 tcp:4000` documentado no README e no Makefile. Sem Firebase e sem

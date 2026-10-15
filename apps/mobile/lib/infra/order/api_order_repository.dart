@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../core/errors/app_failure.dart';
 import '../../core/result.dart';
 import '../../modules/order/errors/order_errors.dart';
+import '../../modules/order/model/order_entity.dart';
 import '../../modules/order/model/placed_order.dart';
 import '../../modules/order/provider/order_repository.dart';
 import '../api/order_dto.dart';
@@ -30,6 +31,19 @@ final class ApiOrderRepository implements OrderRepository {
         data: encodePlaceOrder(recipientName, deliveryInstructions),
       ),
       parsePlacedOrder,
+    )) {
+      Ok() && final ok => ok,
+      Failure(:final failure) => Failure(mapOrderFailure(failure)),
+    };
+  }
+
+  /// `GET /me/orders/<id>` com o id codificado, lido por [parseOrderDetail].
+  /// O `404` (`ORDER_NOT_FOUND`) sai como `NotFoundFailure`.
+  @override
+  Future<Result<OrderDetail>> findMine(String id) async {
+    return switch (await runRequest(
+      () => _dio.get<Object?>('$_path/${Uri.encodeComponent(id)}'),
+      parseOrderDetail,
     )) {
       Ok() && final ok => ok,
       Failure(:final failure) => Failure(mapOrderFailure(failure)),
