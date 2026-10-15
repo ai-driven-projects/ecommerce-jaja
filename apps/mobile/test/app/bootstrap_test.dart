@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/app.dart';
 import 'package:mobile/app/bootstrap.dart';
@@ -29,6 +30,8 @@ void main() {
   testWidgets('com o endereço resolvido, registra as dependências e abre o app '
       'sem rede nem disco reais', (tester) async {
     SharedPreferences.setMockInitialValues({});
+    // Sem sessão guardada: o `restore` termina sem pedir `/auth/me`.
+    FlutterSecureStorage.setMockInitialValues({});
 
     final root = createRootWidget(Ok(Uri.parse('http://localhost:4000')));
 

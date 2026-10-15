@@ -43,6 +43,13 @@ Etapa 7: já existem o detalhe do produto no domínio (`ProductDetail`, `Catalog
 "Mais de <categoria>" e o rodapé "Adicionar ao carrinho") nas rotas `/home/product/:slug` e
 `/search/product/:slug`, no lugar da `ProductPage` provisória (apagada), e as peças `ProductArtSize` e
 `ProductBadge` em `lib/ui/shared/widgets/`.
+Etapa 8: já existem a sessão por e-mail e senha (`Email`, `PersonName` e `StrongPassword` em
+`core/value_objects/`; `AuthUser`, `AuthRepository` e `AuthErrorCode` em `lib/modules/auth/`; `Session`,
+`SessionStatus`, `SessionStorage`/`SecureSessionStorage` e o `SessionRepository` em `lib/infra/auth/`; o DTO
+`auth_dto.dart` e o `AuthInterceptor`), a guarda de rotas (`resolveSessionRedirect` em
+`lib/app/router/session_redirect.dart`), o `SplashPage`, as telas cheias "Entrar" (`/login`) e "Criar conta"
+(`/register`) com os ViewModels, e a aba Conta real (convite sem sessão; "Olá, <primeiro nome>" e "Sair"
+com sessão), no lugar da `AccountPage` provisória.
 
 ## Arquitetura
 
@@ -76,7 +83,7 @@ test/             # espelha lib/ (nunca teste ao lado do código)
 | `modules/` | O mesmo que `core/`, mais `core/` e `modules/`. |
 | `infra/` | Tudo acima, mais `dio`, `flutter_secure_storage`, `shared_preferences`, `get_it`. **Só aqui** entram `dio`, `flutter_secure_storage` e `shared_preferences`. |
 | `ui/` | Flutter, `watch_it`, `cached_network_image`, `intl`, `core/`, `modules/`. Nunca os pacotes de HTTP e armazenamento. |
-| `app/` | Flutter, `go_router`, `get_it` (só nos `builder` das rotas), `ui/`, `infra/di/`. |
+| `app/` | Flutter, `go_router`, `get_it` (só nos `builder` das rotas), `ui/`, `infra/di/`, `infra/auth/` (só o estado da sessão — `Session`, `SessionStatus` — para a guarda e o `refreshListenable`). |
 
 ### Regras (não negociáveis)
 
@@ -130,6 +137,19 @@ test/             # espelha lib/ (nunca teste ao lado do código)
   consome.
 - **Cliente:** `createApiClient(Uri)` (`api_client.dart`), registrado como `Dio` lazy singleton em
   `configureDependencies`. Interceptores (Bearer) entram nesse mesmo cliente.
+- **Sessão e Bearer:** o `AuthInterceptor` (`lib/infra/http/auth_interceptor.dart`) é ligado ao `Dio` na DI
+  com fechamentos que resolvem o `getIt<Session>()` na hora da requisição (sem ciclo `Dio` ↔ sessão): põe
+  `Authorization: Bearer <token>` quando a requisição não traz o seu, e o `401` da requisição que levou o
+  token atual chama `Session.expire()` (o erro segue para o `runRequest`, que devolve a `SessionFailure`).
+  `Session` (`lib/infra/auth/session.dart`: `status`, `token`, `expire()`, `Listenable`) é o contrato
+  técnico do router e do interceptor; as telas usam o `AuthRepository` do domínio. Os dois, na DI, são a
+  mesma instância do `SessionRepository`, que nasce `unknown` e é restaurado pelo bootstrap sem esperar.
+- **Rota nova que exige sessão entra em `AppRoutes.sessionRequiredPaths`** (vale o caminho e o que fica
+  abaixo dele); sem sessão, a guarda leva a `/login?from=<destino>`. Nenhuma tela checa a sessão por conta
+  própria nem navega depois de entrar: quem conclui o acesso é a guarda (o redirect, e
+  `_concludePushedAccess` para o "Entrar" empilhado). "Entrar", "Criar conta" e o splash ficam fora do
+  `StatefulShellRoute` (tela cheia, sem a barra). Testes de app e de rotas trocam a sessão com
+  `registerFakeDependencies(auth: FakeAuthRepository(...))`.
 - **`getIt` só em `lib/infra/di/` e `lib/app/`** (regra D da barreira, `ImportRule.locatorConfinement`):
   qualquer outro arquivo, inclusive os entrypoints na raiz de `lib/`, que importe `get_it` faz o
   `flutter test` falhar. Teste que chama `configureDependencies` faz `tearDown(resetDependencies)`.
@@ -336,6 +356,16 @@ specs em `openspec/specs/<domínio>/`.
   refresh) fica no `flutter_secure_storage` e vai como `Authorization: Bearer` por um interceptor. **401
   encerra a sessão** e volta ao login preservando o destino (como o `?voltar=` do web). Mensagem de
   credencial inválida é genérica ("e-mail ou senha inválidos"), nunca diz qual dos dois errou.
+  - Textos de erro (`AuthErrorCode`): "E-mail ou senha inválidos.", "Este e-mail já está cadastrado.",
+    "Não foi possível entrar. Tente novamente.", "Não foi possível criar a conta. Tente novamente."; dos
+    campos, os dos VOs ("E-mail inválido.", "Informe nome e sobrenome.", …) e "As senhas não conferem." na
+    confirmação. O login também exige senha forte, como o `login.schema.ts` do web.
+  - O destino vai no parâmetro **`from`** (`AppRoutes.fromParam`, o `voltar` do web), codificado; só vale
+    caminho relativo iniciado por `/` (não `//`, sem esquema) e fora de splash, login e cadastro
+    (`safeReturnLocation`); senão vai para `/home`.
+  - Restauração: a sessão guardada (`{token, user}` na chave `jaja:sessao` do armazenamento seguro) é
+    conferida com `GET /auth/me` e o Bearer guardado; `401` apaga e segue sem sessão; sem rede ou servidor
+    fora, segue com o usuário guardado até um `401`. Enquanto isso o app mostra o splash.
 - **Carrinho:** anônimo guardado em `shared_preferences` e precificado por `POST /cart/preview`; com sessão,
   `/me/cart`; no login, `POST /me/cart/merge` e limpeza do local, como o web (`cart.context.tsx`,
   `guest-cart-storage.util.ts`). Preço **sempre em centavos** (`Money`), formatado só na UI com `intl` pt-BR.

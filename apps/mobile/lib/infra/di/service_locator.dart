@@ -1,14 +1,23 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../modules/auth/provider/auth_repository.dart';
 import '../../modules/catalog/provider/catalog_repository.dart';
 import '../../modules/store/provider/store_repository.dart';
+import '../../ui/modules/auth/view_models/account_view_model.dart';
+import '../../ui/modules/auth/view_models/login_view_model.dart';
+import '../../ui/modules/auth/view_models/register_view_model.dart';
 import '../../ui/modules/catalog/view_models/home_view_model.dart';
 import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
+import '../auth/secure_session_storage.dart';
+import '../auth/session.dart';
+import '../auth/session_repository.dart';
+import '../auth/session_storage.dart';
 import '../catalog/api_catalog_repository.dart';
 import '../http/api_client.dart';
+import '../http/auth_interceptor.dart';
 import '../storage/key_value_store.dart';
 import '../storage/shared_preferences_key_value_store.dart';
 import '../store/api_store_repository.dart';
@@ -22,7 +31,17 @@ final getIt = GetIt.instance;
 /// repositórios) entra como lazy singleton; os ViewModels, em
 /// [registerViewModels].
 void configureDependencies({required Uri apiBaseUrl}) {
-  getIt.registerLazySingleton<Dio>(() => createApiClient(apiBaseUrl));
+  // Os fechamentos do interceptor resolvem a sessão só na hora da requisição:
+  // o `SessionRepository` depende do `Dio`, e não o contrário.
+  getIt.registerLazySingleton<Dio>(
+    () => createApiClient(apiBaseUrl)
+      ..interceptors.add(
+        AuthInterceptor(
+          readToken: () => getIt<Session>().token,
+          onUnauthorized: () => getIt<Session>().expire(),
+        ),
+      ),
+  );
   getIt.registerLazySingleton<KeyValueStore>(
     SharedPreferencesKeyValueStore.new,
   );
@@ -32,6 +51,15 @@ void configureDependencies({required Uri apiBaseUrl}) {
   getIt.registerLazySingleton<CatalogRepository>(
     () => ApiCatalogRepository(getIt<Dio>()),
   );
+  getIt.registerLazySingleton<SessionStorage>(SecureSessionStorage.new);
+  // Uma instância só atende o domínio (`AuthRepository`) e o router e o
+  // interceptor (`Session`).
+  getIt.registerLazySingleton<SessionRepository>(
+    () => SessionRepository(getIt<Dio>(), getIt<SessionStorage>()),
+    dispose: (repository) => repository.dispose(),
+  );
+  getIt.registerLazySingleton<Session>(() => getIt<SessionRepository>());
+  getIt.registerLazySingleton<AuthRepository>(() => getIt<SessionRepository>());
   registerViewModels();
 }
 
@@ -51,6 +79,15 @@ void registerViewModels() {
   );
   getIt.registerFactory<ProductDetailViewModel>(
     () => ProductDetailViewModel(getIt<CatalogRepository>()),
+  );
+  getIt.registerFactory<LoginViewModel>(
+    () => LoginViewModel(getIt<AuthRepository>()),
+  );
+  getIt.registerFactory<RegisterViewModel>(
+    () => RegisterViewModel(getIt<AuthRepository>()),
+  );
+  getIt.registerFactory<AccountViewModel>(
+    () => AccountViewModel(getIt<AuthRepository>()),
   );
 }
 

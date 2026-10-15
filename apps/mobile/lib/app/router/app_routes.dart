@@ -8,6 +8,37 @@ abstract final class AppRoutes {
   static const String cart = '/cart';
   static const String account = '/account';
 
+  /// Abertura enquanto a sessão é desconhecida; fora das abas (sem barra).
+  static const String splash = '/splash';
+
+  /// "Entrar" e "Criar conta", em tela cheia, fora das abas.
+  static const String login = '/login';
+  static const String register = '/register';
+
+  /// Parâmetro de query com o destino depois da abertura ou do acesso (o
+  /// `voltar` do web).
+  static const String fromParam = 'from';
+
+  static String splashLocation({String? from}) => _withFrom(splash, from);
+
+  static String loginLocation({String? from}) => _withFrom(login, from);
+
+  static String registerLocation({String? from}) => _withFrom(register, from);
+
+  /// Rotas que exigem sessão; sem sessão, levam a "Entrar". Nasce vazia: as
+  /// etapas de dados de entrega, checkout e pedido acrescentam as suas.
+  static const Set<String> sessionRequiredPaths = {};
+
+  /// Se [path] é uma das [sessionRequiredPaths] ou fica abaixo de uma delas.
+  static bool requiresSession(String path) => sessionRequiredPaths.any(
+    (required) => path == required || path.startsWith('$required/'),
+  );
+
+  static String _withFrom(String path, String? from) => Uri(
+    path: path,
+    queryParameters: from == null ? null : {fromParam: from},
+  ).toString();
+
   /// Produto por slug, na pilha da aba Início (barra de abas visível).
   static const String product = '$home/$productSegment';
 

@@ -56,6 +56,14 @@ enum GenericFailureCode { unspecified }
 
 enum MoneyCode { negativeCents }
 
+enum EmailCode { invalid }
+
+enum PersonNameCode { tooShort, tooLong, surnameMissing }
+
+/// `mismatch`: a confirmação do cadastro difere da senha (validada no
+/// `RegisterViewModel`, não num value object).
+enum PasswordCode { tooWeak, mismatch }
+
 enum ConfigurationCode { missingApiUrl, invalidApiUrl }
 
 /// Códigos das falhas de requisição HTTP, atribuídos por `mapHttpFailure` em

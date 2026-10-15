@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 ///
 /// Só 2xx é sucesso (`validateStatus` padrão); o resto vira `DioException` e
 /// é traduzido por `mapHttpFailure`. Sem `sendTimeout`: o `dio` reclama dele em
-/// requisições sem corpo. O interceptor do Bearer entra na etapa da sessão.
+/// requisições sem corpo.
 Dio createApiClient(Uri baseUrl) {
   return Dio(
     BaseOptions(

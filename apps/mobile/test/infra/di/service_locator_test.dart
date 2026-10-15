@@ -1,16 +1,27 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/infra/auth/secure_session_storage.dart';
+import 'package:mobile/infra/auth/session.dart';
+import 'package:mobile/infra/auth/session_repository.dart';
+import 'package:mobile/infra/auth/session_status.dart';
+import 'package:mobile/infra/auth/session_storage.dart';
 import 'package:mobile/infra/catalog/api_catalog_repository.dart';
 import 'package:mobile/infra/di/service_locator.dart';
+import 'package:mobile/infra/http/auth_interceptor.dart';
 import 'package:mobile/infra/storage/key_value_store.dart';
 import 'package:mobile/infra/store/api_store_repository.dart';
+import 'package:mobile/modules/auth/provider/auth_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
+import 'package:mobile/ui/modules/auth/view_models/account_view_model.dart';
+import 'package:mobile/ui/modules/auth/view_models/login_view_model.dart';
+import 'package:mobile/ui/modules/auth/view_models/register_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/home_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/product_detail_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/store/view_models/store_selector_view_model.dart';
 
+import '../../modules/auth/support/fake_auth_repository.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 
@@ -108,6 +119,71 @@ void main() {
 
       expect(identical(first, second), isFalse);
     });
+
+    test('o LoginViewModel é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final first = getIt<LoginViewModel>();
+      final second = getIt<LoginViewModel>();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      expect(identical(first, second), isFalse);
+    });
+
+    test('o RegisterViewModel é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final first = getIt<RegisterViewModel>();
+      final second = getIt<RegisterViewModel>();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      expect(identical(first, second), isFalse);
+    });
+
+    test('o AccountViewModel é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final first = getIt<AccountViewModel>();
+      final second = getIt<AccountViewModel>();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      expect(identical(first, second), isFalse);
+    });
+
+    test('Session, AuthRepository e SessionRepository são a mesma '
+        'instância', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final repository = getIt<SessionRepository>();
+
+      expect(getIt<SessionStorage>(), isA<SecureSessionStorage>());
+      expect(identical(getIt<Session>(), repository), isTrue);
+      expect(identical(getIt<AuthRepository>(), repository), isTrue);
+      expect(identical(getIt<SessionRepository>(), repository), isTrue);
+    });
+
+    test('o Dio tem um AuthInterceptor', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      expect(
+        getIt<Dio>().interceptors.whereType<AuthInterceptor>(),
+        hasLength(1),
+      );
+    });
+
+    test('resolver o Dio e a Session não entra em ciclo', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final dio = getIt<Dio>();
+      final session = getIt<Session>();
+
+      expect(dio, isA<Dio>());
+      expect(session.status, SessionStatus.unknown);
+      expect(session.token, isNull);
+    });
   });
 
   group('registerViewModels', () {
@@ -115,6 +191,9 @@ void main() {
         'Dio nem armazenamento', () {
       getIt.registerSingleton<StoreRepository>(FakeStoreRepository());
       getIt.registerSingleton<CatalogRepository>(FakeCatalogRepository());
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      getIt.registerSingleton<AuthRepository>(auth);
 
       registerViewModels();
 
@@ -125,11 +204,20 @@ void main() {
       addTearDown(storeSelector.dispose);
       addTearDown(home.dispose);
       addTearDown(search.dispose);
+      final login = getIt<LoginViewModel>();
+      final register = getIt<RegisterViewModel>();
+      final account = getIt<AccountViewModel>();
       addTearDown(productDetail.dispose);
+      addTearDown(login.dispose);
+      addTearDown(register.dispose);
+      addTearDown(account.dispose);
       expect(storeSelector, isA<StoreSelectorViewModel>());
       expect(home, isA<HomeViewModel>());
       expect(search, isA<SearchViewModel>());
       expect(productDetail, isA<ProductDetailViewModel>());
+      expect(login, isA<LoginViewModel>());
+      expect(register, isA<RegisterViewModel>());
+      expect(account, isA<AccountViewModel>());
       expect(getIt.isRegistered<Dio>(), isFalse);
       expect(getIt.isRegistered<KeyValueStore>(), isFalse);
     });
@@ -143,9 +231,15 @@ void main() {
     expect(getIt.isRegistered<Dio>(), isFalse);
     expect(getIt.isRegistered<StoreRepository>(), isFalse);
     expect(getIt.isRegistered<CatalogRepository>(), isFalse);
+    expect(getIt.isRegistered<SessionRepository>(), isFalse);
+    expect(getIt.isRegistered<Session>(), isFalse);
+    expect(getIt.isRegistered<AuthRepository>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
     expect(getIt.isRegistered<HomeViewModel>(), isFalse);
     expect(getIt.isRegistered<SearchViewModel>(), isFalse);
     expect(getIt.isRegistered<ProductDetailViewModel>(), isFalse);
+    expect(getIt.isRegistered<LoginViewModel>(), isFalse);
+    expect(getIt.isRegistered<RegisterViewModel>(), isFalse);
+    expect(getIt.isRegistered<AccountViewModel>(), isFalse);
   });
 }

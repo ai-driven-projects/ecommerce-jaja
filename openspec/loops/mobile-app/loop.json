@@ -467,7 +467,7 @@
       "commit": "c24b13ccdcc7ecb21b4f0a60b1d0649282ea60ba"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 8,
       "phase": "Conta e carrinho",
       "title": "Sessão: login e cadastro",
@@ -478,14 +478,69 @@
         "base": "777cfdd94174ffa13353964e765344eece4d1b82",
         "commit": "353f97b07fb93fde57625e0f1403b0a29e4a889f",
         "at": "2026-10-15T17:00:45.474Z"
-      }
+      },
+      "iteration": 8,
+      "deliveredAt": "2026-10-15T17:25:34.612Z",
+      "durationMs": 1485425,
+      "cost": 10.4458644,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 60761,
+          "cost": 0.6651212000000001,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 21942,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 332,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1343040,
+          "cost": 9.3943988,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 25246,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 33890,
+          "cost": 0.3863444,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 214,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
       "number": 9,
       "phase": "Conta e carrinho",
       "title": "Carrinho anônimo",
-      "change": "mobile-app-09-carrinho-anonimo-mobile"
+      "change": "mobile-app-09-carrinho-anonimo-mobile",
+      "early": {
+        "title": "Planeja o carrinho anônimo do app mobile",
+        "comparison": "- A aba Carrinho ainda é a `CartPage` provisória, e o \"Adicionar ao carrinho\" do detalhe está com `onAddToCart: null`. A barra de abas (`AppNavigationShell`) ainda não tem badge.\n- O `KeyValueStore` já guarda a loja escolhida, mas não tem como apagar uma chave. A change acrescenta `remove`, para o carrinho vazio apagar a chave `jaja.guest-cart`, como faz o web.\n- O web já tem tudo o que é preciso espelhar: `guest-cart-storage.util.ts` (normalização, 99 unidades e 50 produtos), `cart.util.ts` (regras de inclusão), `cart.context.tsx` (prévia depois de 250 ms e retirada dos produtos que não voltam na prévia) e o `CartDetailDTO` do backend, que sempre responde `200` com os itens já normalizados.\n- A barreira de arquitetura já cobre `lib/modules` e `lib/infra` inteiros, então as pastas novas `cart` entram sem mudar o teste. O `Money` já tem `times`.\n- A etapa 8 ainda está sendo aplicada no código, que está pela metade. Por isso as premissas (DI da sessão, redirect, `registerFakeDependencies` com `auth`) estão em \"Dependências da etapa anterior\". A change fica em cerca de 41 mil caracteres e passa em `openspec validate --strict`.\n- Ficaram fora: o \"+\" nos cards (não está no texto do plano) e `/me/cart` com o merge, que ficam para a etapa 10. O \"Finalizar pedido\" aparece desabilitado até a etapa 12.",
+        "base": "e23a99aa92326c9c00904f4497225f19213698ec",
+        "commit": "8ac7acb9b0d25fbd24ccc70e8aa325ed871dcbd1",
+        "at": "2026-10-15T17:25:34.601Z"
+      }
     },
     {
       "status": "pending",
@@ -530,84 +585,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 8,
-    "stage": 8,
-    "startCommit": "c24b13ccdcc7ecb21b4f0a60b1d0649282ea60ba",
-    "startedAt": "2026-10-15T17:00:49.107Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 60761,
-        "cost": 0.6651212000000001,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 21942,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja a sessão do app mobile: login, cadastro, guarda de rotas e aba Conta",
-      "comparison": "O app ainda não tem sessão: a aba Conta é provisória (PlaceholderBody), o createApiClient não tem interceptor (o comentário reserva o Bearer para esta etapa) e o flutter_secure_storage ainda não está no pubspec, embora a barreira já o confine a lib/infra.\nO mapHttpFailure já transforma 401 em SessionFailure e os outros 4xx em BackendRejectionFailure com os códigos do backend, o que basta para tratar INVALID_CREDENTIALS (401) e EMAIL_ALREADY_EXISTS (409) do AuthController.\nO CLAUDE.md manda o estado técnico da sessão (token e os estados unknown/authenticated/anonymous) para lib/infra/auth, mas a tabela de camadas não deixa ui/ e app/ importarem infra: o usuário e as ações foram para o domínio auth, e o router passa a poder importar infra/auth.\nO web valida com os value objects do pacote compartilhado (Email, PersonName de 3 a 50 caracteres com sobrenome, StrongPassword) e usa senha forte até no login; o /auth/me devolve id, name, email e admin, sem avatarUrl.\nA etapa 7 estava sendo aplicada em paralelo (arquivos do detalhe do produto pela metade no working tree); as suposições sobre router, DI e fakes dela estão em \"Dependências da etapa anterior\".",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 15078081,
-    "cost": 122.81396509999998,
+    "durationMs": 16480803,
+    "cost": 135.5476975,
     "runs": 1,
     "iterationsStarted": 8,
-    "iterationsDelivered": 7,
-    "claudeSessions": 71,
-    "turns": 1263,
-    "checks": 53,
+    "iterationsDelivered": 8,
+    "claudeSessions": 79,
+    "turns": 1453,
+    "checks": 56,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 17
+    "commits": 19
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

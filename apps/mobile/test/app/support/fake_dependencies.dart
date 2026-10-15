@@ -1,7 +1,10 @@
+import 'package:mobile/infra/auth/session.dart';
 import 'package:mobile/infra/di/service_locator.dart';
+import 'package:mobile/modules/auth/provider/auth_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 
+import '../../modules/auth/support/fake_auth_repository.dart';
 import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
@@ -12,12 +15,17 @@ import '../../modules/store/support/store_fixtures.dart';
 /// (sem rede nem disco) e os ViewModels de verdade, via `registerViewModels()`.
 /// Quem chama faz `tearDown(resetDependencies)`. Devolve o fake de loja.
 ///
+/// A sessão é o [FakeAuthRepository] de [auth] (padrão: sem sessão),
+/// registrado como `Session` (guarda e `refreshListenable` do router) e como
+/// `AuthRepository` (ViewModels de acesso), a mesma instância como no app.
+///
 /// O catálogo padrão são as fixtures do seed sem foto: a Início monta os
 /// cards logo ao abrir, e uma foto de verdade acionaria o cache do aparelho,
 /// que o `flutter_test` não tem (ver `test/ui/shared/support/fake_image_loads.dart`).
 FakeStoreRepository registerFakeDependencies({
   FakeStoreRepository? storeRepository,
   FakeCatalogRepository? catalogRepository,
+  FakeAuthRepository? auth,
 }) {
   final repository =
       storeRepository ??
@@ -31,6 +39,9 @@ FakeStoreRepository registerFakeDependencies({
       );
   getIt.registerSingleton<StoreRepository>(repository);
   getIt.registerSingleton<CatalogRepository>(catalog);
+  final session = auth ?? FakeAuthRepository();
+  getIt.registerSingleton<Session>(session);
+  getIt.registerSingleton<AuthRepository>(session);
   registerViewModels();
   return repository;
 }
