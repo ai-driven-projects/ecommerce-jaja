@@ -113,7 +113,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "7d51debd543475441429721ceabfac50b122b912"
     },
     {
       "status": "pending",
@@ -214,22 +215,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 2,
+    "stage": 2,
+    "startCommit": "7d51debd543475441429721ceabfac50b122b912",
+    "startedAt": "2026-10-15T13:07:56.397Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 541185,
+        "cost": 2.3982284000000003,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 10211,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja o tema da marca Jajá e os componentes base do app mobile",
+      "comparison": "A etapa 1 deixou apps/mobile com CLAUDE.md, lib/core e a barreira de imports, mas sem lib/ui, sem assets e com um MaterialApp sem tema. A regra de cor e estilo literal ainda não era verificada.\nA spec openspec/specs/shared/design-system está desatualizada (vermelho, Archivo, cantos retos) e contradiz o globals.css, o DESIGN.md e os componentes do web (laranja, Manrope, pílulas, raio 18). A change segue o código do web e registra o conflito.\nComo nada pode ser baixado, as fontes saem de cópias locais OFL: Manrope variável de um app instalado e Bricolage do app modelo da plataforma. A licença da Bricolage vem do zen-loop e a da Manrope é montada com o copyright lido da própria fonte.\nA API já envia discountPercent e unit no produto da vitrine, então o card recebe o desconto pronto. O cached_network_image e o mapa de arte por categoria ficam para a etapa 5, como manda o plano.\nA change tem cerca de 36 mil caracteres, 8 grupos de tarefas e `openspec validate --strict` passa.",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 1041936,
-    "cost": 8.0216408,
+    "durationMs": 1593748,
+    "cost": 10.4198692,
     "runs": 1,
-    "iterationsStarted": 1,
+    "iterationsStarted": 2,
     "iterationsDelivered": 1,
-    "claudeSessions": 11,
-    "turns": 119,
-    "checks": 14,
+    "claudeSessions": 12,
+    "turns": 149,
+    "checks": 17,
     "fixes": 3,
     "recoveries": 1,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 1
+    "commits": 2
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
