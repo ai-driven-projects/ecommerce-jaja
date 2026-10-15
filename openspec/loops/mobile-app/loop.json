@@ -771,7 +771,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "0c74ed87dab1b103697659972b298f6bf5bd031a"
     },
     {
       "status": "pending",
@@ -795,22 +796,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 13,
+    "stage": 13,
+    "startCommit": "0c74ed87dab1b103697659972b298f6bf5bd031a",
+    "startedAt": "2026-10-15T19:04:00.344Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 271308,
+        "cost": 2.1201285999999997,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 30541,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja o detalhe do pedido do app mobile",
+      "comparison": "A etapa 12 deixou a rota `/cart/orders/:id` com uma página provisória (`OrderPlacedPage`), já protegida pela guarda, e o domínio `order` só com `PlacedOrder` e `placeOrder`.\nO backend responde `GET /me/orders/:id` com o `OrderDetailDTO` completo e devolve `404 ORDER_NOT_FOUND` também para pedido de outra conta ou com id malformado. O app já transforma qualquer `404` em `NotFoundFailure`.\nO web (`order-tracking.component.tsx`, `order-status.util.ts`, `order.util.ts`) traz os rótulos, a regra feito/atual/pendente, os formatos de hora e o endereço, e esses viram o molde da tela.\nO mockup `Rastreamento.dc.html` tem mapa, entregador e \"pago no Pix\", que estão fora do escopo do plano. A tela segue o web: \"Pagamento simulado\" e sem mapa.\nO `CLAUDE.md` exige banner com \"Tentar de novo\" e skeleton ao puxar a tela, o que diverge do aviso do web. Segui o `CLAUDE.md` e registrei a escolha no design.\nO `placedOrderJson` da etapa 12 já é um `OrderDetailDTO` completo e será reaproveitado como JSON de exemplo para o teste de parsing.",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 22369934,
-    "cost": 185.3572739,
+    "durationMs": 22672166,
+    "cost": 187.47740249999998,
     "runs": 1,
-    "iterationsStarted": 12,
+    "iterationsStarted": 13,
     "iterationsDelivered": 12,
-    "claudeSessions": 113,
-    "turns": 2176,
-    "checks": 80,
+    "claudeSessions": 114,
+    "turns": 2209,
+    "checks": 83,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 29
+    "commits": 30
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
