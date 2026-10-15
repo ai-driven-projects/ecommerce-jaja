@@ -5,15 +5,20 @@ import 'package:mobile/app/router/app_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/modules/catalog/model/product_query.dart';
+import 'package:mobile/modules/catalog/model/product_query_params.dart';
+import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/ui/modules/cart/pages/cart_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/home_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/product_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/search_page.dart';
+import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
+import 'package:mobile/ui/modules/catalog/widgets/filters_sheet.dart';
+import 'package:mobile/ui/modules/catalog/widgets/product_grid.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
-import 'package:mobile/ui/shared/widgets/placeholder_body.dart';
 import 'package:mobile/ui/shared/widgets/product_card.dart';
 
 import '../../modules/catalog/support/catalog_fixtures.dart';
+import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../support/fake_dependencies.dart';
 
 Future<GoRouter> _pumpRouter(
@@ -32,8 +37,35 @@ Future<GoRouter> _pumpRouter(
 String _location(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.path;
 
+/// Caminho e query da localização atual, como a aba a guarda.
+String _fullLocation(GoRouter router) =>
+    router.routerDelegate.currentConfiguration.uri.toString();
+
 NavigationBar _bar(WidgetTester tester) =>
     tester.widget<NavigationBar>(find.byType(NavigationBar));
+
+FakeCatalogRepository get _catalog =>
+    getIt<CatalogRepository>() as FakeCatalogRepository;
+
+/// Troca o `registerFactory` do [SearchViewModel] por um que conta as
+/// chamadas, para provar que trocar o filtro não recria o ViewModel.
+List<SearchViewModel> _countSearchViewModels() {
+  final created = <SearchViewModel>[];
+  getIt.unregister<SearchViewModel>();
+  getIt.registerFactory<SearchViewModel>(() {
+    final viewModel = SearchViewModel(getIt<CatalogRepository>());
+    created.add(viewModel);
+    return viewModel;
+  });
+  return created;
+}
+
+Future<void> _tapTab(WidgetTester tester, String label) async {
+  await tester.tap(
+    find.descendant(of: find.byType(NavigationBar), matching: find.text(label)),
+  );
+  await tester.pumpAndSettle();
+}
 
 void main() {
   setUp(registerFakeDependencies);
@@ -92,13 +124,50 @@ void main() {
       final page = tester.widget<SearchPage>(find.byType(SearchPage));
       expect(page.initialQuery, const ProductQuery(categorySlug: 'escolar'));
       expect(page.initialQuery.sort, isNull);
-      expect(
-        find.descendant(
-          of: find.byType(PlaceholderBody),
-          matching: find.text('Buscar'),
-        ),
-        findsOneWidget,
+      expect(encodeProductQuery(_catalog.productQueries.last), {
+        'category': 'escolar',
+        'page': '1',
+        'pageSize': '24',
+      });
+    });
+
+    testWidgets('marcar "Só ofertas" espelha o filtro na rota sem recriar o '
+        'ViewModel, e voltar à aba depois da Início não pede de novo', (
+      tester,
+    ) async {
+      final created = _countSearchViewModels();
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.search,
       );
+
+      await tester.tap(find.text(SearchPage.filtersLabel));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text(FiltersSheet.onSaleLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(FiltersSheet.onSaleLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(FiltersSheet.closeTooltip));
+      await tester.pumpAndSettle();
+
+      expect(_fullLocation(router), '/search?onSale=true');
+      expect(created, hasLength(1));
+      expect(
+        tester.widget<SearchPage>(find.byType(SearchPage)).initialQuery,
+        const ProductQuery(onSale: true),
+      );
+
+      await _tapTab(tester, 'Início');
+      expect(find.byType(HomePage), findsOneWidget);
+      final requests = _catalog.productQueries.length;
+
+      await _tapTab(tester, 'Buscar');
+
+      expect(_bar(tester).selectedIndex, 1);
+      expect(_fullLocation(router), '/search?onSale=true');
+      expect(find.text('Filtros (1)'), findsOneWidget);
+      expect(_catalog.productQueries, hasLength(requests));
+      expect(created, hasLength(1));
     });
 
     testWidgets('/home/product/caneta-x mostra "Produto" sobre a Início, com '
@@ -140,6 +209,40 @@ void main() {
       // `push` não muda a localização "ida" do router; o que conta é a pilha.
       expect(_location(router), AppRoutes.home);
     });
+
+    testWidgets('tocar num card da Buscar abre "Produto" na pilha da aba, e '
+        'voltar mostra a mesma listagem sem nova requisição', (tester) async {
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.search,
+      );
+      final listed = tester
+          .widget<ProductGrid>(find.byType(ProductGrid))
+          .products;
+      final requests = _catalog.productQueries.length;
+
+      await tester.tap(find.byType(ProductCard).first);
+      await tester.pumpAndSettle();
+
+      final page = tester.widget<ProductPage>(find.byType(ProductPage));
+      expect(page.slug, listed.first.slug);
+      expect(find.text('Produto'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 1);
+      expect(find.byType(SearchPage), findsNothing);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductPage), findsNothing);
+      expect(find.byType(SearchPage), findsOneWidget);
+      expect(
+        tester.widget<ProductGrid>(find.byType(ProductGrid)).products,
+        listed,
+      );
+      expect(_catalog.productQueries, hasLength(requests));
+      expect(_location(router), AppRoutes.search);
+    });
   });
 
   group('AppRoutes', () {
@@ -163,6 +266,15 @@ void main() {
     test('productLocation monta o caminho do produto pelo slug', () {
       expect(AppRoutes.productLocation('caneta-x'), '/home/product/caneta-x');
       expect(AppRoutes.product, '/home/product/:slug');
+    });
+
+    test('searchProductLocation monta o produto na pilha da Buscar e codifica '
+        'o slug', () {
+      expect(
+        AppRoutes.searchProductLocation('caneta x'),
+        '/search/product/caneta%20x',
+      );
+      expect(AppRoutes.searchProduct, '/search/product/:slug');
     });
   });
 

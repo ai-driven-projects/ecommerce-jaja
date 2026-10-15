@@ -7,6 +7,7 @@ import 'package:mobile/infra/store/api_store_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 import 'package:mobile/ui/modules/catalog/view_models/home_view_model.dart';
+import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/store/view_models/store_selector_view_model.dart';
 
 import '../../modules/catalog/support/fake_catalog_repository.dart';
@@ -83,6 +84,17 @@ void main() {
 
       expect(identical(first, second), isFalse);
     });
+
+    test('o SearchViewModel é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final first = getIt<SearchViewModel>();
+      final second = getIt<SearchViewModel>();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      expect(identical(first, second), isFalse);
+    });
   });
 
   group('registerViewModels', () {
@@ -95,10 +107,13 @@ void main() {
 
       final storeSelector = getIt<StoreSelectorViewModel>();
       final home = getIt<HomeViewModel>();
+      final search = getIt<SearchViewModel>();
       addTearDown(storeSelector.dispose);
       addTearDown(home.dispose);
+      addTearDown(search.dispose);
       expect(storeSelector, isA<StoreSelectorViewModel>());
       expect(home, isA<HomeViewModel>());
+      expect(search, isA<SearchViewModel>());
       expect(getIt.isRegistered<Dio>(), isFalse);
       expect(getIt.isRegistered<KeyValueStore>(), isFalse);
     });
@@ -114,5 +129,6 @@ void main() {
     expect(getIt.isRegistered<CatalogRepository>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
     expect(getIt.isRegistered<HomeViewModel>(), isFalse);
+    expect(getIt.isRegistered<SearchViewModel>(), isFalse);
   });
 }

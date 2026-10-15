@@ -10,14 +10,21 @@ import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 
 import 'catalog_fixtures.dart' as fixtures;
 
-/// Uma página de uma só, com [items] e sem facetas, para enfileirar nos fakes.
-ProductPage pageOf(List<ProductSummary> items) => ProductPage(
+/// Uma página com [items], para enfileirar nos fakes. Sem os nomeados, é a
+/// única página do resultado, sem facetas; [total] padrão é o de itens.
+ProductPage pageOf(
+  List<ProductSummary> items, {
+  int page = 1,
+  int? totalPages,
+  int? total,
+  List<BrandFacet> brandFacets = const [],
+}) => ProductPage(
   items: List.unmodifiable(items),
-  total: items.length,
-  page: 1,
+  total: total ?? items.length,
+  page: page,
   pageSize: items.length,
-  totalPages: items.isEmpty ? 0 : 1,
-  brandFacets: const [],
+  totalPages: totalPages ?? (items.isEmpty ? 0 : 1),
+  brandFacets: List.unmodifiable(brandFacets),
 );
 
 /// [CatalogRepository] em memória para os testes de ViewModel e de página,

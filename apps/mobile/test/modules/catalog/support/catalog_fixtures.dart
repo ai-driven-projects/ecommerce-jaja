@@ -1,4 +1,5 @@
 import 'package:mobile/modules/catalog/model/category_entity.dart';
+import 'package:mobile/modules/catalog/model/product_page_entity.dart';
 import 'package:mobile/modules/catalog/model/product_summary_entity.dart';
 
 import '../../../ui/shared/support/money.dart';
@@ -126,3 +127,18 @@ final brushSupersoft = ProductSummary(
 
 /// Os três produtos, na ordem em que a API os devolve nos testes.
 final products = [finePen, brushDuo, brushSupersoft];
+
+/// [count] cópias de [finePen] com `id`, `slug` e `name` únicos
+/// (`<prefix>-1`, `<prefix>-2`…), para encher páginas da listagem.
+List<ProductSummary> manyProducts(int count, {String prefix = 'produto'}) =>
+    List.unmodifiable([
+      for (var i = 1; i <= count; i++)
+        finePen.copyWith(
+          id: '$prefix-id-$i',
+          slug: '$prefix-$i',
+          name: 'Produto $prefix $i',
+        ),
+    ]);
+
+/// Faceta da marca HP (`brandSlug` do seed).
+const hpFacet = BrandFacet(slug: 'hp', name: 'HP', count: 12);

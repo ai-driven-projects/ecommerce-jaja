@@ -348,18 +348,73 @@
       "commit": "21c112467b7a63c0266229c05cffb10f13466096"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 6,
       "phase": "Catálogo",
       "title": "Busca, filtros e paginação",
-      "change": "mobile-app-06-busca-catalogo-mobile"
+      "change": "mobile-app-06-busca-catalogo-mobile",
+      "iteration": 6,
+      "deliveredAt": "2026-10-15T16:40:48.268Z",
+      "durationMs": 1680435,
+      "cost": 11.076224,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 387092,
+          "cost": 2.6202118,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 15842,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 353,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1225260,
+          "cost": 8.0955858,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 20754,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 30928,
+          "cost": 0.3604264,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 206,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
       "number": 7,
       "phase": "Catálogo",
       "title": "Detalhe do produto",
-      "change": "mobile-app-07-detalhe-produto-mobile"
+      "change": "mobile-app-07-detalhe-produto-mobile",
+      "early": {
+        "title": "Planeja o detalhe do produto do app mobile",
+        "comparison": "As duas rotas de produto ainda montam o widget provisório `ProductPage({slug, onBack})`, que tem o mesmo nome da entidade `ProductPage` (página de produtos). A change o troca por `ProductDetailPage` e apaga o arquivo antigo.\nO contrato `GET /storefront/products/:slug` (`StorefrontProductDetailDTO`) traz marca, trilha de categorias e imagens com thumb e large. O `runRequest` já converte `404` em `NotFoundFailure`, então o \"produto inexistente\" não precisa de código novo de falha.\nO `ProductArt` só tem o tamanho do card (altura 120) e o selo do `ProductCard` é privado (`_Badge`). A galeria e a miniatura pedem tamanhos novos, e o selo vira `shared/widgets/product_badge.dart`.\nA página web também tem quantidade, cartão de entrega e \"Você já tem N no carrinho\", que dependem das regras de frete e do carrinho. Ficam para a etapa 9, e o botão nasce desabilitado.\nA etapa 6 está em aplicação. A change supõe as rotas `searchProduct*`, o `didUpdateWidget` da `SearchPage` e os ajustes no `FakeCatalogRepository`, e registra isso em \"Dependências da etapa anterior\".",
+        "base": "c830b01c20f6243839cf56cd439f75ffac381b2d",
+        "commit": "2dab781883989d7f1d93220d5ab0f30b1f86d996",
+        "at": "2026-10-15T16:40:48.256Z"
+      }
     },
     {
       "status": "pending",
@@ -418,84 +473,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 6,
-    "stage": 6,
-    "startCommit": "21c112467b7a63c0266229c05cffb10f13466096",
-    "startedAt": "2026-10-15T16:12:47.765Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 387092,
-        "cost": 2.6202118,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 15842,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja a busca, os filtros e a paginação infinita da aba Buscar do app mobile",
-      "comparison": "A aba Buscar ainda é provisória: a `SearchPage(initialQuery)` só recebe o filtro decodificado da rota `/search?…`, que a Início já usa para abrir categorias, destaques e ofertas.\nO domínio `catalog` da etapa 5 já tem quase tudo o que a listagem precisa: `ProductQuery`/`ProductSort`, a codificação única dos filtros, `ProductPage` com `brandFacets` e `fetchProducts` sem cache. Faltam só regras puras (24 itens por página, ordem efetiva, normalização do filtro, caminho da categoria na árvore).\nO web guarda tudo na URL em português e pagina com botões. O app mantém a codificação única nos nomes da API, troca os botões por paginação infinita e leva a categoria para o painel inferior, como o plano pede.\nO `Command0` ignora chamadas enquanto roda, então a primeira página fica fora dele e cada pedido carrega um número de geração para descartar a resposta de um filtro antigo; só `loadMore` usa `Command`.\nO `AppTextField` sempre mostra rótulo, por isso o campo de busca vira um widget próprio. A montagem do card que hoje está no `ProductRail` sai para um widget compartilhado pela grade e pelo trilho.\nNão há pacote novo nem lacuna de API; a barreira de arquitetura não muda.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 12523467,
-    "cost": 99.15054890000002,
+    "durationMs": 13800968,
+    "cost": 110.39690429999999,
     "runs": 1,
     "iterationsStarted": 6,
-    "iterationsDelivered": 5,
-    "claudeSessions": 55,
-    "turns": 909,
-    "checks": 41,
+    "iterationsDelivered": 6,
+    "claudeSessions": 62,
+    "turns": 1053,
+    "checks": 44,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 11
+    "commits": 13
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

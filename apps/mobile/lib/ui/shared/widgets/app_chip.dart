@@ -18,6 +18,7 @@ class AppChip extends StatelessWidget {
     this.emoji,
     this.count,
     this.size = AppChipSize.md,
+    this.trailingIcon,
   });
 
   final String label;
@@ -31,6 +32,9 @@ class AppChip extends StatelessWidget {
   final int? count;
   final AppChipSize size;
 
+  /// Ícone depois do rótulo e da contagem (o fechar das pílulas de filtro).
+  final IconData? trailingIcon;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -41,6 +45,7 @@ class AppChip extends StatelessWidget {
             .copyWith(color: foreground);
     final emoji = this.emoji;
     final count = this.count;
+    final trailingIcon = this.trailingIcon;
 
     return Semantics(
       container: true,
@@ -77,6 +82,10 @@ class AppChip extends StatelessWidget {
                       color: selected ? tokens.brand : tokens.mutedInk,
                     ),
                   ),
+                ],
+                if (trailingIcon != null) ...[
+                  const SizedBox(width: 6),
+                  Icon(trailingIcon, size: 16, color: foreground),
                 ],
               ],
             ),

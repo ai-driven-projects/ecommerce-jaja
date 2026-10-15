@@ -31,6 +31,11 @@ consultas da Início em `home_catalog.dart` e o contrato `CatalogRepository`), o
 `lib/ui/modules/catalog/view_models/`, os widgets de `lib/ui/modules/catalog/widgets/`), as rotas
 `/home/product/:slug` (com a `ProductPage` provisória, widget homônimo da entidade; a etapa 7 a substitui) e
 `/search?…` com o filtro decodificado, o `ProductArt` com `cached_network_image` e a regra F da barreira.
+Etapa 6: já existem as regras puras da listagem (`product_listing.dart` e `category_tree.dart` em
+`lib/modules/catalog/model/`), o `parseReaisToCents`/`formatCentsAsReais` e o `SearchViewModel` em
+`lib/ui/modules/catalog/view_models/`, a aba Buscar completa (campo com espera de 300 ms, painéis inferiores
+de filtros e de ordenação, pílulas, grade de duas colunas com paginação infinita), o filtro espelhado na rota
+`/search?…` e a rota `/search/product/:slug` (mesma `ProductPage` provisória, na pilha da aba Buscar).
 
 ## Arquitetura
 
@@ -197,6 +202,11 @@ Todo bloco que mostra dado buscado da rede segue a mesma regra, sem variação p
   skeleton, `StateErrorBanner` com "Tentar de novo", nada quando carregado e vazio, conteúdo). Tela nova
   com bloco remoto reusa esse `sealed class`; com o segundo consumidor fora do catálogo, ele sobe para
   `ui/shared/` sem mudar de forma.
+- **Listas paginadas (paginação infinita, molde: a Buscar):** o skeleton da grade entra **só na página 1**
+  (primeira carga, troca de filtro, "Tentar de novo", puxar a tela); a página seguinte mostra só um skeleton
+  curto no rodapé, mantendo os itens. Falha da página seguinte **não** troca a grade: o `StateErrorBanner`
+  ("Não foi possível carregar mais produtos.") com "Tentar de novo" aparece **só no rodapé** e refaz a mesma
+  página. A próxima página é pedida perto do fim da rolagem e também quando a lista não enche a tela.
 
 ## Convenções
 
@@ -335,6 +345,17 @@ specs em `openspec/specs/<domínio>/`.
   produtos **nunca** são guardadas. Chip e cartão de categoria abrem a Buscar filtrada
   (`onOpenSearch(ProductQuery)`), card de produto abre `/home/product/:slug` (`onOpenProduct(slug)`) — a
   página só navega por callback.
+- **Listagem da Buscar:** `lib/modules/catalog/model/product_listing.dart` (cópia de
+  `storefront-query.util.ts`): **24 itens por página** (`listingPageSize`), ordem efetiva = a escolhida, senão
+  `relevance` com busca e `featured` sem (`effectiveSort`; "Mais relevantes" só aparece com busca). Todo filtro
+  que entra no `SearchViewModel` (rota, painel, campo, pílula) passa por **`normalizeListingQuery`**, a porta
+  única: zera `page`/`pageSize`, apara a busca, marcas sem repetição e no máximo 20, `relevance` sem busca vira
+  `null`; filtro normalizado igual ao em vigor não pede nada. O filtro em vigor é **espelhado na rota da aba**
+  (`context.go(AppRoutes.searchLocation(q))`, sem `page`/`pageSize`; o `go` reconstrói a mesma página e o
+  mesmo ViewModel), e o filtro que chega pela rota entra por `applyQuery`. Cada pedido (página 1 ou seguinte)
+  leva a **geração** do filtro; resposta de geração antiga é **descartada**. A primeira página não usa
+  `Command` (troca de filtro no meio do pedido precisa valer); a seguinte é `Command0` e item de `id`
+  repetido entre páginas é pulado. Card da Buscar abre `/search/product/:slug`, na pilha da aba.
 - **Dados de entrega:** `GET/PUT /me/customer` com endereço em texto, **sem mapa**. Ao salvar, preserve a
   `location` vinda do backend; cliente novo vai com `location: null`.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o

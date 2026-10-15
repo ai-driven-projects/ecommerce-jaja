@@ -8,6 +8,7 @@ import '../../ui/modules/catalog/pages/home_page.dart';
 import '../../ui/modules/catalog/pages/product_page.dart';
 import '../../ui/modules/catalog/pages/search_page.dart';
 import '../../ui/modules/catalog/view_models/home_view_model.dart';
+import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../../ui/shared/pages/not_found_page.dart';
 import '../../ui/shared/widgets/app_navigation_shell.dart';
@@ -59,8 +60,26 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
               GoRoute(
                 path: AppRoutes.search,
                 builder: (context, state) => SearchPage(
+                  searchViewModelFactory: () => getIt<SearchViewModel>(),
                   initialQuery: decodeProductQuery(state.uri.queryParameters),
+                  // O filtro em vigor volta para a rota; o `go` reconstrói a
+                  // mesma página (a chave é o caminho, sem a query).
+                  onQueryChanged: (query) =>
+                      context.go(AppRoutes.searchLocation(query)),
+                  onOpenProduct: (slug) =>
+                      context.push(AppRoutes.searchProductLocation(slug)),
                 ),
+                routes: [
+                  // Filha de /search: fica na pilha da aba Buscar, e voltar
+                  // mostra a listagem com os itens e a rolagem.
+                  GoRoute(
+                    path: AppRoutes.searchProductSegment,
+                    builder: (context, state) => ProductPage(
+                      slug: state.pathParameters['slug']!,
+                      onBack: () => context.pop(),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

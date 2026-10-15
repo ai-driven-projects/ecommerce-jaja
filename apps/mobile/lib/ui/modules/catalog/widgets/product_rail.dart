@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../modules/catalog/model/product_summary_entity.dart';
 import '../../../shared/theme/app_radius.dart';
 import '../../../shared/theme/app_spacing.dart';
-import '../../../shared/widgets/product_card.dart';
 import '../../../shared/widgets/skeleton_box.dart';
-import '../view_models/category_art.dart';
+import 'product_summary_card.dart';
 
 /// Trilho horizontal de cards das seções de produtos da Início. Trilho, e não
 /// a grade do web, porque 20 cards em duas colunas empurrariam as categorias
@@ -47,28 +46,17 @@ class ProductRail extends StatelessWidget {
           children: [
             for (final (index, product) in products.indexed) ...[
               if (index > 0) const SizedBox(width: _gap),
-              SizedBox(width: cardWidth, child: _card(product)),
+              SizedBox(
+                width: cardWidth,
+                child: ProductSummaryCard(
+                  product: product,
+                  onOpenProduct: onOpenProduct,
+                ),
+              ),
             ],
           ],
         ),
       ),
-    );
-  }
-
-  Widget _card(ProductSummary product) {
-    final art = categoryArtOf(product.rootCategorySlug);
-
-    return ProductCard(
-      name: product.name,
-      unit: product.unit,
-      price: product.price,
-      previousPrice: product.listPrice,
-      discountPercent: product.discountPercent,
-      featured: product.isFeatured,
-      imageUrl: product.thumbUrl,
-      emoji: art.emoji,
-      tint: art.tint,
-      onTap: () => onOpenProduct(product.slug),
     );
   }
 }

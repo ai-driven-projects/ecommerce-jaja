@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import '../../modules/catalog/provider/catalog_repository.dart';
 import '../../modules/store/provider/store_repository.dart';
 import '../../ui/modules/catalog/view_models/home_view_model.dart';
+import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../catalog/api_catalog_repository.dart';
 import '../http/api_client.dart';
@@ -43,6 +44,9 @@ void registerViewModels() {
   );
   getIt.registerFactory<HomeViewModel>(
     () => HomeViewModel(getIt<CatalogRepository>()),
+  );
+  getIt.registerFactory<SearchViewModel>(
+    () => SearchViewModel(getIt<CatalogRepository>()),
   );
 }
 
