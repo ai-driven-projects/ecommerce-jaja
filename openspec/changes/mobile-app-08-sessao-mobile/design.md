@@ -84,11 +84,11 @@ Só acréscimos: "Etapa 8" no estado atual; na tabela de camadas, `app/` pode im
 
 ## Dependências da etapa anterior
 
-Assumido da change `mobile-app-07-detalhe-produto-mobile` (em aplicação quando esta foi escrita); conferir no lote 1 e, se algo diferir, adaptar sem renomear o que existe e registrar abaixo:
+Conferido no código entregue pela change `mobile-app-07-detalhe-produto-mobile` (arquivada), todos com o nome abaixo; se algo mudar até a aplicação, adaptar sem renomear o que existe e registrar abaixo:
 - `app_router.dart` com as rotas filhas `product/:slug` de `/home` e `/search` montando `ProductDetailPage`; o arquivo `pages/product_page.dart` foi apagado. Esta etapa só acrescenta rotas de nível superior, `refreshListenable` e o redirect, sem tocar nessas rotas.
 - `registerViewModels()` com `ProductDetailViewModel` registrado; esta etapa acrescenta três ViewModels ao final.
 - `registerFakeDependencies({storeRepository, catalogRepository})` sem parâmetro novo da etapa 7 (o `FakeCatalogRepository` padrão devolve `plainDetail`); esta etapa acrescenta `auth`.
-- `test/app/router/app_router_test.dart` e `test/app/app_test.dart` esperando a `ProductDetailPage` nas duas pilhas; com a sessão fake `anonymous`, essas expectativas seguem iguais.
+- `test/app/router/app_router_test.dart` esperando a `ProductDetailPage` nas duas pilhas (o `app_test.dart` não a menciona); com a sessão fake `anonymous`, essas expectativas seguem iguais.
 - `CLAUDE.md` com o "Etapa 7" no estado atual; os acréscimos desta etapa vêm depois dele.
 - Das etapas 1 a 6 (conferido no código): `AppTextField(label, controller, onChanged, hintText, errorText, keyboardType, textInputAction, obscureText, maxLength, enabled, autofillHints)`, `AppButton(label, onPressed, variant, size, icon, expand)` com `AppButtonVariant.{primary, secondary, outline}` e `AppButtonSize.xl`, `context.tokens` com `brand`, `mutedInk`, `danger`, `success`, `successSoft`, `textTheme.{displaySmall, headlineSmall, bodySmall}`, `runRequest`, `mapHttpFailure`, `FakeHttpClientAdapter(requests, enqueueResponse, enqueueError)`, `Command0`, `PlaceholderBody` (ainda usado pela `CartPage`).
 

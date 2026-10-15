@@ -463,7 +463,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "c24b13ccdcc7ecb21b4f0a60b1d0649282ea60ba"
     },
     {
       "status": "pending",
@@ -529,22 +530,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 8,
+    "stage": 8,
+    "startCommit": "c24b13ccdcc7ecb21b4f0a60b1d0649282ea60ba",
+    "startedAt": "2026-10-15T17:00:49.107Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 60761,
+        "cost": 0.6651212000000001,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 21942,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja a sessão do app mobile: login, cadastro, guarda de rotas e aba Conta",
+      "comparison": "O app ainda não tem sessão: a aba Conta é provisória (PlaceholderBody), o createApiClient não tem interceptor (o comentário reserva o Bearer para esta etapa) e o flutter_secure_storage ainda não está no pubspec, embora a barreira já o confine a lib/infra.\nO mapHttpFailure já transforma 401 em SessionFailure e os outros 4xx em BackendRejectionFailure com os códigos do backend, o que basta para tratar INVALID_CREDENTIALS (401) e EMAIL_ALREADY_EXISTS (409) do AuthController.\nO CLAUDE.md manda o estado técnico da sessão (token e os estados unknown/authenticated/anonymous) para lib/infra/auth, mas a tabela de camadas não deixa ui/ e app/ importarem infra: o usuário e as ações foram para o domínio auth, e o router passa a poder importar infra/auth.\nO web valida com os value objects do pacote compartilhado (Email, PersonName de 3 a 50 caracteres com sobrenome, StrongPassword) e usa senha forte até no login; o /auth/me devolve id, name, email e admin, sem avatarUrl.\nA etapa 7 estava sendo aplicada em paralelo (arquivos do detalhe do produto pela metade no working tree); as suposições sobre router, DI e fakes dela estão em \"Dependências da etapa anterior\".",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 14994939,
-    "cost": 122.14884389999997,
+    "durationMs": 15078081,
+    "cost": 122.81396509999998,
     "runs": 1,
-    "iterationsStarted": 7,
+    "iterationsStarted": 8,
     "iterationsDelivered": 7,
-    "claudeSessions": 70,
-    "turns": 1245,
-    "checks": 50,
+    "claudeSessions": 71,
+    "turns": 1263,
+    "checks": 53,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 16
+    "commits": 17
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

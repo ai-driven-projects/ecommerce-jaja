@@ -4,7 +4,7 @@
 
 ## 1. Dependência e validações do núcleo
 
-- [ ] 1.1 Conferir no código as dependências da etapa 7 listadas no design; registrar no `design.md` qualquer nome diferente e seguir com o nome entregue.
+- [x] 1.1 Conferir no código as dependências da etapa 7 listadas no design; registrar no `design.md` qualquer nome diferente e seguir com o nome entregue. (Conferido na revisão da proposta, depois de a etapa 7 ser arquivada: todos os nomes batem.)
 - [ ] 1.2 `cd apps/mobile && flutter pub add flutter_secure_storage`; conferir que só `pubspec.yaml`/`pubspec.lock` mudaram.
 - [ ] 1.3 Em `lib/core/errors/app_failure.dart`, acrescentar `EmailCode`, `PersonNameCode` e `PasswordCode` (Decisão 1).
 - [ ] 1.4 Criar `lib/core/value_objects/email.dart` e testes em `test/core/value_objects/email_test.dart`: ` Ana@Exemplo.COM ` → `ana@exemplo.com`; `ana@`, `ana @x.com`, vazio → "E-mail inválido."; igualdade por valor.
