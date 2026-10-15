@@ -80,6 +80,32 @@ void main() {
       );
     });
 
+    test('watch_it só em lib/ui (com show, sem di) e lib/app', () {
+      final scanned = dartFilesIn('lib').where(
+        (file) => file.readAsStringSync().contains('package:$bindingPackage/'),
+      );
+      expect(
+        scanned,
+        isNotEmpty,
+        reason:
+            'Nenhum arquivo de lib importa watch_it — a barreira não '
+            'verificou nada.',
+      );
+
+      final violations = scanDirectory(
+        'lib',
+        rules: {ImportRule.bindingConfinement},
+      );
+
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'watch_it fora de lib/ui e lib/app, ou em lib/ui sem show ou '
+            'trazendo o localizador:\n${violations.join('\n')}',
+      );
+    });
+
     test('pages e widgets de lib/ui tiram cor, tipografia e raio do tema', () {
       final scanned = dartFilesIn(
         'lib/ui',
@@ -337,6 +363,133 @@ void main() {
       );
 
       expect(violations.map((v) => v.rule), [ImportRule.locatorConfinement]);
+    });
+  });
+
+  group('Regra E: ligação da UI confinada', () {
+    const pagePath = 'lib/ui/modules/store/pages/x.dart';
+    const watchItUri = 'package:watch_it/watch_it.dart';
+
+    test('show só com nomes de ligação numa página é aceito', () {
+      final violations = _scan(
+        pagePath,
+        "import 'package:flutter/material.dart';\n"
+            "import '$watchItUri' show WatchingWidget, watchPropertyValue;\n",
+        ImportRule.bindingConfinement,
+      );
+
+      expect(violations, isEmpty);
+    });
+
+    test('sem show numa página é violação com arquivo e linha', () {
+      final violations = _scan(
+        pagePath,
+        "import 'package:flutter/material.dart';\n"
+            "import '$watchItUri';\n",
+        ImportRule.bindingConfinement,
+      );
+
+      expect(violations, hasLength(1));
+      expect(
+        violations.single.toString(),
+        "$pagePath:2 → import '$watchItUri';",
+      );
+    });
+
+    for (final directive in [
+      "import '$watchItUri' show di;",
+      "import '$watchItUri' show WatchingWidget, di;",
+      "import '$watchItUri' show sl;",
+      "import '$watchItUri' show GetIt;",
+      "import '$watchItUri' hide di;",
+      "import '$watchItUri' show WatchingWidget hide di;",
+      "export '$watchItUri';",
+    ]) {
+      test('$directive numa página é violação', () {
+        final violations = _scan(
+          pagePath,
+          '$directive\n',
+          ImportRule.bindingConfinement,
+        );
+
+        expect(violations, hasLength(1));
+        expect(violations.single.rule, ImportRule.bindingConfinement);
+        expect(violations.single.directive, directive);
+      });
+    }
+
+    for (final filePath in [
+      'lib/infra/store/x.dart',
+      'lib/infra/di/x.dart',
+      'lib/modules/store/x.dart',
+      'lib/main_dev.dart',
+    ]) {
+      test('watch_it em $filePath é violação mesmo com show', () {
+        final violations = _scan(
+          filePath,
+          "import '$watchItUri' show WatchingWidget;\n",
+          ImportRule.bindingConfinement,
+        );
+
+        expect(violations, hasLength(1));
+        expect(violations.single.rule, ImportRule.bindingConfinement);
+      });
+    }
+
+    for (final filePath in [
+      'lib/app/router/x.dart',
+      '/projeto/apps/mobile/lib/app/x.dart',
+    ]) {
+      test('watch_it sem show em $filePath é aceito', () {
+        final violations = _scan(
+          filePath,
+          "import '$watchItUri';\n",
+          ImportRule.bindingConfinement,
+        );
+
+        expect(violations, isEmpty);
+      });
+    }
+
+    test('caminho absoluto de página também exige show', () {
+      const absolutePath = '/projeto/apps/mobile/$pagePath';
+
+      expect(
+        _scan(
+          absolutePath,
+          "import '$watchItUri';\n",
+          ImportRule.bindingConfinement,
+        ),
+        hasLength(1),
+      );
+      expect(
+        _scan(
+          absolutePath,
+          "import '$watchItUri' show watchPropertyValue;\n",
+          ImportRule.bindingConfinement,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('a regra E não olha outros pacotes', () {
+      final violations = _scan(
+        pagePath,
+        "import 'package:flutter/material.dart';\n"
+            "import 'package:intl/intl.dart';\n",
+        ImportRule.bindingConfinement,
+      );
+
+      expect(violations, isEmpty);
+    });
+
+    test('a regra E está no conjunto padrão', () {
+      final violations = scanSource(
+        filePath: pagePath,
+        source: "import '$watchItUri';\n",
+      );
+
+      expect(violations.map((v) => v.rule), [ImportRule.bindingConfinement]);
     });
   });
 

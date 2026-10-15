@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/app.dart';
+import 'package:mobile/infra/di/service_locator.dart';
+import 'package:mobile/ui/shared/theme/app_radius.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
 import 'package:mobile/ui/shared/theme/brand_tokens.dart';
+
+import '../../../app/support/fake_dependencies.dart';
 
 void main() {
   final theme = AppTheme.light();
@@ -51,11 +55,27 @@ void main() {
     },
   );
 
+  test('o painel inferior é branco, com alça visível na cor da linha', () {
+    final sheet = theme.bottomSheetTheme;
+
+    expect(sheet.backgroundColor, BrandTokens.light.card);
+    expect(sheet.surfaceTintColor, Colors.transparent);
+    expect(sheet.showDragHandle, isTrue);
+    expect(sheet.dragHandleColor, BrandTokens.light.line);
+    expect(
+      (sheet.shape as RoundedRectangleBorder).borderRadius,
+      const BorderRadius.vertical(top: Radius.circular(AppRadius.xl3)),
+    );
+  });
+
   testWidgets('com o aparelho em modo escuro o app continua claro', (
     tester,
   ) async {
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    // O app monta a aba Início, que pede o ViewModel do seletor ao `getIt`.
+    registerFakeDependencies();
+    addTearDown(resetDependencies);
 
     await tester.pumpWidget(const JajaApp());
 

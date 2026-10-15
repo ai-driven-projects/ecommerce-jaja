@@ -81,8 +81,22 @@ class AppTheme {
         style: button(AppButtonVariant.ghost),
       ),
       navigationBarTheme: _navigationBarTheme(textTheme),
+      bottomSheetTheme: _bottomSheetTheme,
     );
   }
+
+  // Painel inferior (seletor de loja, filtros): sem referência no web, que usa
+  // menu suspenso; cartão branco com a alça na cor da linha e os cantos de
+  // cima no raio `xl3`.
+  static const BottomSheetThemeData _bottomSheetTheme = BottomSheetThemeData(
+    backgroundColor: AppColors.card,
+    surfaceTintColor: Colors.transparent,
+    showDragHandle: true,
+    dragHandleColor: AppColors.line,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl3)),
+    ),
+  );
 
   // Barra de abas: sem referência no web nem nos mockups; segue o chip ativo
   // (fundo `brandSoft`, texto `brand`) sobre o cartão branco.

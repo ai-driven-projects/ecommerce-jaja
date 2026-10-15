@@ -236,11 +236,59 @@
       "commit": "b729cf64aa0a501dcdb94e285d5cde5d682a3cd0"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 4,
       "phase": "Catálogo",
       "title": "Lojas e seletor de loja",
-      "change": "mobile-app-04-seletor-loja-mobile"
+      "change": "mobile-app-04-seletor-loja-mobile",
+      "iteration": 4,
+      "deliveredAt": "2026-10-15T14:21:22.853Z",
+      "durationMs": 2141250,
+      "cost": 20.623834350000003,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 340454,
+          "cost": 2.2084550000000007,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 39623,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 509,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1611254,
+          "cost": 17.27735935,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 21328,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 127915,
+          "cost": 1.13802,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 167,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
@@ -320,84 +368,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 4,
-    "stage": 4,
-    "startCommit": "b729cf64aa0a501dcdb94e285d5cde5d682a3cd0",
-    "startedAt": "2026-10-15T13:45:41.499Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 340454,
-        "cost": 2.2084550000000007,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 39623,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o domínio de lojas e o seletor de loja do app mobile",
-      "comparison": "No web, a loja escolhida não é enviada à API e não muda o catálogo nem os preços. Ela só aparece no seletor do cabeçalho, fica lembrada no navegador pela chave `jaja:vitrine:loja` e fornece cidade/UF para pré-preencher os dados de entrega. A loja em vigor é a da URL, depois a lembrada (se ainda ativa), depois a primeira ativa.\nO app tem núcleo, tema, HTTP, DI e as quatro abas com páginas provisórias, mas `lib/modules` está vazio e ainda não há ViewModel, `watch_it`, `freezed` nem `shared_preferences`. Esta etapa faz a primeira entidade, o primeiro repositório e o primeiro ViewModel.\nOs testes de app, de rotas e de bootstrap montam a `HomePage` sem dependências. Com o seletor, eles passam a precisar de um repositório fake, registrado por um `registerViewModels()` público.\nO `watch_it` reexporta o `get_it`. Por isso a barreira ganha a regra E: em `lib/ui`, o `watch_it` só entra com `show` e sem `di`.\nO contrato `GET /storefront/stores` (público, falha vira 400) bate com a spec `stores/storefront-stores`. Não achei nenhuma lacuna de API para registrar.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 3680914,
-    "cost": 27.6228744,
+    "durationMs": 5442087,
+    "cost": 48.66120694999999,
     "runs": 1,
     "iterationsStarted": 4,
-    "iterationsDelivered": 3,
-    "claudeSessions": 29,
-    "turns": 412,
-    "checks": 29,
+    "iterationsDelivered": 4,
+    "claudeSessions": 37,
+    "turns": 604,
+    "checks": 32,
     "fixes": 3,
     "recoveries": 1,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 7
+    "commits": 8
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

@@ -3,9 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/app/router/app_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
+import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/ui/modules/cart/pages/cart_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/home_page.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
+
+import '../support/fake_dependencies.dart';
 
 Future<GoRouter> _pumpRouter(
   WidgetTester tester, {
@@ -24,6 +27,9 @@ String _location(GoRouter router) =>
     router.routerDelegate.currentConfiguration.uri.path;
 
 void main() {
+  setUp(registerFakeDependencies);
+  tearDown(resetDependencies);
+
   group('abas', () {
     testWidgets('a barra mostra Início, Buscar, Carrinho e Conta, com Início '
         'selecionada', (tester) async {

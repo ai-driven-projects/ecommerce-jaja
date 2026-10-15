@@ -18,6 +18,11 @@ Etapa 2: já existem o tema claro da marca (`lib/ui/shared/theme/`, com as fonte
 Etapa 3: já existem o cliente HTTP com falhas tipadas (`lib/infra/http/`), a DI com `get_it`
 (`lib/infra/di/`), os entrypoints `lib/main_dev.dart`/`lib/main_prod.dart` (o `main.dart` foi apagado), o
 bootstrap e o `JajaApp` em `lib/app/`, e o shell de quatro abas com páginas provisórias.
+Etapa 4: já existem o primeiro domínio (`lib/modules/store/`, com `Store` em `freezed` e `pickCurrentStore`),
+o value object `CityState` em `core/value_objects/`, o DTO de `GET /storefront/stores` (`lib/infra/api/`), o
+`KeyValueStore` sobre `shared_preferences` (`lib/infra/storage/`), o `ApiStoreRepository` (`lib/infra/store/`),
+o primeiro ViewModel com `watch_it` e o seletor de loja no topo da aba Início (`lib/ui/modules/store/`), o
+`registerViewModels()` na DI e a regra E da barreira.
 
 ## Arquitetura
 
@@ -108,6 +113,24 @@ test/             # espelha lib/ (nunca teste ao lado do código)
 - **`getIt` só em `lib/infra/di/` e `lib/app/`** (regra D da barreira, `ImportRule.locatorConfinement`):
   qualquer outro arquivo, inclusive os entrypoints na raiz de `lib/`, que importe `get_it` faz o
   `flutter test` falhar. Teste que chama `configureDependencies` faz `tearDown(resetDependencies)`.
+- **`watch_it` só em `lib/ui/` e `lib/app/`** (regra E da barreira, `ImportRule.bindingConfinement`). Em
+  `lib/ui/` o import **sempre com `show`** listando só o que a tela usa (ex.:
+  `show WatchingStatefulWidget, watchPropertyValue`), nunca sem `show`, com `hide` nem trazendo `di`, `sl`
+  ou `GetIt`: o `watch_it` reexporta o `get_it`, e sem o `show` o localizador entraria nas telas por fora da
+  regra D. Qualquer diretiva fora disso faz o `flutter test` falhar com arquivo, linha e o import.
+- **ViewModels na DI:** `configureDependencies` registra a infraestrutura (lazy singletons) e termina chamando
+  `registerViewModels()`, público, que registra cada ViewModel com `registerFactory`. Etapa nova acrescenta
+  o seu ViewModel ali. Testes de app e de rotas registram o repositório fake com
+  `getIt.registerSingleton<…>` e chamam só `registerViewModels()` (`test/app/support/fake_dependencies.dart`),
+  sem rede nem disco.
+- **Página recebe a fábrica do ViewModel pelo construtor** (`xxxViewModelFactory: () => getIt<XxxViewModel>()`
+  no `builder` da rota), materializa a instância no `initState`, dispara a carga ali, descarta no `dispose()`
+  e observa com `watchPropertyValue(..., target:)` numa `WatchingStatefulWidget`. Nos testes, a fábrica cria
+  o ViewModel de verdade sobre o repositório fake.
+- **`shared_preferences` só por `KeyValueStore`** (`lib/infra/storage/key_value_store.dart`, contrato
+  técnico de texto, implementado por `SharedPreferencesKeyValueStore`): repositório nenhum importa o
+  pacote, e leitura ilegível vira `null`, gravação que falha é engolida — o domínio nunca vê exceção do
+  disco. Testes usam o `FakeKeyValueStore` de `test/infra/storage/support/`.
 - **Entrypoints:** `lib/main_dev.dart` e `lib/main_prod.dart` só chamam `bootstrap(AppEnvironment.x)`; todo
   `flutter run` usa `-t` (o `Makefile` cuida). Endereço não resolvido abre `ConfigurationErrorApp`, sem
   registrar dependências.
@@ -259,7 +282,12 @@ specs em `openspec/specs/<domínio>/`.
   `/me/cart`; no login, `POST /me/cart/merge` e limpeza do local, como o web (`cart.context.tsx`,
   `guest-cart-storage.util.ts`). Preço **sempre em centavos** (`Money`), formatado só na UI com `intl` pt-BR.
 - **Loja:** lista de `GET /storefront/stores`, escolha lembrada em `shared_preferences`; espelhe exatamente o
-  efeito que a escolha tem no web, sem inventar parâmetro de API.
+  efeito que a escolha tem no web, sem inventar parâmetro de API. A loja em vigor sai **sempre** de
+  `pickCurrentStore(stores, rememberedSlug)` (`lib/modules/store/model/current_store.dart`: a lembrada se
+  ainda estiver ativa, senão a primeira; fallback não grava). O slug fica na chave **`jaja:vitrine:loja`**
+  (a mesma do web) via `StoreRepository.readChosenSlug`/`rememberChosenSlug`. A escolha **nunca vai para a
+  API** — não muda catálogo, preço nem disponibilidade; só alimenta o seletor e a cidade/UF (`Store.place`,
+  `CityState`) dos dados de entrega.
 - **Dados de entrega:** `GET/PUT /me/customer` com endereço em texto, **sem mapa**. Ao salvar, preserve a
   `location` vinda do backend; cliente novo vai com `location: null`.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o

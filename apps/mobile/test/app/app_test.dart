@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/app.dart';
+import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/ui/modules/catalog/pages/home_page.dart';
 import 'package:mobile/ui/shared/theme/brand_tokens.dart';
 
+import 'support/fake_dependencies.dart';
+
 void main() {
+  setUp(registerFakeDependencies);
+  tearDown(resetDependencies);
+
   testWidgets('o app usa o tema da marca e se chama Jajá', (tester) async {
     await tester.pumpWidget(const JajaApp());
     await tester.pumpAndSettle();

@@ -6,18 +6,39 @@ import 'package:mobile/app/bootstrap.dart';
 import 'package:mobile/core/env/app_environment.dart';
 import 'package:mobile/core/result.dart';
 import 'package:mobile/infra/di/service_locator.dart';
+import 'package:mobile/modules/store/provider/store_repository.dart';
+import 'package:mobile/ui/modules/catalog/pages/home_page.dart';
+import 'package:mobile/ui/modules/store/widgets/store_selector.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../infra/http/support/fake_http_client_adapter.dart';
 
 void main() {
   tearDown(resetDependencies);
 
-  testWidgets('com o endereço resolvido, registra o Dio e abre o app', (
-    tester,
-  ) async {
+  testWidgets('com o endereço resolvido, registra as dependências e abre o app '
+      'sem rede nem disco reais', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
     final root = createRootWidget(Ok(Uri.parse('http://localhost:4000')));
 
     expect(root, isA<JajaApp>());
     expect(getIt.isRegistered<Dio>(), isTrue);
+    expect(getIt.isRegistered<StoreRepository>(), isTrue);
     expect(getIt<Dio>().options.baseUrl, 'http://localhost:4000');
+
+    // Antes do `pump`: a aba Início pede as lojas ao montar.
+    final adapter = FakeHttpClientAdapter()..enqueueResponse(body: []);
+    getIt<Dio>().httpClientAdapter = adapter;
+
+    await tester.pumpWidget(root);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(adapter.requests.map((request) => request.path), [
+      '/storefront/stores',
+    ]);
+    expect(find.text(StoreSelector.emptyTitle), findsOneWidget);
   });
 
   testWidgets('sem endereço em produção, abre a tela de erro de configuração '
@@ -33,5 +54,6 @@ void main() {
     expect(find.text('Endereço da API não configurado.'), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
     expect(getIt.isRegistered<Dio>(), isFalse);
+    expect(getIt.isRegistered<StoreRepository>(), isFalse);
   });
 }

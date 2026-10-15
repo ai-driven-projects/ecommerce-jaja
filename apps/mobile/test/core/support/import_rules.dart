@@ -37,7 +37,34 @@ const infraLayer = 'infra';
 const locatorPackage = 'get_it';
 const locatorAllowedPrefixes = {'infra/di/', 'app/'};
 
-enum ImportRule { purity, infraConfinement, locatorConfinement }
+/// Regra E: o pacote de ligação da UI aos ViewModels, confinado a `lib/ui` e
+/// `lib/app`. Em `lib/ui` a diretiva precisa de `show` sem `hide`, e o `show`
+/// não pode trazer o localizador que o pacote reexporta — caso contrário
+/// `di`/`GetIt` entrariam nas telas sem importar `get_it` (regra D).
+const bindingPackage = 'watch_it';
+const bindingAllowedPrefixes = {'ui/', 'app/'};
+const bindingShowRequiredPrefixes = {'ui/'};
+const bindingForbiddenNames = {'di', 'sl', 'GetIt'};
+
+enum ImportRule {
+  purity,
+  infraConfinement,
+  locatorConfinement,
+  bindingConfinement,
+}
+
+/// Combinadores (`show`/`hide`) de um `import` ou `export`.
+final class DirectiveCombinators {
+  const DirectiveCombinators({this.shownNames, this.hidesNames = false});
+
+  static const none = DirectiveCombinators();
+
+  /// Nomes listados no `show`, ou `null` quando a diretiva não tem `show`.
+  final Set<String>? shownNames;
+
+  /// Se a diretiva tem algum `hide`.
+  final bool hidesNames;
+}
 
 class ImportViolation {
   const ImportViolation(
@@ -120,7 +147,8 @@ List<ImportViolation> scanDirectory(
 /// Lê as diretivas com o parser do `analyzer`: `import` comentado ou dentro de
 /// string não é diretiva e não conta. Cada regra só se aplica aos arquivos da
 /// sua camada (Regra A em `core`/`modules`, Regra B fora de `infra`, Regra D
-/// fora de `infra/di` e `app`).
+/// fora de `infra/di` e `app`, Regra E fora de `ui` e `app` — e dentro de `ui`
+/// olhando os combinadores).
 List<ImportViolation> scanSource({
   required String filePath,
   required String source,
@@ -141,6 +169,7 @@ List<ImportViolation> scanSource({
       directive.uri.stringValue,
       ...directive.configurations.map((c) => c.uri.stringValue),
     ].nonNulls;
+    final combinators = _combinatorsOf(directive);
 
     for (final uri in uris) {
       final target = resolveImportTarget(uri: uri, fromFile: filePath);
@@ -151,6 +180,7 @@ List<ImportViolation> scanSource({
               fromLib: fromLib,
               fromLayer: fromLayer,
               target: target,
+              combinators: combinators,
             ),
           )
           .firstOrNull;
@@ -197,11 +227,26 @@ ImportTarget resolveImportTarget({
   return AppTarget(_layerOf(resolved.substring('lib/'.length)));
 }
 
+DirectiveCombinators _combinatorsOf(NamespaceDirective directive) {
+  Set<String>? shownNames;
+  var hidesNames = false;
+  for (final combinator in directive.combinators) {
+    switch (combinator) {
+      case ShowCombinator(shownNames: final names):
+        (shownNames ??= {}).addAll(names.map((name) => name.name));
+      case HideCombinator():
+        hidesNames = true;
+    }
+  }
+  return DirectiveCombinators(shownNames: shownNames, hidesNames: hidesNames);
+}
+
 bool _breaks(
   ImportRule rule, {
   required String? fromLib,
   required String? fromLayer,
   required ImportTarget target,
+  DirectiveCombinators combinators = DirectiveCombinators.none,
 }) {
   switch (rule) {
     case ImportRule.purity:
@@ -223,6 +268,17 @@ bool _breaks(
         return false;
       }
       return target is PackageTarget && target.package == locatorPackage;
+    case ImportRule.bindingConfinement:
+      if (target is! PackageTarget || target.package != bindingPackage) {
+        return false;
+      }
+      if (fromLib == null || !bindingAllowedPrefixes.any(fromLib.startsWith)) {
+        return true;
+      }
+      if (!bindingShowRequiredPrefixes.any(fromLib.startsWith)) return false;
+      final shownNames = combinators.shownNames;
+      if (shownNames == null || combinators.hidesNames) return true;
+      return shownNames.any(bindingForbiddenNames.contains);
   }
 }
 
