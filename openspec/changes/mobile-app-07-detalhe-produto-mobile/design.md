@@ -1,6 +1,6 @@
 ## Context
 
-As etapas 1 a 5 (arquivadas) deixaram o domínio `catalog` (`ProductSummary`, `ProductQuery`, `encodeProductQuery`, `CatalogRepository` com `fetchCategories`/`fetchProducts`), o `ApiCatalogRepository` sobre `runRequest` (que já converte `404` em `NotFoundFailure`), o `BlockState<T>`, o `categoryArtOf`, o `SectionHeading`, o `ProductRail`, o `ProductArt` (só no tamanho do card, altura 120), o `PriceText`, o `AppButton` (tamanho `xl`), o `StateErrorBanner`, o `EmptyState` e o `SkeletonBox`. A etapa 6 (em aplicação) entrega a Buscar real e a rota de produto também na pilha da Buscar. As duas rotas de produto ainda montam o widget provisório `ProductPage({slug, onBack})`, homônimo da entidade `ProductPage` (página de produtos).
+As etapas 1 a 5 (arquivadas) deixaram o domínio `catalog` (`ProductSummary`, `ProductQuery`, `encodeProductQuery`, `CatalogRepository` com `fetchCategories`/`fetchProducts`), o `ApiCatalogRepository` sobre `runRequest` (que já converte `404` em `NotFoundFailure`), o `BlockState<T>`, o `categoryArtOf`, o `SectionHeading`, o `ProductRail`, o `ProductArt` (só no tamanho do card, altura 120), o `PriceText`, o `AppButton` (tamanho `xl`), o `StateErrorBanner`, o `EmptyState` e o `SkeletonBox`. A etapa 6 (arquivada) entregou a Buscar real, o `ProductSummaryCard` (usado pelo `ProductRail` e pela grade) e a rota de produto também na pilha da Buscar. As duas rotas de produto ainda montam o widget provisório `ProductPage({slug, onBack})`, homônimo da entidade `ProductPage` (página de produtos).
 
 Referência de comportamento (só leitura): `apps/frontend/src/app/(public)/p/[slug]/page.tsx`, `modules/catalog/pages/product.page.tsx`, `components/{product-detail,product-gallery}.component.tsx` e o mockup `openspec/extras/design/Produto.dc.html`. Contrato: `StorefrontController.findProductBySlug` (`404` com `PRODUCT_NOT_FOUND`) e `StorefrontProductDetailDTO`/`ProductImageDTO` em `modules/catalog/src/product/dto/`.
 
@@ -59,12 +59,14 @@ Só acréscimos: "Etapa 7" no estado atual; em "Regras de domínio › Catálogo
 
 ## Dependências da etapa anterior
 
-Assumido da change `mobile-app-06-busca-catalogo-mobile` (conferir antes do lote 1; se algo mudou, adaptar sem renomear o que existe e registrar abaixo):
+Conferido no código entregue pela change `mobile-app-06-busca-catalogo-mobile` (arquivada), todos com o nome abaixo; se algo mudar até a aplicação, adaptar sem renomear o que existe e registrar abaixo:
 - `AppRoutes.searchProduct`, `searchProductSegment` e `searchProductLocation(slug)`, e a rota filha de `/search` montando o `ProductPage({slug, onBack})` provisório com `onBack: context.pop`.
 - `SearchPage` aplica um `initialQuery` novo no `didUpdateWidget` (o `context.go(searchLocation(q))` vindo do produto chega por aí) e `go('/search')` sem query limpa os filtros.
 - `ProductRail` continua com `featuredCardWidth` e monta os cards por `product_summary_card.dart`; `SectionHeading(title, onSeeAll?)` intacto.
 - `FakeCatalogRepository` com `pageOf` de parâmetros nomeados opcionais e `manyProducts` nas fixtures; `SearchViewModel` em `registerViewModels()`.
-- Testes de rota da etapa 6 que esperam a página provisória "Produto" (`app_router_test.dart`, tarefas 5.4 dela e da etapa 5): passam a esperar a `ProductDetailPage`.
+- Testes de rota da etapa 6 que esperam a página provisória "Produto" (`app_router_test.dart`, os dois `find.text('Produto')` das pilhas Início e Buscar, e o import de `pages/product_page.dart`): passam a esperar a `ProductDetailPage`. Fora do router e desse teste, nada mais usa a `ProductPage` provisória.
+- `ProductSummaryCard(product, onOpenProduct)` em `widgets/product_summary_card.dart` monta o `ProductCard` de um `ProductSummary`; é por ele que o `_Badge` extraído chega ao trilho e à grade, sem mudança de aparência.
+- O `catalog_fixtures.dart` já importa a entidade `ProductPage` (`product_page_entity.dart`); com o widget provisório apagado, a homonímia some também nos testes.
 - Da etapa 5 (já conferido no código): `BlockState`, `categoryArtOf`, `ProductArt`/`ProductArtTint`, `_Badge` privado no `ProductCard`, `PriceText(style:)`, `AppButton(size: AppButtonSize.xl, expand:, icon:)`, `EmptyState(emoji:)`, `StateErrorBanner(title:)`, `AppRadius.{md, lg, xl, xl4}`, `AppTextStyles.{artEmoji, chipCount}`, `holdImageLoad`/`failImageLoad`, `runRequest` com `404` → `NotFoundFailure`, `FakeHttpClientAdapter`.
 
 ## Decisões tomadas sem consulta
@@ -85,4 +87,4 @@ Assumido da change `mobile-app-06-busca-catalogo-mobile` (conferir antes do lote
 - [Galeria com fotos nos testes aciona o cache do aparelho] → `holdImageLoad`/`failImageLoad` para cada URL; o fake padrão usa `plainDetail`, sem fotos.
 - [`ProductArt` com três tamanhos fica mais complexo] → o tamanho `card` continua o padrão e os testes do card não mudam.
 - [Segunda requisição (relacionados) a cada produto aberto] → é a mesma do web; pequena (`pageSize=5`) e não bloqueia a página.
-- [A etapa 6 mudar nomes de rota ou do fake] → a seção "Dependências da etapa anterior" lista o que conferir; o lote 1 começa por ela.
+- [Os nomes de rota ou do fake mudarem até a aplicação] → a seção "Dependências da etapa anterior" lista o que foi conferido; o lote 1 começa por ela.

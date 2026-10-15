@@ -4,7 +4,7 @@
 
 ## 1. Domínio do detalhe
 
-- [ ] 1.1 Conferir no código as dependências da etapa 6 listadas no design; registrar no `design.md` qualquer nome diferente e seguir com o nome entregue.
+- [x] 1.1 Conferir no código as dependências da etapa 6 listadas no design; registrar no `design.md` qualquer nome diferente e seguir com o nome entregue. (Conferido na revisão da proposta, depois de a etapa 6 ser arquivada: todos os nomes batem.)
 - [ ] 1.2 Criar `lib/modules/catalog/model/product_detail_entity.dart` (Decisão 1, `freezed` v3) e rodar `dart run build_runner build --delete-conflicting-outputs`; o `.freezed.dart` fica no repositório.
 - [ ] 1.3 Criar `lib/modules/catalog/model/product_detail.dart` (Decisão 1, origem no comentário).
 - [ ] 1.4 Em `test/modules/catalog/support/catalog_fixtures.dart`, criar `tonerDetail` e `plainDetail` (Decisão 6).

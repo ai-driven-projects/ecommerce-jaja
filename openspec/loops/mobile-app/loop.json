@@ -400,7 +400,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "59330da98e0e9b5826e6c0da6216098f2af4ae5f"
     },
     {
       "status": "pending",
@@ -473,22 +474,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 7,
+    "stage": 7,
+    "startCommit": "59330da98e0e9b5826e6c0da6216098f2af4ae5f",
+    "startedAt": "2026-10-15T16:40:51.789Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 70141,
+        "cost": 0.7301398,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 19626,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja o detalhe do produto do app mobile",
+      "comparison": "As duas rotas de produto ainda montam o widget provisório `ProductPage({slug, onBack})`, que tem o mesmo nome da entidade `ProductPage` (página de produtos). A change o troca por `ProductDetailPage` e apaga o arquivo antigo.\nO contrato `GET /storefront/products/:slug` (`StorefrontProductDetailDTO`) traz marca, trilha de categorias e imagens com thumb e large. O `runRequest` já converte `404` em `NotFoundFailure`, então o \"produto inexistente\" não precisa de código novo de falha.\nO `ProductArt` só tem o tamanho do card (altura 120) e o selo do `ProductCard` é privado (`_Badge`). A galeria e a miniatura pedem tamanhos novos, e o selo vira `shared/widgets/product_badge.dart`.\nA página web também tem quantidade, cartão de entrega e \"Você já tem N no carrinho\", que dependem das regras de frete e do carrinho. Ficam para a etapa 9, e o botão nasce desabilitado.\nA etapa 6 está em aplicação. A change supõe as rotas `searchProduct*`, o `didUpdateWidget` da `SearchPage` e os ajustes no `FakeCatalogRepository`, e registra isso em \"Dependências da etapa anterior\".",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 13800968,
-    "cost": 110.39690429999999,
+    "durationMs": 13891073,
+    "cost": 111.12704409999999,
     "runs": 1,
-    "iterationsStarted": 6,
+    "iterationsStarted": 7,
     "iterationsDelivered": 6,
-    "claudeSessions": 62,
-    "turns": 1053,
-    "checks": 44,
+    "claudeSessions": 63,
+    "turns": 1070,
+    "checks": 47,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 13
+    "commits": 14
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
