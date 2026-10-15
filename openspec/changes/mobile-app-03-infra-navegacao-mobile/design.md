@@ -1,6 +1,6 @@
 ## Context
 
-Etapa 1 (arquivada) deixou `lib/core` com `Result`, `Command0/1`, `AppFailure` selada (inclusive `NetworkFailure`, `SessionFailure`, `BackendRejectionFailure(statusCode, codes)`, `NotFoundFailure`, `ServerFailure`, `UnexpectedFailure`), `GenericFailureCode.unspecified` e `resolveApiBaseUrl(AppEnvironment, {definedApiUrl})` → `Result<Uri>`, além da barreira de imports (`test/core/support/import_rules.dart`, regras A e B, `ImportRule`, constantes `infraPackages` etc.). A etapa 2 (aplicada em paralelo) entrega o tema e os componentes; o que esta change assume dela está em "Dependências da etapa anterior".
+Etapa 1 (arquivada) deixou `lib/core` com `Result`, `Command0/1`, `AppFailure` selada (inclusive `NetworkFailure`, `SessionFailure`, `BackendRejectionFailure(statusCode, codes)`, `NotFoundFailure`, `ServerFailure`, `UnexpectedFailure`), `GenericFailureCode.unspecified` e `resolveApiBaseUrl(AppEnvironment, {definedApiUrl})` → `Result<Uri>`, além da barreira de imports (`test/core/support/import_rules.dart`, regras A e B, `ImportRule`, constantes `infraPackages` etc.). A etapa 2 (entregue) trouxe o tema e os componentes; o que esta change usa dela está em "Dependências da etapa anterior".
 
 O backend responde erro como `ApiErrorResponse` (`apps/backend/src/shared/errors/api-error-response.type.ts`): `{ statusCode, error, message: string[], details?, path?, timestamp }`, com códigos de negócio em `message`. O web (`apps/frontend/src/shared/util/api-client.util.ts`) guarda esses códigos em `ApiError.codes` e traduz a mensagem por um dicionário. O desenho de cliente, DI, bootstrap e shell vem do app modelo (`/Users/leonardomleitao/Desktop/1-projetos/git/formacaodev/plataforma/apps/mobile`: `lib/infra/http/{dio_client,http_failure_mapper}.dart`, `lib/infra/di/service_locator.dart`, `lib/app/{bootstrap,app}.dart`, `lib/app/router/app_router.dart`, `lib/ui/shared/widgets/app_navigation_shell.dart`, `Makefile`), sem Firebase, flavors nem domínio de cursos.
 
@@ -64,11 +64,11 @@ Só acréscimos: em "Estado atual", que HTTP, DI e shell de abas existem; numa s
 
 ## Dependências da etapa anterior
 
-Assumido da change `mobile-app-02-tema-marca-mobile` (conferir no código entregue antes de aplicar; se um nome diferir, adaptar esta change ao que foi entregue, sem renomear o código da etapa 2):
-- `lib/ui/shared/theme/app_theme.dart` com `AppTheme.light()` montando `ThemeData` Material 3; esta etapa acrescenta `navigationBarTheme` ali.
+Da change `mobile-app-02-tema-marca-mobile`, conferido no código entregue (nenhum nome diferiu; se algo mudar até a aplicação, adaptar esta change, sem renomear o código da etapa 2):
+- `lib/ui/shared/theme/app_theme.dart` com `AppTheme.light()` devolvendo um `ThemeData` Material 3 montado uma vez em `_buildLight()`; esta etapa acrescenta `navigationBarTheme` ali.
 - `lib/ui/shared/theme/brand_tokens.dart` com `BrandTokens` e a extensão `context.tokens`, contendo pelo menos `card`, `line`, `brand`, `brandSoft` e `mutedInk`; `app_typography.dart` com `labelMedium`, `headlineSmall` e `bodyMedium` na escala da Decisão 3 dela.
-- `lib/ui/shared/widgets/empty_state.dart` (`EmptyState` com emoji opcional, título, explicação e um botão com rótulo e ação obrigatórios) e `test/ui/shared/support/themed.dart`.
-- `lib/main.dart` usando `AppTheme.light()` e `themeMode: ThemeMode.light`, e `test/main_test.dart` conferindo `BrandTokens` no tema — ambos substituídos aqui.
+- `lib/ui/shared/widgets/empty_state.dart` (`EmptyState({required title, required message, required actionLabel, required onAction, emoji = '📦'})`) e `test/ui/shared/support/themed.dart` (`themed(child)`: `MaterialApp` com o tema e `Scaffold`).
+- `lib/main.dart` com `JajaApp` (`StatelessWidget`, `MaterialApp` com `AppTheme.light()`, `themeMode: ThemeMode.light` e `home: Scaffold()`), e `test/main_test.dart` conferindo `MaterialApp` e `BrandTokens` no tema — ambos substituídos aqui (`JajaApp` passa para `lib/app/app.dart`).
 - Regra C (`test/core/support/inline_style_rules.dart`) ativa sobre `pages/` e `widgets/` de `lib/ui`: os arquivos novos dessas pastas precisam passar nela.
 - Dependência `intl` já no `pubspec.yaml`; nenhuma das três desta etapa.
 
