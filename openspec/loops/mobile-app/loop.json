@@ -61,11 +61,59 @@
   },
   "stages": [
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 1,
       "phase": "Fundamentos",
       "title": "Projeto, regras e core",
-      "change": "mobile-app-01-fundacao-app-mobile"
+      "change": "mobile-app-01-fundacao-app-mobile",
+      "iteration": 1,
+      "deliveredAt": "2026-10-15T13:07:52.795Z",
+      "durationMs": 925484,
+      "cost": 5.6884986,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 250548,
+          "cost": 1.6008120000000001,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 213861,
+          "cost": 1.2851572,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 521,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 409526,
+          "cost": 2.4531592000000004,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 9963,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 40910,
+          "cost": 0.34937019999999996,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 155,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
@@ -166,96 +214,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 1,
-    "stage": 1,
-    "startCommit": "5342dea1ffc7b9f70033bb3fc4a9af946c7e9496",
-    "startedAt": "2026-10-15T12:52:27.226Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 250548,
-        "cost": 1.6008120000000001,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 213861,
-        "cost": 1.2851572,
-        "attempts": 1,
-        "recoveries": [
-          {
-            "number": 1,
-            "error": "Codegen (freezed/json_serializable) continua falhando depois de 3 correções",
-            "signature": "baseline:codegen (freezed/json_serializable) continua falhando depois de # correções",
-            "cause": "A pasta `apps/mobile` ainda não existia. As verificações do loop rodam com o diretório de trabalho em `apps/mobile`, e o Node devolve `spawn dart ENOENT` quando esse diretório não existe, mesmo com o `dart` no PATH. Por isso as 3 correções anteriores, que não criaram o projeto, não tinham como resolver.",
-            "whatItDid": "Fiz o grupo 1 do `tasks.md` da change, o mínimo para as verificações terem onde rodar:\n- criei o projeto com `flutter create --org br.com.jaja --platforms android,ios --project-name mobile apps/mobile` e adicionei `build_runner` e `analyzer` como dev com `flutter pub add`, como o plano permite;\n- troquei o nome exibido para \"Jajá\" no AndroidManifest, no Info.plist e no `pubspec.yaml`;\n- reescrevi o `analysis_options.yaml` e reduzi o `main.dart` a um `MaterialApp` vazio;\n- troquei `test/widget_test.dart` por `test/main_test.dart`.\n\nMarquei as tarefas 1.1 a 1.6 e registrei a decisão em \"Decisões tomadas sem consulta\" do `design.md`.\n\nRodei os três comandos de \"Como verificar\" e todos terminaram bem: o codegen terminou com \"wrote 0 outputs\", o `flutter analyze` não achou problemas e o `flutter test` passou com 1 teste.",
-            "resolved": true,
-            "cost": 0.5457492000000002,
-            "at": "2026-10-15T12:59:54.472Z"
-          }
-        ]
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja a fundação do app mobile Flutter com core e barreira de arquitetura",
-      "comparison": "apps/mobile ainda não existe; Flutter 3.44.6 estável está no PATH e o loop não tem etapas entregues.\nO app modelo da plataforma traz Result/Command escritos à mão, AppFailure selada e uma barreira de imports por regex (com analyzer só como dependência); a change mantém o desenho, passa a leitura para o analyzer e tira tudo de Firebase, player e cursos.\nO backend responde erro como { statusCode, error, message: string[] } com os códigos de negócio em message, o que moldou a BackendRejectionFailure (status + códigos).\nAs regras de centavos (taxa de 490, frete grátis a partir de 7900, limites 1..99 e 50 itens) estão em modules/orders/src/cart/errors.ts; Money nasce agora só com soma, multiplicação e comparação.\nNão há URL de produção da API no repositório; o padrão de dev é http://localhost:4000, e produção sem API_URL vira falha de configuração.\nAs specs são agrupadas por domínio, então as capacidades novas ficam em openspec/specs/mobile/ (mobile-architecture e mobile-core).",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 580861,
-    "cost": 3.6210479999999996,
+    "durationMs": 1041936,
+    "cost": 8.0216408,
     "runs": 1,
     "iterationsStarted": 1,
-    "iterationsDelivered": 0,
-    "claudeSessions": 6,
-    "turns": 49,
-    "checks": 11,
+    "iterationsDelivered": 1,
+    "claudeSessions": 11,
+    "turns": 119,
+    "checks": 14,
     "fixes": 3,
     "recoveries": 1,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 0
+    "commits": 1
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
