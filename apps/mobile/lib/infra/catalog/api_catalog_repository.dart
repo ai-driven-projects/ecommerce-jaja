@@ -2,19 +2,22 @@ import 'package:dio/dio.dart';
 
 import '../../core/result.dart';
 import '../../modules/catalog/model/category_entity.dart';
+import '../../modules/catalog/model/product_detail_entity.dart';
 import '../../modules/catalog/model/product_page_entity.dart';
 import '../../modules/catalog/model/product_query.dart';
 import '../../modules/catalog/model/product_query_params.dart';
 import '../../modules/catalog/provider/catalog_repository.dart';
 import '../api/storefront_category_dto.dart';
+import '../api/storefront_product_detail_dto.dart';
 import '../api/storefront_product_dto.dart';
 import '../http/run_request.dart';
 
-/// [CatalogRepository] sobre `GET /storefront/categories` e
-/// `GET /storefront/products` (públicos, sem token). Registrado como
+/// [CatalogRepository] sobre `GET /storefront/categories`,
+/// `GET /storefront/products` e `GET /storefront/products/:slug` (públicos,
+/// sem token). Registrado como
 /// singleton: a árvore de categorias do primeiro sucesso vale enquanto o app
 /// está aberto, como a carga única por montagem do shell no web; páginas de
-/// produtos nunca são guardadas.
+/// produtos e detalhes nunca são guardados.
 final class ApiCatalogRepository implements CatalogRepository {
   ApiCatalogRepository(this._dio);
 
@@ -52,6 +55,17 @@ final class ApiCatalogRepository implements CatalogRepository {
         queryParameters: encodeProductQuery(query),
       ),
       parseStorefrontProductPage,
+    );
+  }
+
+  @override
+  Future<Result<ProductDetail>> fetchProduct(String slug) {
+    // O `404` (`PRODUCT_NOT_FOUND`) já vira `NotFoundFailure` no mapeador.
+    return runRequest(
+      () => _dio.get<Object?>(
+        '/storefront/products/${Uri.encodeComponent(slug)}',
+      ),
+      parseStorefrontProductDetail,
     );
   }
 }

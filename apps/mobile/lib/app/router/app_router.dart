@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../infra/di/service_locator.dart';
@@ -5,9 +6,10 @@ import '../../modules/catalog/model/product_query_params.dart';
 import '../../ui/modules/auth/pages/account_page.dart';
 import '../../ui/modules/cart/pages/cart_page.dart';
 import '../../ui/modules/catalog/pages/home_page.dart';
-import '../../ui/modules/catalog/pages/product_page.dart';
+import '../../ui/modules/catalog/pages/product_detail_page.dart';
 import '../../ui/modules/catalog/pages/search_page.dart';
 import '../../ui/modules/catalog/view_models/home_view_model.dart';
+import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../../ui/shared/pages/not_found_page.dart';
@@ -46,9 +48,10 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
                   // de abas visível.
                   GoRoute(
                     path: AppRoutes.productSegment,
-                    builder: (context, state) => ProductPage(
-                      slug: state.pathParameters['slug']!,
-                      onBack: () => context.pop(),
+                    builder: (context, state) => _productDetailPage(
+                      context,
+                      state,
+                      productLocation: AppRoutes.productLocation,
                     ),
                   ),
                 ],
@@ -74,9 +77,10 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
                   // mostra a listagem com os itens e a rolagem.
                   GoRoute(
                     path: AppRoutes.searchProductSegment,
-                    builder: (context, state) => ProductPage(
-                      slug: state.pathParameters['slug']!,
-                      onBack: () => context.pop(),
+                    builder: (context, state) => _productDetailPage(
+                      context,
+                      state,
+                      productLocation: AppRoutes.searchProductLocation,
                     ),
                   ),
                 ],
@@ -102,5 +106,22 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
         ],
       ),
     ],
+  );
+}
+
+/// Página do produto de uma das pilhas: [productLocation] empilha outro
+/// produto na mesma aba; a marca, a trilha e "Voltar ao catálogo" levam à
+/// aba Buscar. O carrinho chega na etapa 9: até lá, o botão fica desabilitado.
+ProductDetailPage _productDetailPage(
+  BuildContext context,
+  GoRouterState state, {
+  required String Function(String slug) productLocation,
+}) {
+  return ProductDetailPage(
+    slug: state.pathParameters['slug']!,
+    productDetailViewModelFactory: () => getIt<ProductDetailViewModel>(),
+    onBack: () => context.pop(),
+    onOpenSearch: (query) => context.go(AppRoutes.searchLocation(query)),
+    onOpenProduct: (slug) => context.push(productLocation(slug)),
   );
 }

@@ -3,13 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/app/router/app_router.dart';
 import 'package:mobile/app/router/app_routes.dart';
+import 'package:mobile/core/errors/app_failure.dart';
+import 'package:mobile/core/result.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/modules/catalog/model/product_query.dart';
 import 'package:mobile/modules/catalog/model/product_query_params.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/ui/modules/cart/pages/cart_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/home_page.dart';
-import 'package:mobile/ui/modules/catalog/pages/product_page.dart';
+import 'package:mobile/ui/modules/catalog/pages/product_detail_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/search_page.dart';
 import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/catalog/widgets/filters_sheet.dart';
@@ -170,17 +172,22 @@ void main() {
       expect(created, hasLength(1));
     });
 
-    testWidgets('/home/product/caneta-x mostra "Produto" sobre a Início, com '
-        'a barra de abas visível, e voltar retorna à Início', (tester) async {
+    testWidgets('/home/product/caneta-x mostra a página do produto sobre a '
+        'Início, com a barra de abas visível, e voltar retorna à Início', (
+      tester,
+    ) async {
       final router = await _pumpRouter(
         tester,
         initialLocation: AppRoutes.productLocation('caneta-x'),
       );
 
       expect(_location(router), '/home/product/caneta-x');
-      final page = tester.widget<ProductPage>(find.byType(ProductPage));
+      final page = tester.widget<ProductDetailPage>(
+        find.byType(ProductDetailPage),
+      );
       expect(page.slug, 'caneta-x');
-      expect(find.text('Produto'), findsOneWidget);
+      expect(_catalog.productSlugs, ['caneta-x']);
+      expect(find.text(ProductDetailPage.addToCartLabel), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(_bar(tester).selectedIndex, 0);
       expect(find.byType(HomePage), findsNothing);
@@ -188,9 +195,37 @@ void main() {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ProductPage), findsNothing);
+      expect(find.byType(ProductDetailPage), findsNothing);
       expect(find.byType(HomePage), findsOneWidget);
       expect(_location(router), AppRoutes.home);
+    });
+
+    testWidgets('produto inexistente: "Voltar ao catálogo" abre a aba Buscar '
+        'sem filtros', (tester) async {
+      _catalog.enqueueProduct(
+        const Failure(
+          NotFoundFailure(
+            message: 'Não encontramos o que você procurou.',
+            code: HttpFailureCode.notFound,
+          ),
+        ),
+      );
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.productLocation('nao-existe'),
+      );
+
+      expect(find.text(ProductDetailPage.notFoundTitle), findsOneWidget);
+
+      await tester.tap(find.text(ProductDetailPage.notFoundAction));
+      await tester.pumpAndSettle();
+
+      expect(_fullLocation(router), AppRoutes.search);
+      expect(_bar(tester).selectedIndex, 1);
+      expect(
+        tester.widget<SearchPage>(find.byType(SearchPage)).initialQuery,
+        const ProductQuery(),
+      );
     });
 
     testWidgets('tocar num card da Início abre o produto na pilha da aba', (
@@ -203,14 +238,17 @@ void main() {
       await tester.tap(find.byType(ProductCard).first);
       await tester.pumpAndSettle();
 
-      final page = tester.widget<ProductPage>(find.byType(ProductPage));
+      final page = tester.widget<ProductDetailPage>(
+        find.byType(ProductDetailPage),
+      );
       expect(page.slug, finePen.slug);
+      expect(_catalog.productSlugs, [finePen.slug]);
       expect(find.byType(NavigationBar), findsOneWidget);
       // `push` não muda a localização "ida" do router; o que conta é a pilha.
       expect(_location(router), AppRoutes.home);
     });
 
-    testWidgets('tocar num card da Buscar abre "Produto" na pilha da aba, e '
+    testWidgets('tocar num card da Buscar abre o produto na pilha da aba, e '
         'voltar mostra a mesma listagem sem nova requisição', (tester) async {
       final router = await _pumpRouter(
         tester,
@@ -224,9 +262,12 @@ void main() {
       await tester.tap(find.byType(ProductCard).first);
       await tester.pumpAndSettle();
 
-      final page = tester.widget<ProductPage>(find.byType(ProductPage));
+      final page = tester.widget<ProductDetailPage>(
+        find.byType(ProductDetailPage),
+      );
       expect(page.slug, listed.first.slug);
-      expect(find.text('Produto'), findsOneWidget);
+      expect(_catalog.productSlugs, [listed.first.slug]);
+      expect(find.text(ProductDetailPage.addToCartLabel), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(_bar(tester).selectedIndex, 1);
       expect(find.byType(SearchPage), findsNothing);
@@ -234,7 +275,7 @@ void main() {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ProductPage), findsNothing);
+      expect(find.byType(ProductDetailPage), findsNothing);
       expect(find.byType(SearchPage), findsOneWidget);
       expect(
         tester.widget<ProductGrid>(find.byType(ProductGrid)).products,

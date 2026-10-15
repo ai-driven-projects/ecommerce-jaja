@@ -5,6 +5,7 @@ import '../theme/app_radius.dart';
 import '../theme/brand_tokens.dart';
 import 'price_text.dart';
 import 'product_art.dart';
+import 'product_badge.dart';
 
 export 'product_art.dart' show ProductArtTint;
 
@@ -59,18 +60,9 @@ class ProductCard extends StatelessWidget {
     final action = this.action;
 
     final Widget? badge = discount != null && discount > 0
-        ? _Badge(
-            label: '−$discount%',
-            background: tokens.brand,
-            foreground: tokens.onBrand,
-          )
+        ? ProductBadge(label: '−$discount%', variant: ProductBadgeVariant.solid)
         : featured
-        ? _Badge(
-            label: 'Destaque',
-            background: tokens.card,
-            foreground: tokens.brand,
-            shadows: tokens.shadowBadge,
-          )
+        ? const ProductBadge(label: 'Destaque')
         : null;
 
     return GestureDetector(
@@ -126,41 +118,6 @@ class ProductCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Selo em pílula de `badge.tsx` (`px-2.5 py-[3px] text-[11.5px]`).
-class _Badge extends StatelessWidget {
-  const _Badge({
-    required this.label,
-    required this.background,
-    required this.foreground,
-    this.shadows,
-  });
-
-  final String label;
-  final Color background;
-  final Color foreground;
-  final List<BoxShadow>? shadows;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: ShapeDecoration(
-        color: background,
-        shape: const StadiumBorder(),
-        shadows: shadows,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        child: Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.labelSmall!.copyWith(color: foreground),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import '../../../core/result.dart';
 import '../model/category_entity.dart';
+import '../model/product_detail_entity.dart';
 import '../model/product_page_entity.dart';
 import '../model/product_query.dart';
 
@@ -12,4 +13,8 @@ abstract interface class CatalogRepository {
   /// Uma página de produtos pelos filtros de [query]. Nunca é reaproveitada
   /// entre pedidos.
   Future<Result<ProductPage>> fetchProducts(ProductQuery query);
+
+  /// O detalhe do produto [slug]. Nunca é reaproveitado entre pedidos; slug
+  /// inexistente vira `NotFoundFailure`.
+  Future<Result<ProductDetail>> fetchProduct(String slug);
 }

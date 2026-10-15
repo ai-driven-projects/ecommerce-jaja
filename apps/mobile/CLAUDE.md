@@ -36,6 +36,13 @@ Etapa 6: já existem as regras puras da listagem (`product_listing.dart` e `cate
 `lib/ui/modules/catalog/view_models/`, a aba Buscar completa (campo com espera de 300 ms, painéis inferiores
 de filtros e de ordenação, pílulas, grade de duas colunas com paginação infinita), o filtro espelhado na rota
 `/search?…` e a rota `/search/product/:slug` (mesma `ProductPage` provisória, na pilha da aba Buscar).
+Etapa 7: já existem o detalhe do produto no domínio (`ProductDetail`, `CatalogRef` e `ProductImage` em
+`freezed`; `relatedProductsQuery`/`relatedProducts`/`rootCategorySlugOf` em `product_detail.dart`; o contrato
+`fetchProduct(slug)`), o DTO de `GET /storefront/products/:slug` (`lib/infra/api/`), o
+`ProductDetailViewModel` e a `ProductDetailPage` (galeria, descrição recolhível, ficha, trilha de categorias,
+"Mais de <categoria>" e o rodapé "Adicionar ao carrinho") nas rotas `/home/product/:slug` e
+`/search/product/:slug`, no lugar da `ProductPage` provisória (apagada), e as peças `ProductArtSize` e
+`ProductBadge` em `lib/ui/shared/widgets/`.
 
 ## Arquitetura
 
@@ -279,6 +286,11 @@ Onde fica cada coisa do tema (`lib/ui/shared/theme/`):
   (🛒/verde) para raiz desconhecida. Chips de categoria, reserva do card sem foto e cartões de categoria
   passam por ela; nenhum widget mapeia slug para emoji ou cor por conta própria, e os tons continuam sendo
   os `ProductArtTint` do tema (regra C).
+- **Arte e selo do produto:** `ProductArt(size: ProductArtSize.card | gallery | thumb)` (padrão `card`, com
+  altura 120; `gallery` e `thumb` ocupam o espaço que quem usa dá) e `ProductBadge(label, variant:
+  ProductBadgeVariant.brand | solid)` (`brand`: o "Destaque"/"Em destaque" do card e do detalhe; `solid`: o
+  `−N%`), ambos em `lib/ui/shared/widgets/`. Nenhum widget redesenha foto, reserva com emoji ou selo de
+  produto por conta própria.
 
 **Conflito conhecido:** `openspec/specs/shared/design-system` descreve um visual antigo (vermelho `#ec3013`,
 Archivo, IBM Plex Mono, cantos retos) que o web não usa mais. Vale o código do web (`globals.css`,
@@ -356,6 +368,15 @@ specs em `openspec/specs/<domínio>/`.
   leva a **geração** do filtro; resposta de geração antiga é **descartada**. A primeira página não usa
   `Command` (troca de filtro no meio do pedido precisa valer); a seguinte é `Command0` e item de `id`
   repetido entre páginas é pulado. Card da Buscar abre `/search/product/:slug`, na pilha da aba.
+- **Detalhe do produto:** `GET /storefront/products/:slug` (público, slug com `Uri.encodeComponent`) só por
+  `CatalogRepository.fetchProduct`, **nunca guardado** (cada abertura e cada "Tentar de novo" pedem de
+  novo). `404` (`NotFoundFailure`) vira o estado vazio "Produto não encontrado" com "Voltar ao catálogo"
+  (Buscar sem filtros); outra falha, o banner com "Tentar de novo". "Mais de <categoria>" usa
+  `relatedProductsQuery` (última categoria da trilha, `sort=featured&pageSize=5`) e `relatedProducts` (sem o
+  próprio, no máximo 4), pedido só depois do produto e fora do `load`: falha ou lista vazia **some** em
+  silêncio, sem banner. Marca e trilha abrem a Buscar filtrada pela página (`onOpenSearch`); outro produto
+  empilha na mesma aba. O botão "Adicionar ao carrinho" fica fixo no rodapé, **visível e desabilitado**
+  (`onAddToCart: null`) até a etapa 9 ligar o carrinho; sem stepper, total nem entrega antes disso.
 - **Dados de entrega:** `GET/PUT /me/customer` com endereço em texto, **sem mapa**. Ao salvar, preserve a
   `location` vinda do backend; cliente novo vai com `location: null`.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o

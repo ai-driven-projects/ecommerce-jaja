@@ -404,7 +404,7 @@
       "commit": "59330da98e0e9b5826e6c0da6216098f2af4ae5f"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 7,
       "phase": "Catálogo",
       "title": "Detalhe do produto",
@@ -415,14 +415,69 @@
         "base": "c830b01c20f6243839cf56cd439f75ffac381b2d",
         "commit": "2dab781883989d7f1d93220d5ab0f30b1f86d996",
         "at": "2026-10-15T16:40:48.256Z"
-      }
+      },
+      "iteration": 7,
+      "deliveredAt": "2026-10-15T17:00:45.487Z",
+      "durationMs": 1193633,
+      "cost": 8.4470422,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 70141,
+          "cost": 0.7301398,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 19626,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 253,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1045744,
+          "cost": 7.344517400000001,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 20782,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 36851,
+          "cost": 0.372385,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 236,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
       "number": 8,
       "phase": "Conta e carrinho",
       "title": "Sessão: login e cadastro",
-      "change": "mobile-app-08-sessao-mobile"
+      "change": "mobile-app-08-sessao-mobile",
+      "early": {
+        "title": "Planeja a sessão do app mobile: login, cadastro, guarda de rotas e aba Conta",
+        "comparison": "O app ainda não tem sessão: a aba Conta é provisória (PlaceholderBody), o createApiClient não tem interceptor (o comentário reserva o Bearer para esta etapa) e o flutter_secure_storage ainda não está no pubspec, embora a barreira já o confine a lib/infra.\nO mapHttpFailure já transforma 401 em SessionFailure e os outros 4xx em BackendRejectionFailure com os códigos do backend, o que basta para tratar INVALID_CREDENTIALS (401) e EMAIL_ALREADY_EXISTS (409) do AuthController.\nO CLAUDE.md manda o estado técnico da sessão (token e os estados unknown/authenticated/anonymous) para lib/infra/auth, mas a tabela de camadas não deixa ui/ e app/ importarem infra: o usuário e as ações foram para o domínio auth, e o router passa a poder importar infra/auth.\nO web valida com os value objects do pacote compartilhado (Email, PersonName de 3 a 50 caracteres com sobrenome, StrongPassword) e usa senha forte até no login; o /auth/me devolve id, name, email e admin, sem avatarUrl.\nA etapa 7 estava sendo aplicada em paralelo (arquivos do detalhe do produto pela metade no working tree); as suposições sobre router, DI e fakes dela estão em \"Dependências da etapa anterior\".",
+        "base": "777cfdd94174ffa13353964e765344eece4d1b82",
+        "commit": "353f97b07fb93fde57625e0f1403b0a29e4a889f",
+        "at": "2026-10-15T17:00:45.474Z"
+      }
     },
     {
       "status": "pending",
@@ -474,84 +529,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 7,
-    "stage": 7,
-    "startCommit": "59330da98e0e9b5826e6c0da6216098f2af4ae5f",
-    "startedAt": "2026-10-15T16:40:51.789Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 70141,
-        "cost": 0.7301398,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 19626,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o detalhe do produto do app mobile",
-      "comparison": "As duas rotas de produto ainda montam o widget provisório `ProductPage({slug, onBack})`, que tem o mesmo nome da entidade `ProductPage` (página de produtos). A change o troca por `ProductDetailPage` e apaga o arquivo antigo.\nO contrato `GET /storefront/products/:slug` (`StorefrontProductDetailDTO`) traz marca, trilha de categorias e imagens com thumb e large. O `runRequest` já converte `404` em `NotFoundFailure`, então o \"produto inexistente\" não precisa de código novo de falha.\nO `ProductArt` só tem o tamanho do card (altura 120) e o selo do `ProductCard` é privado (`_Badge`). A galeria e a miniatura pedem tamanhos novos, e o selo vira `shared/widgets/product_badge.dart`.\nA página web também tem quantidade, cartão de entrega e \"Você já tem N no carrinho\", que dependem das regras de frete e do carrinho. Ficam para a etapa 9, e o botão nasce desabilitado.\nA etapa 6 está em aplicação. A change supõe as rotas `searchProduct*`, o `didUpdateWidget` da `SearchPage` e os ajustes no `FakeCatalogRepository`, e registra isso em \"Dependências da etapa anterior\".",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 13891073,
-    "cost": 111.12704409999999,
+    "durationMs": 14994939,
+    "cost": 122.14884389999997,
     "runs": 1,
     "iterationsStarted": 7,
-    "iterationsDelivered": 6,
-    "claudeSessions": 63,
-    "turns": 1070,
-    "checks": 47,
+    "iterationsDelivered": 7,
+    "claudeSessions": 70,
+    "turns": 1245,
+    "checks": 50,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 14
+    "commits": 16
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

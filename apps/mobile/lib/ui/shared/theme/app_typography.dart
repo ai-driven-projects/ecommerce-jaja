@@ -114,10 +114,74 @@ extension AppTextStyles on TextTheme {
   TextStyle get countCaption =>
       bodySmall!.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
 
+  // Os seguintes vêm de `product-detail.component.tsx` e
+  // `product-gallery.component.tsx` (página do produto).
+
+  /// Nome do produto no detalhe (`h1`: `font-display text-[26px]
+  /// font-extrabold leading-[1.15] tracking-[-0.8px]`, o tamanho de celular).
+  TextStyle get productTitle =>
+      _display(headlineSmall!, 26, FontWeight.w800, 1.15, -0.8);
+
+  /// Preço do detalhe (`font-display text-[34px] tracking-[-0.5px]`, com o
+  /// peso e os algarismos tabulares do preço).
+  TextStyle get priceLarge => _display(
+    headlineSmall!,
+    34,
+    FontWeight.w800,
+    1.1,
+    -0.5,
+  ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+
+  /// Título de seção pequena ("Sobre o produto": `font-display text-[17px]
+  /// font-bold`).
+  TextStyle get sectionSmall => _display(
+    headlineSmall!,
+    17,
+    FontWeight.w700,
+    1.3,
+    AppTypography.displayLetterSpacing,
+  );
+
+  /// Texto da descrição (`text-[14.5px] leading-[1.65]`).
+  TextStyle get descriptionBody =>
+      bodyMedium!.copyWith(fontSize: 14.5, height: 1.65);
+
+  /// Linha da ficha do produto (`text-[13.5px]`): o rótulo.
+  TextStyle get specsBody => bodyMedium!.copyWith(fontSize: 13.5);
+
+  /// Linha da ficha do produto: o valor (`font-bold`).
+  TextStyle get specsValue => _withWeight(specsBody, FontWeight.w700);
+
+  /// Emoji de reserva da galeria. O web usa `text-[120px]` numa área de 380
+  /// de altura; na tela do celular, mais estreita, fica em 96.
+  TextStyle get artEmojiLarge => bodyLarge!.copyWith(fontSize: 96, height: 1);
+
+  /// Emoji de reserva da miniatura da galeria (`text-[26px]`).
+  TextStyle get artEmojiThumb => bodyLarge!.copyWith(fontSize: 26, height: 1);
+
   // Troca o peso e o eixo `wght` juntos (fonte variável, ver acima).
   static TextStyle _withWeight(TextStyle style, FontWeight weight) =>
       style.copyWith(
         fontWeight: weight,
         fontVariations: [FontVariation('wght', weight.value.toDouble())],
       );
+
+  // Variação de um papel em Bricolage: `wght` e `opsz` acompanham o peso e o
+  // tamanho (ver as regras de [AppTypography]).
+  static TextStyle _display(
+    TextStyle style,
+    double size,
+    FontWeight weight,
+    double height,
+    double letterSpacing,
+  ) => style.copyWith(
+    fontSize: size,
+    fontWeight: weight,
+    fontVariations: [
+      FontVariation('wght', weight.value.toDouble()),
+      FontVariation('opsz', size),
+    ],
+    height: height,
+    letterSpacing: letterSpacing,
+  );
 }

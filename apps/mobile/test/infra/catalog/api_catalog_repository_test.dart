@@ -11,6 +11,7 @@ import 'package:mobile/modules/catalog/model/product_query.dart';
 
 import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../api/support/storefront_catalog_json.dart';
+import '../api/support/storefront_product_detail_json.dart';
 import '../http/support/fake_http_client_adapter.dart';
 
 void main() {
@@ -256,6 +257,86 @@ void main() {
       final result = await repository.fetchProducts(homeFeaturedQuery);
 
       expect(failureOf(result), isA<BackendRejectionFailure>());
+    });
+  });
+
+  group('fetchProduct', () {
+    test(
+      'faz GET /storefront/products/<slug> sem Authorization e lê o detalhe',
+      () async {
+        adapter.enqueueResponse(body: tonerDetailJson);
+
+        final result = await repository.fetchProduct(tonerDetail.slug);
+
+        expect(adapter.requests, hasLength(1));
+        final request = adapter.requests.single;
+        expect(request.method, 'GET');
+        expect(
+          request.uri.toString(),
+          'http://localhost:4000/storefront/products/${tonerDetail.slug}',
+        );
+        expect(
+          request.headers.keys.map((key) => key.toLowerCase()),
+          isNot(contains('authorization')),
+        );
+        expect(valueOf(result), tonerDetail);
+      },
+    );
+
+    test('o slug sai codificado no caminho', () async {
+      adapter.enqueueResponse(body: plainDetailJson);
+
+      await repository.fetchProduct('caneta x');
+
+      expect(
+        adapter.requests.single.uri.toString(),
+        'http://localhost:4000/storefront/products/caneta%20x',
+      );
+    });
+
+    test('duas chamadas fazem duas requisições (nada é guardado)', () async {
+      adapter.enqueueResponse(body: plainDetailJson);
+      adapter.enqueueResponse(body: plainDetailJson);
+
+      final first = await repository.fetchProduct('caneta-x');
+      final second = await repository.fetchProduct('caneta-x');
+
+      expect(adapter.requests, hasLength(2));
+      expect(valueOf(first), plainDetail);
+      expect(valueOf(second), plainDetail);
+    });
+
+    test('404 vira NotFoundFailure', () async {
+      adapter.enqueueResponse(
+        statusCode: 404,
+        body: {'statusCode': 404, 'message': 'PRODUCT_NOT_FOUND'},
+      );
+
+      final result = await repository.fetchProduct('nao-existe');
+
+      final failure = failureOf(result);
+      expect(failure, isA<NotFoundFailure>());
+      expect(failure.code, HttpFailureCode.notFound);
+    });
+
+    test('500 vira ServerFailure', () async {
+      adapter.enqueueResponse(statusCode: 500, body: 'Internal Server Error');
+
+      final result = await repository.fetchProduct('caneta-x');
+
+      final failure = failureOf(result);
+      expect(failure, isA<ServerFailure>());
+      expect(failure.code, HttpFailureCode.server);
+    });
+
+    test('200 com priceCents: -1 vira UnexpectedFailure', () async {
+      adapter.enqueueResponse(body: {...plainDetailJson, 'priceCents': -1});
+
+      final result = await repository.fetchProduct('caneta-x');
+
+      final failure = failureOf(result);
+      expect(failure, isA<UnexpectedFailure>());
+      expect(failure.code, HttpFailureCode.unexpected);
     });
   });
 

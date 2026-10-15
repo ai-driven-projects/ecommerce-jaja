@@ -1,4 +1,5 @@
 import 'package:mobile/modules/catalog/model/category_entity.dart';
+import 'package:mobile/modules/catalog/model/product_detail_entity.dart';
 import 'package:mobile/modules/catalog/model/product_page_entity.dart';
 import 'package:mobile/modules/catalog/model/product_summary_entity.dart';
 
@@ -142,3 +143,71 @@ List<ProductSummary> manyProducts(int count, {String prefix = 'produto'}) =>
 
 /// Faceta da marca HP (`brandSlug` do seed).
 const hpFacet = BrandFacet(slug: 'hp', name: 'HP', count: 12);
+
+// Detalhe de um toner HP do seed (nome, slug, `sku` e unidade de
+// `products.json`; o seed não fixa o id). Preço, "De:", desconto, destaque,
+// descrição e as três fotos são de exemplo, para a página mostrar todos os
+// blocos: a descrição tem 700 caracteres, acima do limite de "Ler mais".
+
+/// Texto de 700 caracteres, com quebras de linha, para a descrição recolhível.
+final tonerDescription =
+    ('Toner HP 230X original, amarelo, rendimento alto para a '
+        'LaserJet Pro.\n') *
+    10;
+
+final tonerDetail = ProductDetail(
+  id: '4b7a2f10-3c5e-4d8a-9e21-7f6b1c2d3e10',
+  slug:
+      'toner-hp-230x-amarelo-laserjet-original-w2302x-para-hp-laserjet-pro-'
+      '4203cdn-4203dn-4203dw-4303dw-4303fdn-4303fdw-cx-1-un',
+  name:
+      'Toner HP 230x, Amarelo, Laserjet Original (W2302X), Para HP LaserJet '
+      'Pro 4203cdn, 4203dn, 4203dw, 4303dw, 4303fdn, 4303fdw, CX 1 UN',
+  sku: '796915',
+  description: tonerDescription,
+  price: money(3490),
+  listPrice: money(4990),
+  discountPercent: 30,
+  unit: 'caixa com 1',
+  isFeatured: true,
+  brand: const CatalogRef(slug: 'hp', name: 'HP'),
+  categories: const [
+    CatalogRef(slug: 'cartuchos-toners', name: 'Cartuchos & Toners'),
+    CatalogRef(slug: 'toners-hp', name: 'Toners HP'),
+  ],
+  images: const [
+    ProductImage(
+      thumbUrl: 'https://img.kalunga.com.br/fotosdeprodutos/796915d.jpg',
+      largeUrl: 'https://img.kalunga.com.br/fotosdeprodutos/796915z.jpg',
+      order: 0,
+    ),
+    ProductImage(
+      thumbUrl: 'https://img.kalunga.com.br/fotosdeprodutos/796915d_1.jpg',
+      largeUrl: 'https://img.kalunga.com.br/fotosdeprodutos/796915z_1.jpg',
+      order: 1,
+    ),
+    ProductImage(
+      thumbUrl: 'https://img.kalunga.com.br/fotosdeprodutos/796915d_2.jpg',
+      largeUrl: 'https://img.kalunga.com.br/fotosdeprodutos/796915z_2.jpg',
+      order: 2,
+    ),
+  ],
+);
+
+/// Detalhe mínimo: sem marca, `sku`, descrição, "De:", desconto, categorias
+/// nem fotos. É o padrão do `FakeCatalogRepository`.
+final plainDetail = ProductDetail(
+  id: '4b7a2f10-3c5e-4d8a-9e21-7f6b1c2d3e11',
+  slug: 'caneta-x',
+  name: 'Caneta X',
+  sku: null,
+  description: null,
+  price: money(750),
+  listPrice: null,
+  discountPercent: null,
+  unit: 'unidade',
+  isFeatured: false,
+  brand: null,
+  categories: const [],
+  images: const [],
+);

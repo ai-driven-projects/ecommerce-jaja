@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:mobile/core/result.dart';
 import 'package:mobile/modules/catalog/model/category_entity.dart';
+import 'package:mobile/modules/catalog/model/product_detail_entity.dart';
 import 'package:mobile/modules/catalog/model/product_page_entity.dart';
 import 'package:mobile/modules/catalog/model/product_query.dart';
 import 'package:mobile/modules/catalog/model/product_summary_entity.dart';
@@ -33,14 +34,19 @@ ProductPage pageOf(
 /// [enqueueProducts] ou [holdProducts]. Com a fila vazia, devolve as fixtures
 /// do seed ([categories] e uma página com [products]). As respostas de
 /// produtos saem na ordem das chamadas: na Início, destaques antes das ofertas.
-/// [categoryCalls] guarda o `refresh` de cada chamada e [productQueries] cada
-/// consulta pedida, na ordem.
+/// Cada `fetchProduct` consome a próxima de [enqueueProduct] ou
+/// [holdProduct]; com a fila vazia, devolve [product] ([fixtures.plainDetail]
+/// por padrão). [categoryCalls] guarda o `refresh` de cada chamada,
+/// [productQueries] cada consulta pedida e [productSlugs] cada slug pedido,
+/// na ordem.
 class FakeCatalogRepository implements CatalogRepository {
   FakeCatalogRepository({
     List<Category>? categories,
     List<ProductSummary>? products,
+    ProductDetail? product,
   }) : categories = List.of(categories ?? fixtures.categoryTree),
-       products = List.of(products ?? fixtures.products);
+       products = List.of(products ?? fixtures.products),
+       product = product ?? fixtures.plainDetail;
 
   /// Árvore devolvida quando não há nada enfileirado.
   List<Category> categories;
@@ -48,10 +54,15 @@ class FakeCatalogRepository implements CatalogRepository {
   /// Itens da página devolvida quando não há nada enfileirado.
   List<ProductSummary> products;
 
+  /// Detalhe devolvido quando não há nada enfileirado.
+  ProductDetail product;
+
   final List<bool> categoryCalls = [];
   final List<ProductQuery> productQueries = [];
+  final List<String> productSlugs = [];
   final Queue<Future<Result<List<Category>>>> _categoryResponses = Queue();
   final Queue<Future<Result<ProductPage>>> _productResponses = Queue();
+  final Queue<Future<Result<ProductDetail>>> _detailResponses = Queue();
 
   void enqueueCategories(Result<List<Category>> result) {
     _categoryResponses.add(Future.value(result));
@@ -59,6 +70,10 @@ class FakeCatalogRepository implements CatalogRepository {
 
   void enqueueProducts(Result<ProductPage> result) {
     _productResponses.add(Future.value(result));
+  }
+
+  void enqueueProduct(Result<ProductDetail> result) {
+    _detailResponses.add(Future.value(result));
   }
 
   /// Segura o próximo `fetchCategories` até o teste completar o [Completer],
@@ -73,6 +88,13 @@ class FakeCatalogRepository implements CatalogRepository {
   Completer<Result<ProductPage>> holdProducts() {
     final completer = Completer<Result<ProductPage>>();
     _productResponses.add(completer.future);
+    return completer;
+  }
+
+  /// Segura o próximo `fetchProduct` até o teste completar o [Completer].
+  Completer<Result<ProductDetail>> holdProduct() {
+    final completer = Completer<Result<ProductDetail>>();
+    _detailResponses.add(completer.future);
     return completer;
   }
 
@@ -92,5 +114,12 @@ class FakeCatalogRepository implements CatalogRepository {
       return Future.value(Ok(pageOf(products)));
     }
     return _productResponses.removeFirst();
+  }
+
+  @override
+  Future<Result<ProductDetail>> fetchProduct(String slug) {
+    productSlugs.add(slug);
+    if (_detailResponses.isEmpty) return Future.value(Ok(product));
+    return _detailResponses.removeFirst();
   }
 }
