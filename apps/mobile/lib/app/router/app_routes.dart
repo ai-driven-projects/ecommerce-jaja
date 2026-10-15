@@ -57,6 +57,15 @@ abstract final class AppRoutes {
   static String searchProductLocation(String slug) =>
       '$search/product/${Uri.encodeComponent(slug)}';
 
+  /// Produto por slug, na pilha da aba Carrinho.
+  static const String cartProduct = '$cart/$cartProductSegment';
+
+  /// O trecho de [cartProduct] relativo a [cart], para a rota filha.
+  static const String cartProductSegment = 'product/:slug';
+
+  static String cartProductLocation(String slug) =>
+      '$cart/product/${Uri.encodeComponent(slug)}';
+
   /// A Buscar com os filtros na query, na codificação única dos filtros;
   /// sem `?` quando a consulta é vazia.
   static String searchLocation(ProductQuery query) {

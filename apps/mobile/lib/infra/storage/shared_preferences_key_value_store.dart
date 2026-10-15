@@ -36,4 +36,14 @@ final class SharedPreferencesKeyValueStore implements KeyValueStore {
       // Memória indisponível: a próxima abertura do app fica sem a lembrança.
     }
   }
+
+  /// Falha ao apagar é ignorada, como a gravação.
+  @override
+  Future<void> remove(String key) async {
+    try {
+      await (await _instance()).remove(key);
+    } catch (_) {
+      // Memória indisponível: o valor antigo continua guardado.
+    }
+  }
 }

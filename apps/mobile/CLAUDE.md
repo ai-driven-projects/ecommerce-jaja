@@ -50,6 +50,14 @@ Etapa 8: já existem a sessão por e-mail e senha (`Email`, `PersonName` e `Stro
 `lib/app/router/session_redirect.dart`), o `SplashPage`, as telas cheias "Entrar" (`/login`) e "Criar conta"
 (`/register`) com os ViewModels, e a aba Conta real (convite sem sessão; "Olá, <primeiro nome>" e "Sair"
 com sessão), no lugar da `AccountPage` provisória.
+Etapa 9: já existem o carrinho do visitante no domínio (`lib/modules/cart/`: `CartItem`, `CartLine` e
+`CartDetail` em `freezed`, as regras e constantes de `cart_rules.dart`, o `CartState`, `CartErrorCode` e o
+contrato `CartRepository`), o `GuestCartStorage` e o `GuestCartRepository` (`lib/infra/cart/`), o DTO de
+`POST /cart/preview` (`lib/infra/api/cart_dto.dart`), o `KeyValueStore.remove`, a aba Carrinho real
+(`CartPage`, `CartViewModel`, `CartLineTile`, `CartSummary` e o `CartNavigationShell` com o badge na aba),
+a rota `/cart/product/:slug`, o `QuantityStepper` em `lib/ui/shared/widgets/` e o rodapé ligado do detalhe
+do produto (quantidade, "Adicionar · <total>", "Você já tem N no carrinho." e o cartão de entrega). O
+`PlaceholderBody` foi apagado (não sobrou consumidor).
 
 ## Arquitetura
 
@@ -178,7 +186,8 @@ test/             # espelha lib/ (nunca teste ao lado do código)
 - **`shared_preferences` só por `KeyValueStore`** (`lib/infra/storage/key_value_store.dart`, contrato
   técnico de texto, implementado por `SharedPreferencesKeyValueStore`): repositório nenhum importa o
   pacote, e leitura ilegível vira `null`, gravação que falha é engolida — o domínio nunca vê exceção do
-  disco. Testes usam o `FakeKeyValueStore` de `test/infra/storage/support/`.
+  disco. Testes usam o `FakeKeyValueStore` de `test/infra/storage/support/`. `remove(key)` apaga a chave
+  (também nunca lança; o `FakeKeyValueStore` respeita `failOnWrite`).
 - **Entrypoints:** `lib/main_dev.dart` e `lib/main_prod.dart` só chamam `bootstrap(AppEnvironment.x)`; todo
   `flutter run` usa `-t` (o `Makefile` cuida). Endereço não resolvido abre `ConfigurationErrorApp`, sem
   registrar dependências.
@@ -311,6 +320,10 @@ Onde fica cada coisa do tema (`lib/ui/shared/theme/`):
   ProductBadgeVariant.brand | solid)` (`brand`: o "Destaque"/"Em destaque" do card e do detalhe; `solid`: o
   `−N%`), ambos em `lib/ui/shared/widgets/`. Nenhum widget redesenha foto, reserva com emoji ou selo de
   produto por conta própria.
+- **Quantidade:** `QuantityStepper(quantity, itemName, onDecrement, onIncrement, size:
+  QuantityStepperSize.compact | large)` em `lib/ui/shared/widgets/` (linha do carrinho e rodapé do produto),
+  com alvos de 44 e os rótulos "Diminuir/Aumentar quantidade de <nome>"; `null` desabilita o botão e quem
+  usa decide os limites. Nenhum widget redesenha o "− n +".
 
 **Conflito conhecido:** `openspec/specs/shared/design-system` descreve um visual antigo (vermelho `#ec3013`,
 Archivo, IBM Plex Mono, cantos retos) que o web não usa mais. Vale o código do web (`globals.css`,
@@ -369,6 +382,23 @@ specs em `openspec/specs/<domínio>/`.
 - **Carrinho:** anônimo guardado em `shared_preferences` e precificado por `POST /cart/preview`; com sessão,
   `/me/cart`; no login, `POST /me/cart/merge` e limpeza do local, como o web (`cart.context.tsx`,
   `guest-cart-storage.util.ts`). Preço **sempre em centavos** (`Money`), formatado só na UI com `intl` pt-BR.
+  - Visitante: a chave é **`jaja.guest-cart`** (a do web), com `[{"productId","quantity"}]`, normalizada na
+    leitura por `normalizeCartItems`; carrinho vazio apaga a chave. Limites e entrega só pelas constantes de
+    `cart_rules.dart` (copiadas de `modules/orders/src/cart/errors.ts`: 99 unidades, 50 produtos, taxa
+    R$ 4,90, grátis a partir de R$ 79,00); toda mudança passa por `addCartItem`/`setCartItemQuantity`/
+    `removeCartItem`, e a falha de regra devolve `ValidationFailure` sem mudar nada.
+  - O estado global é o `GuestCartRepository` (`CartRepository` na DI, mesma instância), restaurado pelo
+    bootstrap sem esperar; as ações esperam o `restore`. Quantidade e badge mudam na hora (soma local);
+    a prévia (`POST /cart/preview`) é pedida **250 ms depois da última mudança**, cada pedido abre uma
+    **geração** e resposta de geração antiga (ou depois do `dispose`) é descartada. Produto que a prévia
+    **não devolve sai** do carrinho e do armazenamento, em silêncio. Falha da prévia vira o banner "Não
+    foi possível carregar o carrinho." com "Tentar de novo" (`refresh()`).
+  - Até a etapa 10, o carrinho é o do visitante **mesmo com sessão** (sem `/me/cart` nem merge); a UI
+    depende só do `CartRepository`, que a etapa 10 reimplementa com as duas fontes.
+  - "Finalizar pedido · <total>" aparece **desabilitado** até a etapa 12 ligar o checkout.
+  - No detalhe do produto, o rodapé tem o `QuantityStepper` (1 a 99) e "Adicionar · <total>"
+    ("Adicionando…" enquanto inclui); o sucesso mostra o aviso "Adicionado ao carrinho" com "Ver carrinho"
+    (abre a aba Carrinho) e volta a quantidade a 1. Isso substitui o botão desabilitado da etapa 7.
 - **Loja:** lista de `GET /storefront/stores`, escolha lembrada em `shared_preferences`; espelhe exatamente o
   efeito que a escolha tem no web, sem inventar parâmetro de API. A loja em vigor sai **sempre** de
   `pickCurrentStore(stores, rememberedSlug)` (`lib/modules/store/model/current_store.dart`: a lembrada se

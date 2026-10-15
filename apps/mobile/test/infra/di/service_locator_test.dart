@@ -5,23 +5,28 @@ import 'package:mobile/infra/auth/session.dart';
 import 'package:mobile/infra/auth/session_repository.dart';
 import 'package:mobile/infra/auth/session_status.dart';
 import 'package:mobile/infra/auth/session_storage.dart';
+import 'package:mobile/infra/cart/guest_cart_repository.dart';
+import 'package:mobile/infra/cart/guest_cart_storage.dart';
 import 'package:mobile/infra/catalog/api_catalog_repository.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/infra/http/auth_interceptor.dart';
 import 'package:mobile/infra/storage/key_value_store.dart';
 import 'package:mobile/infra/store/api_store_repository.dart';
 import 'package:mobile/modules/auth/provider/auth_repository.dart';
+import 'package:mobile/modules/cart/provider/cart_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 import 'package:mobile/ui/modules/auth/view_models/account_view_model.dart';
 import 'package:mobile/ui/modules/auth/view_models/login_view_model.dart';
 import 'package:mobile/ui/modules/auth/view_models/register_view_model.dart';
+import 'package:mobile/ui/modules/cart/view_models/cart_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/home_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/product_detail_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/store/view_models/store_selector_view_model.dart';
 
 import '../../modules/auth/support/fake_auth_repository.dart';
+import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 
@@ -165,6 +170,27 @@ void main() {
       expect(identical(getIt<SessionRepository>(), repository), isTrue);
     });
 
+    test('CartRepository e GuestCartRepository são a mesma instância', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final repository = getIt<GuestCartRepository>();
+
+      expect(getIt.isRegistered<GuestCartStorage>(), isTrue);
+      expect(identical(getIt<CartRepository>(), repository), isTrue);
+      expect(identical(getIt<GuestCartRepository>(), repository), isTrue);
+    });
+
+    test('o CartViewModel é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      final first = getIt<CartViewModel>();
+      final second = getIt<CartViewModel>();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      expect(identical(first, second), isFalse);
+    });
+
     test('o Dio tem um AuthInterceptor', () {
       configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
 
@@ -194,6 +220,9 @@ void main() {
       final auth = FakeAuthRepository();
       addTearDown(auth.dispose);
       getIt.registerSingleton<AuthRepository>(auth);
+      final cart = FakeCartRepository();
+      addTearDown(cart.dispose);
+      getIt.registerSingleton<CartRepository>(cart);
 
       registerViewModels();
 
@@ -207,7 +236,9 @@ void main() {
       final login = getIt<LoginViewModel>();
       final register = getIt<RegisterViewModel>();
       final account = getIt<AccountViewModel>();
+      final cartViewModel = getIt<CartViewModel>();
       addTearDown(productDetail.dispose);
+      addTearDown(cartViewModel.dispose);
       addTearDown(login.dispose);
       addTearDown(register.dispose);
       addTearDown(account.dispose);
@@ -218,6 +249,7 @@ void main() {
       expect(login, isA<LoginViewModel>());
       expect(register, isA<RegisterViewModel>());
       expect(account, isA<AccountViewModel>());
+      expect(cartViewModel, isA<CartViewModel>());
       expect(getIt.isRegistered<Dio>(), isFalse);
       expect(getIt.isRegistered<KeyValueStore>(), isFalse);
     });
@@ -234,6 +266,8 @@ void main() {
     expect(getIt.isRegistered<SessionRepository>(), isFalse);
     expect(getIt.isRegistered<Session>(), isFalse);
     expect(getIt.isRegistered<AuthRepository>(), isFalse);
+    expect(getIt.isRegistered<GuestCartRepository>(), isFalse);
+    expect(getIt.isRegistered<CartRepository>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
     expect(getIt.isRegistered<HomeViewModel>(), isFalse);
     expect(getIt.isRegistered<SearchViewModel>(), isFalse);
@@ -241,5 +275,6 @@ void main() {
     expect(getIt.isRegistered<LoginViewModel>(), isFalse);
     expect(getIt.isRegistered<RegisterViewModel>(), isFalse);
     expect(getIt.isRegistered<AccountViewModel>(), isFalse);
+    expect(getIt.isRegistered<CartViewModel>(), isFalse);
   });
 }

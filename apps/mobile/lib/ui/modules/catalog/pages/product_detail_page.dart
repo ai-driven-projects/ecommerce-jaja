@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:watch_it/watch_it.dart'
     show WatchingStatefulWidget, watchPropertyValue;
 
+import '../../../../core/result.dart';
+import '../../../../core/value_objects/money.dart';
+import '../../../../modules/cart/model/cart_rules.dart';
 import '../../../../modules/catalog/model/product_detail_entity.dart';
 import '../../../../modules/catalog/model/product_query.dart';
 import '../../../../modules/catalog/model/product_summary_entity.dart';
+import '../../../shared/formatters/money_formatter.dart';
 import '../../../shared/theme/app_radius.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/app_typography.dart';
@@ -13,6 +17,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/price_text.dart';
 import '../../../shared/widgets/product_badge.dart';
+import '../../../shared/widgets/quantity_stepper.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
 import '../view_models/block_state.dart';
@@ -25,11 +30,12 @@ import '../widgets/product_specs.dart';
 import '../widgets/section_heading.dart';
 
 /// Página do produto, de `product-detail.component.tsx`: a galeria, os
-/// selos, a marca, o nome, a unidade e o código, o preço, a trilha de
-/// categorias, "Sobre o produto", a ficha e "Mais de `<categoria>`". A única
-/// ação principal, "Adicionar ao carrinho", fica fixa no rodapé enquanto o
-/// produto está carregado; sem [onAddToCart] aparece desabilitada (o carrinho
-/// chega na etapa 9). A navegação sai por callback, como nas outras páginas.
+/// selos, a marca, o nome, a unidade e o código, o preço, o cartão de entrega,
+/// a trilha de categorias, "Sobre o produto", a ficha e "Mais de
+/// `<categoria>`". A única ação principal fica fixa no rodapé enquanto o
+/// produto está carregado: a quantidade e "Adicionar · `<total>`", com o aviso
+/// "Adicionado ao carrinho" e "Ver carrinho" no sucesso. A navegação sai por
+/// callback, como nas outras páginas.
 class ProductDetailPage extends WatchingStatefulWidget {
   const ProductDetailPage({
     super.key,
@@ -38,15 +44,31 @@ class ProductDetailPage extends WatchingStatefulWidget {
     required this.onBack,
     required this.onOpenSearch,
     required this.onOpenProduct,
-    this.onAddToCart,
+    required this.onOpenCart,
   });
 
-  static const String addToCartLabel = 'Adicionar ao carrinho';
+  static const String addingLabel = 'Adicionando…';
+  static const String addedTitle = 'Adicionado ao carrinho';
+  static const String openCartAction = 'Ver carrinho';
   static const String errorTitle = 'Não foi possível carregar o produto.';
   static const String notFoundTitle = 'Produto não encontrado';
   static const String notFoundMessage = 'Ele pode ter saído do catálogo.';
   static const String notFoundAction = 'Voltar ao catálogo';
   static const String featuredLabel = 'Em destaque';
+
+  static String addLabel(Money total) => 'Adicionar · ${formatMoney(total)}';
+
+  static String addedDetail(int quantity, Money total) =>
+      '$quantity un · ${formatMoney(total)}';
+
+  static String inCartLabel(int quantity) =>
+      'Você já tem $quantity no carrinho.';
+
+  static String freeDeliveryLabel(Money threshold) =>
+      'Entrega grátis acima de ${formatMoney(threshold)}';
+
+  static String deliveryFeeLabel(Money fee) =>
+      'Abaixo disso, taxa fixa de ${formatMoney(fee)}';
 
   static String discountLabel(int percent) => '−$percent%';
 
@@ -68,8 +90,8 @@ class ProductDetailPage extends WatchingStatefulWidget {
   /// Abre outro produto pelo slug, na pilha da mesma aba.
   final ValueChanged<String> onOpenProduct;
 
-  /// Põe o produto no carrinho; `null` deixa o botão desabilitado.
-  final VoidCallback? onAddToCart;
+  /// Abre a aba Carrinho, pelo "Ver carrinho" do aviso.
+  final VoidCallback onOpenCart;
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -91,6 +113,51 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     super.dispose();
   }
 
+  /// Inclui a quantidade escolhida e avisa o resultado. O
+  /// [ScaffoldMessenger] é capturado antes do `await`.
+  Future<void> _addToCart() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final textTheme = Theme.of(context).textTheme;
+    final onSnackBar = Theme.of(context).colorScheme.onInverseSurface;
+    await _viewModel.addToCart.execute();
+    switch (_viewModel.addToCart.result) {
+      case Ok(:final value):
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ProductDetailPage.addedTitle,
+                    style: textTheme.titleSmall!.copyWith(color: onSnackBar),
+                  ),
+                  Text(
+                    ProductDetailPage.addedDetail(value.quantity, value.total),
+                    style: textTheme.bodyMedium!.copyWith(color: onSnackBar),
+                  ),
+                ],
+              ),
+              // Some sozinho, como o toaster do web: o aviso fica no
+              // `ScaffoldMessenger` do app e não deve seguir para outra aba.
+              persist: false,
+              action: SnackBarAction(
+                label: ProductDetailPage.openCartAction,
+                onPressed: widget.onOpenCart,
+              ),
+            ),
+          );
+      case Failure(:final failure):
+        messenger
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(failure.message)));
+      case null:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = watchPropertyValue(
@@ -101,8 +168,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       (ProductDetailViewModel vm) => vm.related,
       target: _viewModel,
     );
-    // Derivado de [product], observado acima.
+    final quantity = watchPropertyValue(
+      (ProductDetailViewModel vm) => vm.quantity,
+      target: _viewModel,
+    );
+    final inCart = watchPropertyValue(
+      (ProductDetailViewModel vm) => vm.inCart,
+      target: _viewModel,
+    );
+    final isAdding = watchPropertyValue(
+      (ProductDetailViewModel vm) => vm.addToCart.running,
+      target: _viewModel,
+    );
+    // Derivados de [product] e [quantity], observados acima.
     final isNotFound = _viewModel.isNotFound;
+    final total = _viewModel.total;
 
     final Widget body = switch (product) {
       BlockLoading() => const _ProductDetailSkeleton(),
@@ -139,9 +219,19 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Scaffold(
       appBar: AppBar(leading: BackButton(onPressed: widget.onBack)),
       body: body,
-      bottomNavigationBar: product is BlockLoaded<ProductDetail>
-          ? _AddToCartBar(onAddToCart: widget.onAddToCart)
-          : null,
+      bottomNavigationBar: switch (product) {
+        BlockLoaded(:final value) when total != null => _AddToCartBar(
+          itemName: value.name,
+          quantity: quantity,
+          total: total,
+          inCart: inCart,
+          isAdding: isAdding,
+          onDecrement: _viewModel.canDecrement ? _viewModel.decrement : null,
+          onIncrement: _viewModel.canIncrement ? _viewModel.increment : null,
+          onAdd: _addToCart,
+        ),
+        _ => null,
+      },
     );
   }
 }
@@ -218,6 +308,8 @@ class _ProductDetailContent extends StatelessWidget {
           previousPrice: product.listPrice,
           style: textTheme.priceLarge,
         ),
+        const SizedBox(height: AppSpacing.s16),
+        const _DeliveryCard(),
         if (product.categories.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.s16),
           CategoryTrail(
@@ -249,15 +341,80 @@ class _ProductDetailContent extends StatelessWidget {
   }
 }
 
-/// Rodapé fixo com a ação principal.
-class _AddToCartBar extends StatelessWidget {
-  const _AddToCartBar({required this.onAddToCart});
-
-  final VoidCallback? onAddToCart;
+/// Regra de frete da loja, com os valores de `cart_rules.dart`.
+class _DeliveryCard extends StatelessWidget {
+  const _DeliveryCard();
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.card,
+        borderRadius: BorderRadius.circular(AppRadius.xl2),
+        border: Border.all(color: tokens.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s16),
+        child: Row(
+          children: [
+            Icon(Icons.local_shipping_outlined, color: tokens.brand),
+            const SizedBox(width: AppSpacing.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ProductDetailPage.freeDeliveryLabel(freeDeliveryThreshold),
+                    style: textTheme.titleSmall!.copyWith(color: tokens.ink),
+                  ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Text(
+                    ProductDetailPage.deliveryFeeLabel(deliveryFee),
+                    style: textTheme.bodySmall!.copyWith(
+                      color: tokens.mutedInk,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Rodapé fixo com a ação principal: "Você já tem N no carrinho.", a
+/// quantidade e "Adicionar · `<total>`" ("Adicionando…" e indisponível
+/// enquanto a inclusão roda).
+class _AddToCartBar extends StatelessWidget {
+  const _AddToCartBar({
+    required this.itemName,
+    required this.quantity,
+    required this.total,
+    required this.inCart,
+    required this.isAdding,
+    required this.onDecrement,
+    required this.onIncrement,
+    required this.onAdd,
+  });
+
+  final String itemName;
+  final int quantity;
+  final Money total;
+  final int inCart;
+  final bool isAdding;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -267,12 +424,46 @@ class _AddToCartBar extends StatelessWidget {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.s16),
-          child: AppButton(
-            label: ProductDetailPage.addToCartLabel,
-            size: AppButtonSize.xl,
-            expand: true,
-            icon: Icons.shopping_bag_outlined,
-            onPressed: onAddToCart,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (inCart > 0) ...[
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    ProductDetailPage.inCartLabel(inCart),
+                    style: textTheme.labelMedium!.copyWith(
+                      color: tokens.inkSoft,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s8),
+              ],
+              Row(
+                children: [
+                  QuantityStepper(
+                    quantity: quantity,
+                    itemName: itemName,
+                    onDecrement: isAdding ? null : onDecrement,
+                    onIncrement: isAdding ? null : onIncrement,
+                    size: QuantityStepperSize.large,
+                  ),
+                  const SizedBox(width: AppSpacing.s12),
+                  Expanded(
+                    child: AppButton(
+                      label: isAdding
+                          ? ProductDetailPage.addingLabel
+                          : ProductDetailPage.addLabel(total),
+                      size: AppButtonSize.xl,
+                      expand: true,
+                      icon: Icons.shopping_bag_outlined,
+                      onPressed: isAdding ? null : onAdd,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

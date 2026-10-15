@@ -37,6 +37,32 @@ void main() {
       );
     });
 
+    test('remove apaga a chave', () async {
+      SharedPreferences.setMockInitialValues({
+        'jaja.guest-cart': '[]',
+        'jaja:vitrine:loja': 'loja-paulista',
+      });
+
+      final store = SharedPreferencesKeyValueStore();
+      await store.remove('jaja.guest-cart');
+
+      expect(await store.readString('jaja.guest-cart'), isNull);
+      expect(await store.readString('jaja:vitrine:loja'), 'loja-paulista');
+      expect(
+        (await SharedPreferences.getInstance()).containsKey('jaja.guest-cart'),
+        isFalse,
+      );
+    });
+
+    test('remove de chave ausente não lança', () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final store = SharedPreferencesKeyValueStore();
+
+      await expectLater(store.remove('jaja.guest-cart'), completes);
+      expect(await store.readString('jaja.guest-cart'), isNull);
+    });
+
     test('valor de outro tipo na chave é lido como null', () async {
       SharedPreferences.setMockInitialValues({'jaja:vitrine:loja': 42});
 

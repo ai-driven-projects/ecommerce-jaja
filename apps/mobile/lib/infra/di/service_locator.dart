@@ -2,11 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../modules/auth/provider/auth_repository.dart';
+import '../../modules/cart/provider/cart_repository.dart';
 import '../../modules/catalog/provider/catalog_repository.dart';
 import '../../modules/store/provider/store_repository.dart';
 import '../../ui/modules/auth/view_models/account_view_model.dart';
 import '../../ui/modules/auth/view_models/login_view_model.dart';
 import '../../ui/modules/auth/view_models/register_view_model.dart';
+import '../../ui/modules/cart/view_models/cart_view_model.dart';
 import '../../ui/modules/catalog/view_models/home_view_model.dart';
 import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
@@ -15,6 +17,8 @@ import '../auth/secure_session_storage.dart';
 import '../auth/session.dart';
 import '../auth/session_repository.dart';
 import '../auth/session_storage.dart';
+import '../cart/guest_cart_repository.dart';
+import '../cart/guest_cart_storage.dart';
 import '../catalog/api_catalog_repository.dart';
 import '../http/api_client.dart';
 import '../http/auth_interceptor.dart';
@@ -60,6 +64,18 @@ void configureDependencies({required Uri apiBaseUrl}) {
   );
   getIt.registerLazySingleton<Session>(() => getIt<SessionRepository>());
   getIt.registerLazySingleton<AuthRepository>(() => getIt<SessionRepository>());
+  getIt.registerLazySingleton<GuestCartStorage>(
+    () => GuestCartStorage(getIt<KeyValueStore>()),
+  );
+  // Como a sessão: a mesma instância atende o bootstrap (`restore`) e o
+  // domínio (`CartRepository`).
+  getIt.registerLazySingleton<GuestCartRepository>(
+    () => GuestCartRepository(getIt<Dio>(), getIt<GuestCartStorage>()),
+    dispose: (repository) => repository.dispose(),
+  );
+  getIt.registerLazySingleton<CartRepository>(
+    () => getIt<GuestCartRepository>(),
+  );
   registerViewModels();
 }
 
@@ -78,7 +94,10 @@ void registerViewModels() {
     () => SearchViewModel(getIt<CatalogRepository>()),
   );
   getIt.registerFactory<ProductDetailViewModel>(
-    () => ProductDetailViewModel(getIt<CatalogRepository>()),
+    () => ProductDetailViewModel(
+      getIt<CatalogRepository>(),
+      getIt<CartRepository>(),
+    ),
   );
   getIt.registerFactory<LoginViewModel>(
     () => LoginViewModel(getIt<AuthRepository>()),
@@ -88,6 +107,9 @@ void registerViewModels() {
   );
   getIt.registerFactory<AccountViewModel>(
     () => AccountViewModel(getIt<AuthRepository>()),
+  );
+  getIt.registerFactory<CartViewModel>(
+    () => CartViewModel(getIt<CartRepository>()),
   );
 }
 

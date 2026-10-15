@@ -12,6 +12,8 @@ import '../../ui/modules/auth/view_models/account_view_model.dart';
 import '../../ui/modules/auth/view_models/login_view_model.dart';
 import '../../ui/modules/auth/view_models/register_view_model.dart';
 import '../../ui/modules/cart/pages/cart_page.dart';
+import '../../ui/modules/cart/view_models/cart_view_model.dart';
+import '../../ui/modules/cart/widgets/cart_navigation_shell.dart';
 import '../../ui/modules/catalog/pages/home_page.dart';
 import '../../ui/modules/catalog/pages/product_detail_page.dart';
 import '../../ui/modules/catalog/pages/search_page.dart';
@@ -21,7 +23,6 @@ import '../../ui/modules/catalog/view_models/search_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../../ui/shared/pages/not_found_page.dart';
 import '../../ui/shared/pages/splash_page.dart';
-import '../../ui/shared/widgets/app_navigation_shell.dart';
 import 'app_routes.dart';
 import 'session_redirect.dart';
 
@@ -73,8 +74,10 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
         ),
       ),
       StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppNavigationShell(navigationShell: navigationShell),
+        builder: (context, state, navigationShell) => CartNavigationShell(
+          navigationShell: navigationShell,
+          cartViewModelFactory: () => getIt<CartViewModel>(),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [
@@ -137,7 +140,24 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
             routes: [
               GoRoute(
                 path: AppRoutes.cart,
-                builder: (context, state) => const CartPage(),
+                builder: (context, state) => CartPage(
+                  cartViewModelFactory: () => getIt<CartViewModel>(),
+                  onOpenProduct: (slug) =>
+                      context.go(AppRoutes.cartProductLocation(slug)),
+                  onOpenSearch: () => context.go(AppRoutes.search),
+                ),
+                routes: [
+                  // Filha de /cart: fica na pilha da aba Carrinho, e voltar
+                  // mostra o carrinho.
+                  GoRoute(
+                    path: AppRoutes.cartProductSegment,
+                    builder: (context, state) => _productDetailPage(
+                      context,
+                      state,
+                      productLocation: AppRoutes.cartProductLocation,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -191,7 +211,7 @@ void _closeAccess(BuildContext context) =>
 
 /// Página do produto de uma das pilhas: [productLocation] empilha outro
 /// produto na mesma aba; a marca, a trilha e "Voltar ao catálogo" levam à
-/// aba Buscar. O carrinho chega na etapa 9: até lá, o botão fica desabilitado.
+/// aba Buscar; "Ver carrinho", no aviso de "Adicionar", abre a aba Carrinho.
 ProductDetailPage _productDetailPage(
   BuildContext context,
   GoRouterState state, {
@@ -203,5 +223,6 @@ ProductDetailPage _productDetailPage(
     onBack: () => context.pop(),
     onOpenSearch: (query) => context.go(AppRoutes.searchLocation(query)),
     onOpenProduct: (slug) => context.push(productLocation(slug)),
+    onOpenCart: () => context.go(AppRoutes.cart),
   );
 }

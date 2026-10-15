@@ -530,7 +530,7 @@
       "commit": "f05cba938a4021729485ae5ec3604c66441016be"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 9,
       "phase": "Conta e carrinho",
       "title": "Carrinho anônimo",
@@ -541,14 +541,69 @@
         "base": "e23a99aa92326c9c00904f4497225f19213698ec",
         "commit": "8ac7acb9b0d25fbd24ccc70e8aa325ed871dcbd1",
         "at": "2026-10-15T17:25:34.601Z"
-      }
+      },
+      "iteration": 9,
+      "deliveredAt": "2026-10-15T17:53:33.194Z",
+      "durationMs": 1674930,
+      "cost": 11.559163000000002,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 70317,
+          "cost": 0.782407,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 24322,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 1866,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1523204,
+          "cost": 10.395026200000002,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 27589,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 27391,
+          "cost": 0.3817298,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 241,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
       "number": 10,
       "phase": "Conta e carrinho",
       "title": "Carrinho da conta e merge",
-      "change": "mobile-app-10-carrinho-conta-mobile"
+      "change": "mobile-app-10-carrinho-conta-mobile",
+      "early": {
+        "title": "Planeja o carrinho da conta e a mescla no login do app mobile",
+        "comparison": "A change mobile-app-10-carrinho-conta-mobile está criada com proposal, design, spec mobile/mobile-cart e tasks (7 grupos). São cerca de 30 mil caracteres, e `openspec validate --strict` passou.\n- Parti da change 09 como entregue: o contrato `CartRepository` e o `CartState` já são o que a etapa 10 reimplementa. A peça nova é um `SessionCartRepository` que escolhe a fonte pelo token da sessão e usa o `GuestCartRepository` como fonte do visitante. O contrato muda pouco: `remove` passa a devolver `Result`, entram `clear()` e o campo `mergeFailure`.\n- O comportamento copia a parte \"conta\" do `cart.context.tsx` do web: fila de comandos com quantidades aplicadas na hora, mescla quando surge o token com o carrinho local apagado só no sucesso, e nova leitura do carrinho depois de uma recusa.\n- No backend, o `throwFailure` devolve `CART_PRODUCT_NOT_FOUND` como 404. O `mapHttpFailure` da etapa 8 descarta os códigos do 404, então nos comandos o 404 vira \"Produto indisponível.\" direto.\n- O `SessionRepository` avisa os ouvintes até sem trocar de estado. Por isso a troca de fonte compara o token e abre uma geração nova a cada entrada e saída.\n- Duas mudanças na `CartPage`: a falha de carga aparece antes do estado vazio (a conta pode falhar sem itens) e entra um banner de falha da mescla com \"Tentar de novo\". As demais decisões tomadas sem consulta estão no `design.md`.",
+        "base": "0ba3f4a801e0cf8f89d04f0468d23ed949bd15d9",
+        "commit": "1ca60e0ebf34147bfd5e5b1eb94a0200f8d91d8c",
+        "at": "2026-10-15T17:53:33.183Z"
+      }
     },
     {
       "status": "pending",
@@ -586,84 +641,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 9,
-    "stage": 9,
-    "startCommit": "f05cba938a4021729485ae5ec3604c66441016be",
-    "startedAt": "2026-10-15T17:25:38.190Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 70317,
-        "cost": 0.782407,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 24322,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o carrinho anônimo do app mobile",
-      "comparison": "- A aba Carrinho ainda é a `CartPage` provisória, e o \"Adicionar ao carrinho\" do detalhe está com `onAddToCart: null`. A barra de abas (`AppNavigationShell`) ainda não tem badge.\n- O `KeyValueStore` já guarda a loja escolhida, mas não tem como apagar uma chave. A change acrescenta `remove`, para o carrinho vazio apagar a chave `jaja.guest-cart`, como faz o web.\n- O web já tem tudo o que é preciso espelhar: `guest-cart-storage.util.ts` (normalização, 99 unidades e 50 produtos), `cart.util.ts` (regras de inclusão), `cart.context.tsx` (prévia depois de 250 ms e retirada dos produtos que não voltam na prévia) e o `CartDetailDTO` do backend, que sempre responde `200` com os itens já normalizados.\n- A barreira de arquitetura já cobre `lib/modules` e `lib/infra` inteiros, então as pastas novas `cart` entram sem mudar o teste. O `Money` já tem `times`.\n- A etapa 8 ainda está sendo aplicada no código, que está pela metade. Por isso as premissas (DI da sessão, redirect, `registerFakeDependencies` com `auth`) estão em \"Dependências da etapa anterior\". A change fica em cerca de 41 mil caracteres e passa em `openspec validate --strict`.\n- Ficaram fora: o \"+\" nos cards (não está no texto do plano) e `/me/cart` com o merge, que ficam para a etapa 10. O \"Finalizar pedido\" aparece desabilitado até a etapa 12.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 16575832,
-    "cost": 136.3301045,
+    "durationMs": 18156123,
+    "cost": 149.1976593,
     "runs": 1,
     "iterationsStarted": 9,
-    "iterationsDelivered": 8,
-    "claudeSessions": 80,
-    "turns": 1469,
-    "checks": 59,
+    "iterationsDelivered": 9,
+    "claudeSessions": 88,
+    "turns": 1649,
+    "checks": 62,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 20
+    "commits": 22
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

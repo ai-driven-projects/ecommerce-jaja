@@ -73,3 +73,10 @@ O app SHALL ter uma lista de rotas que exigem sessão; sem sessão, abrir uma de
 #### Scenario: Rota protegida sem sessão
 - **WHEN** sem sessão, o app abre uma rota da lista que exige sessão, `/x?y=1`
 - **THEN** a tela "Entrar" aparece com `from=/x?y=1`
+
+### Requirement: Rota do produto no carrinho
+A rota do produto na pilha da aba Carrinho SHALL ser `/cart/product/<slug>`, com a barra de abas visível e a aba Carrinho selecionada, e MUST abrir a página do produto daquele slug; voltar MUST retornar à aba Carrinho. Um produto aberto a partir desse produto MUST entrar na mesma pilha.
+
+#### Scenario: Produto a partir do carrinho
+- **WHEN** na aba Carrinho a pessoa toca no nome de um produto e depois em voltar
+- **THEN** a página do produto aparece com a aba Carrinho selecionada e, depois do toque, a aba Carrinho volta a ser exibida

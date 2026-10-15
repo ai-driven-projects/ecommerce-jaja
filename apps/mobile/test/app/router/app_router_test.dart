@@ -14,6 +14,7 @@ import 'package:mobile/ui/modules/auth/pages/account_page.dart';
 import 'package:mobile/ui/modules/auth/pages/login_page.dart';
 import 'package:mobile/ui/modules/auth/pages/register_page.dart';
 import 'package:mobile/ui/modules/cart/pages/cart_page.dart';
+import 'package:mobile/ui/modules/cart/widgets/cart_line_tile.dart';
 import 'package:mobile/ui/modules/catalog/pages/home_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/product_detail_page.dart';
 import 'package:mobile/ui/modules/catalog/pages/search_page.dart';
@@ -28,6 +29,8 @@ import 'package:mobile/ui/shared/widgets/product_card.dart';
 
 import '../../modules/auth/support/auth_fixtures.dart';
 import '../../modules/auth/support/fake_auth_repository.dart';
+import '../../modules/cart/support/cart_fixtures.dart';
+import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
 import '../support/fake_dependencies.dart';
@@ -53,19 +56,22 @@ Future<void> _useSession(FakeAuthRepository auth) async {
   registerFakeDependencies(auth: auth);
 }
 
+/// Troca o carrinho registrado pelo `setUp` por [cart], antes de montar o app.
+Future<void> _useCart(FakeCartRepository cart) async {
+  await resetDependencies();
+  registerFakeDependencies(cart: cart);
+}
+
 FakeAuthRepository get _session => getIt<Session>() as FakeAuthRepository;
 
-Future<void> _enterText(
-  WidgetTester tester,
-  String label,
-  String text,
-) => tester.enterText(
-  find.descendant(
-    of: find.widgetWithText(AppTextField, label),
-    matching: find.byType(TextField),
-  ),
-  text,
-);
+Future<void> _enterText(WidgetTester tester, String label, String text) =>
+    tester.enterText(
+      find.descendant(
+        of: find.widgetWithText(AppTextField, label),
+        matching: find.byType(TextField),
+      ),
+      text,
+    );
 
 /// Preenche e envia "Entrar"; o fake devolve a [ana] e avisa a guarda.
 Future<void> _signIn(WidgetTester tester) async {
@@ -235,7 +241,7 @@ void main() {
       );
       expect(page.slug, 'caneta-x');
       expect(_catalog.productSlugs, ['caneta-x']);
-      expect(find.text(ProductDetailPage.addToCartLabel), findsOneWidget);
+      expect(find.textContaining('Adicionar ·'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(_bar(tester).selectedIndex, 0);
       expect(find.byType(HomePage), findsNothing);
@@ -315,7 +321,7 @@ void main() {
       );
       expect(page.slug, listed.first.slug);
       expect(_catalog.productSlugs, [listed.first.slug]);
-      expect(find.text(ProductDetailPage.addToCartLabel), findsOneWidget);
+      expect(find.textContaining('Adicionar ·'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(_bar(tester).selectedIndex, 1);
       expect(find.byType(SearchPage), findsNothing);
@@ -331,6 +337,110 @@ void main() {
       );
       expect(_catalog.productQueries, hasLength(requests));
       expect(_location(router), AppRoutes.search);
+    });
+  });
+
+  group('carrinho', () {
+    testWidgets('tocar no nome de uma linha abre o produto na pilha da aba '
+        'Carrinho, e voltar retorna à aba', (tester) async {
+      await _useCart(FakeCartRepository(state: stateOf([canetaLine])));
+      final router = await _pumpRouter(tester, initialLocation: AppRoutes.cart);
+
+      await tester.tap(find.text(canetaLine.name));
+      await tester.pumpAndSettle();
+
+      expect(_location(router), '/cart/product/${canetaLine.slug}');
+      final page = tester.widget<ProductDetailPage>(
+        find.byType(ProductDetailPage),
+      );
+      expect(page.slug, canetaLine.slug);
+      expect(_catalog.productSlugs, [canetaLine.slug]);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(find.byType(CartPage), findsNothing);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductDetailPage), findsNothing);
+      expect(find.byType(CartLineTile), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(_location(router), AppRoutes.cart);
+    });
+
+    testWidgets('o badge da aba mostra a soma das quantidades do carrinho', (
+      tester,
+    ) async {
+      await _useCart(
+        FakeCartRepository(state: stateOf([canetaLine, tonerLine])),
+      );
+      await _pumpRouter(tester);
+
+      expect(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.descendant(
+            of: find.byType(Badge),
+            matching: find.text('3'),
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('adicionar no detalhe aumenta o badge e "Ver carrinho" no '
+        'aviso abre a aba Carrinho', (tester) async {
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.productLocation(plainDetail.slug),
+      );
+      final badge = find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byType(Badge),
+      );
+      expect(tester.widget<Badge>(badge).isLabelVisible, isFalse);
+
+      await tester.tap(
+        find.widgetWithText(
+          AppButton,
+          ProductDetailPage.addLabel(plainDetail.price),
+        ),
+      );
+      // O `changes` é broadcast: só o `pumpAndSettle` entrega o evento.
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<Badge>(badge).isLabelVisible, isTrue);
+      expect(
+        find.descendant(of: badge, matching: find.text('1')),
+        findsOneWidget,
+      );
+      expect(find.text(ProductDetailPage.addedTitle), findsOneWidget);
+
+      await tester.tap(find.text(ProductDetailPage.openCartAction));
+      await tester.pumpAndSettle();
+
+      expect(_location(router), AppRoutes.cart);
+      expect(_bar(tester).selectedIndex, 2);
+      expect(find.byType(CartPage), findsOneWidget);
+      expect(find.byType(ProductDetailPage), findsNothing);
+    });
+
+    testWidgets('carrinho vazio: "Ver produtos" abre a Buscar sem filtros', (
+      tester,
+    ) async {
+      final router = await _pumpRouter(tester, initialLocation: AppRoutes.cart);
+
+      expect(find.text(CartPage.emptyTitle), findsOneWidget);
+
+      await tester.tap(find.text(CartPage.emptyAction));
+      await tester.pumpAndSettle();
+
+      expect(_fullLocation(router), AppRoutes.search);
+      expect(_bar(tester).selectedIndex, 1);
+      expect(
+        tester.widget<SearchPage>(find.byType(SearchPage)).initialQuery,
+        const ProductQuery(),
+      );
     });
   });
 
@@ -403,11 +513,7 @@ void main() {
       await _enterText(tester, RegisterPage.nameLabel, 'Ana Souza');
       await _enterText(tester, RegisterPage.emailLabel, 'ana@exemplo.com');
       await _enterText(tester, RegisterPage.passwordLabel, '#Senha123');
-      await _enterText(
-        tester,
-        RegisterPage.confirmPasswordLabel,
-        '#Senha123',
-      );
+      await _enterText(tester, RegisterPage.confirmPasswordLabel, '#Senha123');
       await tester.ensureVisible(
         find.widgetWithText(AppButton, RegisterPage.submitLabel),
       );
@@ -482,6 +588,15 @@ void main() {
         '/search/product/caneta%20x',
       );
       expect(AppRoutes.searchProduct, '/search/product/:slug');
+    });
+
+    test('cartProductLocation monta o produto na pilha do Carrinho e codifica '
+        'o slug', () {
+      expect(
+        AppRoutes.cartProductLocation('caneta x'),
+        '/cart/product/caneta%20x',
+      );
+      expect(AppRoutes.cartProduct, '/cart/product/:slug');
     });
   });
 
