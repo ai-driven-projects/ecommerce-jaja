@@ -7,6 +7,7 @@ import '../../../../modules/auth/model/auth_user_entity.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../customer/view_models/customer_texts.dart';
 import '../view_models/account_view_model.dart';
 import '../widgets/account_benefit.dart';
 
@@ -35,7 +36,7 @@ class AccountPage extends WatchingStatefulWidget {
   static const String loginLabel = 'Entrar';
   static const String registerLabel = 'Criar conta';
   static const String adminLabel = 'Administrador';
-  static const String deliveryDetailsLabel = 'Dados de entrega';
+  static const String deliveryDetailsLabel = CustomerTexts.deliveryDetailsTitle;
   static const String signOutLabel = 'Sair';
   static const String signedOutMessage = 'Até já já.';
 

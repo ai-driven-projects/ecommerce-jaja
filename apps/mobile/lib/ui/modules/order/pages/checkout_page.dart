@@ -8,6 +8,7 @@ import '../../../shared/formatters/money_formatter.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
+import '../../customer/view_models/customer_texts.dart';
 import '../view_models/checkout_view_model.dart';
 import '../widgets/checkout_step_card.dart';
 import '../widgets/checkout_summary.dart';
@@ -31,7 +32,7 @@ class CheckoutPage extends WatchingStatefulWidget {
   });
 
   static const String title = 'Finalizar pedido';
-  static const String deliveryTitle = 'Endereço de entrega';
+  static const String deliveryTitle = CustomerTexts.addressTitle;
   static const String confirmingLabel = 'Confirmando…';
   static const String unavailableHint =
       'Remova os itens indisponíveis para confirmar o pedido.';

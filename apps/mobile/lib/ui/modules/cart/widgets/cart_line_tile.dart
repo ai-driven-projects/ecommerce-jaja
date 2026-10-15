@@ -11,6 +11,7 @@ import '../../../shared/widgets/price_text.dart';
 import '../../../shared/widgets/product_art.dart';
 import '../../../shared/widgets/quantity_stepper.dart';
 import '../../catalog/view_models/category_art.dart';
+import '../view_models/cart_texts.dart';
 
 /// Linha da aba Carrinho, do `CartLineRow` de `cart-drawer.component.tsx`:
 /// foto (ou a ilustração da categoria raiz), nome que abre o produto, unidade,
@@ -27,7 +28,7 @@ class CartLineTile extends StatelessWidget {
     required this.onRemove,
   });
 
-  static const String unavailableLabel = 'Indisponível';
+  static const String unavailableLabel = CartTexts.unavailableLabel;
   static const String removeLabel = 'Remover';
 
   static String removeTooltip(String name) => 'Remover $name do carrinho';

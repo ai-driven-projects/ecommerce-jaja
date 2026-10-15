@@ -13,6 +13,8 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
+import '../../catalog/view_models/catalog_texts.dart';
+import '../view_models/cart_texts.dart';
 import '../view_models/cart_view_model.dart';
 import '../widgets/cart_line_tile.dart';
 import '../widgets/cart_summary.dart';
@@ -33,10 +35,10 @@ class CartPage extends WatchingStatefulWidget {
   });
 
   static const String title = 'Seu carrinho';
-  static const String emptyTitle = 'Seu carrinho está vazio.';
-  static const String emptyMessage = 'Adicione itens para o escritório!';
-  static const String emptyAction = 'Ver produtos';
-  static const String errorTitle = 'Não foi possível carregar o carrinho.';
+  static const String emptyTitle = CartTexts.emptyTitle;
+  static const String emptyMessage = CartTexts.emptyMessage;
+  static const String emptyAction = CatalogTexts.seeProducts;
+  static const String errorTitle = CartTexts.loadError;
   static const String mergeErrorTitle =
       'Não foi possível juntar o carrinho deste aparelho à sua conta.';
   static const int skeletonCount = 3;

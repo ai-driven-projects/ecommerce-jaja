@@ -22,7 +22,7 @@ Future<Result<T>> runRequest<T>(
   } catch (_) {
     return const Failure(
       UnexpectedFailure(
-        message: 'Algo deu errado. Tente novamente.',
+        message: unexpectedFailureMessage,
         code: HttpFailureCode.unexpected,
       ),
     );

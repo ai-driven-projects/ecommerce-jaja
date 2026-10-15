@@ -11,11 +11,11 @@ export 'product_art.dart' show ProductArtTint;
 
 /// Card de produto de `product-card.component.tsx`: cartão branco com borda
 /// de linha e raio 18, área de imagem, nome em até 3 linhas, unidade e preço.
-/// Recebe valores de apresentação (o domínio do catálogo nasce na etapa 5) e
-/// o desconto já calculado pela API.
+/// Recebe valores de apresentação, não entidades do catálogo, e o desconto já
+/// calculado pela API.
 ///
 /// Um único selo na imagem: `−N%` quando há desconto, senão "Destaque".
-/// [action] (o "+" ou o stepper da etapa 9) só aparece quando fornecida.
+/// [action] (o "+" ou o stepper de quantidade) só aparece quando fornecida.
 class ProductCard extends StatelessWidget {
   const ProductCard({
     super.key,

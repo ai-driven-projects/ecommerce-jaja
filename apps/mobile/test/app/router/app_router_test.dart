@@ -854,6 +854,132 @@ void main() {
     });
   });
 
+  group('cada rota abre a sua página', () {
+    final withSession = <({String location, Type page, int tab})>[
+      (location: AppRoutes.home, page: HomePage, tab: 0),
+      (location: AppRoutes.search, page: SearchPage, tab: 1),
+      (location: AppRoutes.cart, page: CartPage, tab: 2),
+      (location: AppRoutes.account, page: AccountPage, tab: 3),
+      (
+        location: AppRoutes.productLocation('caneta-x'),
+        page: ProductDetailPage,
+        tab: 0,
+      ),
+      (
+        location: AppRoutes.searchProductLocation('caneta-x'),
+        page: ProductDetailPage,
+        tab: 1,
+      ),
+      (
+        location: AppRoutes.cartProductLocation('caneta-x'),
+        page: ProductDetailPage,
+        tab: 2,
+      ),
+      (location: AppRoutes.checkout, page: CheckoutPage, tab: 2),
+      (location: AppRoutes.checkoutDelivery, page: DeliveryDetailsPage, tab: 2),
+      (
+        location: AppRoutes.orderLocation(fakePlacedOrderId),
+        page: OrderTrackingPage,
+        tab: 2,
+      ),
+      (location: AppRoutes.deliveryDetails, page: DeliveryDetailsPage, tab: 3),
+    ];
+
+    for (final route in withSession) {
+      testWidgets('com sessão, ${route.location} abre ${route.page} com a aba '
+          '${route.tab} selecionada', (tester) async {
+        await _useSession(FakeAuthRepository(currentUser: ana));
+        final router = await _pumpRouter(
+          tester,
+          initialLocation: route.location,
+        );
+
+        expect(find.byType(route.page), findsOneWidget);
+        expect(find.byType(NavigationBar), findsOneWidget);
+        expect(_bar(tester).selectedIndex, route.tab);
+        expect(_location(router), route.location);
+      });
+    }
+
+    final fullScreen = <({String location, Type page, bool unknown})>[
+      (location: AppRoutes.login, page: LoginPage, unknown: false),
+      (location: AppRoutes.register, page: RegisterPage, unknown: false),
+      (location: AppRoutes.splash, page: SplashPage, unknown: true),
+    ];
+
+    for (final route in fullScreen) {
+      testWidgets('sem sessão, ${route.location} abre ${route.page} em tela '
+          'cheia, sem a barra', (tester) async {
+        if (route.unknown) {
+          await _useSession(FakeAuthRepository(unknown: true));
+        }
+        final router = await _pumpRouter(
+          tester,
+          initialLocation: route.location,
+          settle: !route.unknown,
+        );
+
+        expect(find.byType(route.page), findsOneWidget);
+        expect(find.byType(NavigationBar), findsNothing);
+        expect(_location(router), route.location);
+      });
+    }
+
+    // Cada caminho que exige sessão, com um destino concreto abaixo dele
+    // quando o caminho sozinho não é uma página (o pedido leva o id).
+    final sessionRequired = [
+      for (final path in AppRoutes.sessionRequiredPaths)
+        path == AppRoutes.orders
+            ? AppRoutes.orderLocation(fakePlacedOrderId)
+            : path,
+      AppRoutes.checkoutDelivery,
+    ];
+
+    test('a lista de destinos com sessão cobre cada caminho que a exige', () {
+      for (final path in AppRoutes.sessionRequiredPaths) {
+        expect(
+          sessionRequired.any(
+            (location) => location == path || location.startsWith('$path/'),
+          ),
+          isTrue,
+          reason: path,
+        );
+      }
+      expect(sessionRequired.every(AppRoutes.requiresSession), isTrue);
+    });
+
+    for (final location in sessionRequired) {
+      testWidgets('sem sessão, $location leva a "Entrar" com o destino em '
+          'from', (tester) async {
+        final router = await _pumpRouter(tester, initialLocation: location);
+
+        expect(find.byType(LoginPage), findsOneWidget);
+        expect(find.byType(NavigationBar), findsNothing);
+        final uri = router.routerDelegate.currentConfiguration.uri;
+        expect(uri.path, AppRoutes.login);
+        expect(uri.queryParameters[AppRoutes.fromParam], location);
+      });
+    }
+  });
+
+  group('toque na aba selecionada', () {
+    testWidgets('com um produto aberto na Início, tocar em Início volta à raiz '
+        'da aba', (tester) async {
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.productLocation('caneta-x'),
+      );
+      expect(find.byType(ProductDetailPage), findsOneWidget);
+
+      await _tapTab(tester, 'Início');
+
+      expect(find.byType(ProductDetailPage), findsNothing);
+      expect(find.byType(HomePage), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 0);
+      expect(_location(router), AppRoutes.home);
+    });
+  });
+
   group('AppRoutes', () {
     test('searchLocation sem filtros é /search, sem "?"', () {
       expect(AppRoutes.searchLocation(const ProductQuery()), '/search');

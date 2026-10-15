@@ -132,6 +132,14 @@ void main() {
   });
 
   group('AppRoutes', () {
+    test('splashLocation sem destino é /splash e com destino o codifica', () {
+      expect(AppRoutes.splashLocation(), '/splash');
+      expect(
+        AppRoutes.splashLocation(from: '/search?category=escolar'),
+        '/splash?from=%2Fsearch%3Fcategory%3Descolar',
+      );
+    });
+
     test('loginLocation e registerLocation codificam o destino', () {
       expect(AppRoutes.loginLocation(), '/login');
       expect(

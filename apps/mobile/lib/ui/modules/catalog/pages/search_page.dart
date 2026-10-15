@@ -14,6 +14,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/state_error_banner.dart';
 import '../../../shared/view_models/block_state.dart';
+import '../view_models/catalog_texts.dart';
 import '../view_models/search_view_model.dart';
 import '../widgets/active_filter_pills.dart';
 import '../widgets/filters_sheet.dart';
@@ -45,11 +46,11 @@ class SearchPage extends WatchingStatefulWidget {
   static const String errorTitle = 'Não deu para carregar os produtos.';
   static const String loadMoreErrorTitle =
       'Não foi possível carregar mais produtos.';
-  static const String emptyTitle = 'Nada por aqui. Já já.';
+  static const String emptyTitle = CatalogTexts.emptyTitle;
   static const String emptyMessage =
       'Tente limpar os filtros ou buscar outro termo.';
-  static const String clearFiltersAction = 'Limpar filtros';
-  static const String clearSearchAction = 'Limpar busca';
+  static const String clearFiltersAction = CatalogTexts.clearFilters;
+  static const String clearSearchAction = CatalogTexts.clearSearch;
   static const String refreshAction = 'Atualizar';
 
   /// Cartões de skeleton da primeira página e da página seguinte.
@@ -144,7 +145,10 @@ class _SearchPageState extends State<SearchPage> {
       widget.onQueryChanged(_search.query);
     }
     // Lista curta não rola: sem esta checagem a próxima página nunca sairia.
+    // Aberta por baixo de um produto (`/search/product/:slug` direto), a
+    // página ainda não teve layout e a rolagem não tem medidas.
     if (_scroll.hasClients &&
+        _scroll.position.hasContentDimensions &&
         _scroll.position.extentAfter < SearchPage.loadMoreThreshold) {
       _loadMore();
     }

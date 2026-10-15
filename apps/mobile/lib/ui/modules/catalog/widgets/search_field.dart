@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/theme/brand_tokens.dart';
+import '../view_models/catalog_texts.dart';
 
 /// Campo de busca do topo da Buscar: lupa, a dica "Buscar produtos", a
 /// confirmação pelo teclado e o botão "Limpar busca", que só aparece com
@@ -17,7 +18,7 @@ class SearchField extends StatelessWidget {
   });
 
   static const String hint = 'Buscar produtos';
-  static const String clearTooltip = 'Limpar busca';
+  static const String clearTooltip = CatalogTexts.clearSearch;
 
   final TextEditingController controller;
   final ValueChanged<String> onChanged;

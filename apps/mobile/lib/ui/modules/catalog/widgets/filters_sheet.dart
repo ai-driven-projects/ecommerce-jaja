@@ -16,6 +16,7 @@ import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
 import '../../../shared/view_models/block_state.dart';
+import '../view_models/catalog_texts.dart';
 import '../view_models/price_input.dart';
 import '../view_models/search_view_model.dart';
 import 'choice_row.dart';
@@ -51,13 +52,12 @@ class FiltersSheet extends WatchingWidget {
   static const String priceTitle = 'Preço';
   static const String flagsTitle = 'Ofertas e destaques';
   static const String allCategories = 'Todas as categorias';
-  static const String categoriesErrorTitle =
-      'Não foi possível carregar as categorias.';
+  static const String categoriesErrorTitle = CatalogTexts.categoriesError;
   static const String noBrands = 'Nenhuma marca neste resultado.';
   static const String onSaleLabel = 'Só ofertas';
-  static const String featuredLabel = 'Só destaques';
-  static const String clearLabel = 'Limpar filtros';
-  static const String loadingResultsLabel = 'Ver produtos';
+  static const String featuredLabel = CatalogTexts.featuredOnly;
+  static const String clearLabel = CatalogTexts.clearFilters;
+  static const String loadingResultsLabel = CatalogTexts.seeProducts;
 
   final SearchViewModel viewModel;
 

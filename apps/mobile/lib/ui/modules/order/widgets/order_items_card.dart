@@ -5,6 +5,7 @@ import '../../../shared/formatters/money_formatter.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/product_art.dart';
+import '../../cart/view_models/cart_texts.dart';
 import '../../catalog/view_models/category_art.dart';
 import 'checkout_line_tile.dart';
 import 'checkout_step_card.dart';
@@ -18,7 +19,7 @@ class OrderItemsCard extends StatelessWidget {
 
   static const String title = 'Itens do pedido';
   static const String subtotalLabel = 'Subtotal';
-  static const String deliveryLabel = 'Entrega de bike';
+  static const String deliveryLabel = CartTexts.bikeDeliveryLabel;
   static const String freeLabel = 'Grátis';
   static const String totalLabel = 'Total';
   static const String paymentNote = 'Pagamento simulado';

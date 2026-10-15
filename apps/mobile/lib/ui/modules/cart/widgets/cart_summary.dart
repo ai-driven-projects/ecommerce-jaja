@@ -5,6 +5,7 @@ import '../../../../modules/cart/model/cart_entity.dart';
 import '../../../shared/formatters/money_formatter.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
+import '../view_models/cart_texts.dart';
 
 /// Resumo da aba Carrinho, do rodapé de `cart-drawer.component.tsx`:
 /// subtotal, entrega ("Grátis" ou o valor), quanto falta para a entrega
@@ -27,7 +28,7 @@ class CartSummary extends StatelessWidget {
 
   static const String subtotalLabel = 'Subtotal';
   static const String deliveryLabel = 'Entrega';
-  static const String checkoutDeliveryLabel = 'Entrega de bike';
+  static const String checkoutDeliveryLabel = CartTexts.bikeDeliveryLabel;
   static const String freeDeliveryLabel = 'Grátis';
   static const String totalLabel = 'Total';
   static const String syncingLabel = 'Atualizando';

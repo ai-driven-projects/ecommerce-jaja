@@ -138,28 +138,28 @@ class BrandTokens extends ThemeExtension<BrandTokens> {
     tintGreen: AppColors.tintGreen,
     shadowCard: [
       BoxShadow(
-        color: Color.fromRGBO(30, 24, 18, 0.09),
+        color: AppColors.shadowCard,
         offset: Offset(0, 10),
         blurRadius: 26,
       ),
     ],
     shadowBrand: [
       BoxShadow(
-        color: Color.fromRGBO(255, 107, 0, 0.28),
+        color: AppColors.shadowBrand,
         offset: Offset(0, 4),
         blurRadius: 14,
       ),
     ],
     shadowFloat: [
       BoxShadow(
-        color: Color.fromRGBO(0, 0, 0, 0.12),
+        color: AppColors.shadowFloat,
         offset: Offset(0, 6),
         blurRadius: 18,
       ),
     ],
     shadowBadge: [
       BoxShadow(
-        color: Color.fromRGBO(0, 0, 0, 0.08),
+        color: AppColors.shadowBadge,
         offset: Offset(0, 2),
         blurRadius: 6,
       ),

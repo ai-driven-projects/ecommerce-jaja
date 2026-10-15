@@ -1,11 +1,6 @@
 import 'errors/app_failure.dart';
 import 'result.dart';
 
-const _unexpectedFailure = UnexpectedFailure(
-  message: 'Algo deu errado. Tente novamente.',
-  code: GenericFailureCode.unspecified,
-);
-
 // Padrão Command do guia de arquitetura do Flutter: Command0 sem argumento,
 // Command1 com um argumento. O ViewModel passa `notifyListeners` como
 // `onStateChange`, por isso não depende de Flutter.
@@ -29,7 +24,7 @@ class Command0<T> {
     try {
       result = await _action();
     } catch (_) {
-      result = const Failure(_unexpectedFailure);
+      result = const Failure(unspecifiedFailure);
     } finally {
       running = false;
       onStateChange();
@@ -56,7 +51,7 @@ class Command1<T, A> {
     try {
       result = await _action(arg);
     } catch (_) {
-      result = const Failure(_unexpectedFailure);
+      result = const Failure(unspecifiedFailure);
     } finally {
       running = false;
       onStateChange();

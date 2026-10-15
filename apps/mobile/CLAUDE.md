@@ -6,95 +6,27 @@ produto, montar o carrinho, entrar ou criar conta, informar os dados de entrega,
 acompanhá-lo ao vivo. Nada de admin. O app fala **só** com o backend NestJS existente (`apps/backend`,
 porta 4000) e não altera o backend, os módulos nem o web.
 
-**Este arquivo é a fonte inegociável das regras do app.** Leia-o no início de toda sessão. Etapas
-intermediárias podem acrescentar decisões e regras novas, nunca afrouxá-las; só a última etapa do plano o
-reescreve para refletir o estado final.
+**Este arquivo é a fonte inegociável das regras do app.** Leia-o no início de toda sessão. Mudanças
+futuras podem acrescentar decisões e regras novas, nunca afrouxá-las.
 
-**Estado atual:** fundação. Existem o projeto Flutter (só Android e iOS, org `br.com.jaja`, nome exibido
-"Jajá"), um `lib/main.dart` mínimo com um `MaterialApp` vazio, e `lib/core` em construção (`Result`,
-`Command`, `AppFailure`; `Money` e ambiente a seguir). Ainda não há tema, rotas, DI, HTTP nem domínio.
-Etapa 2: já existem o tema claro da marca (`lib/ui/shared/theme/`, com as fontes em `assets/fonts/`), o
-`formatMoney` e os componentes base em `lib/ui/shared/widgets/`; o `main.dart` mínimo usa `AppTheme.light()`.
-Etapa 3: já existem o cliente HTTP com falhas tipadas (`lib/infra/http/`), a DI com `get_it`
-(`lib/infra/di/`), os entrypoints `lib/main_dev.dart`/`lib/main_prod.dart` (o `main.dart` foi apagado), o
-bootstrap e o `JajaApp` em `lib/app/`, e o shell de quatro abas com páginas provisórias.
-Etapa 4: já existem o primeiro domínio (`lib/modules/store/`, com `Store` em `freezed` e `pickCurrentStore`),
-o value object `CityState` em `core/value_objects/`, o DTO de `GET /storefront/stores` (`lib/infra/api/`), o
-`KeyValueStore` sobre `shared_preferences` (`lib/infra/storage/`), o `ApiStoreRepository` (`lib/infra/store/`),
-o primeiro ViewModel com `watch_it` e o seletor de loja no topo da aba Início (`lib/ui/modules/store/`), o
-`registerViewModels()` na DI e a regra E da barreira.
-Etapa 5: já existem o domínio do catálogo (`lib/modules/catalog/`: `Category`, `ProductSummary`,
-`ProductPage`, `ProductQuery`/`ProductSort` em `freezed`, `encodeProductQuery`/`decodeProductQuery`, as
-consultas da Início em `home_catalog.dart` e o contrato `CatalogRepository`), os DTOs de
-`GET /storefront/categories` e `GET /storefront/products` (`lib/infra/api/`), o `ApiCatalogRepository`
-(`lib/infra/catalog/`), a aba Início completa (`HomeViewModel`, `BlockState` e `categoryArtOf` em
-`lib/ui/modules/catalog/view_models/`, os widgets de `lib/ui/modules/catalog/widgets/`), as rotas
-`/home/product/:slug` (com a `ProductPage` provisória, widget homônimo da entidade; a etapa 7 a substitui) e
-`/search?…` com o filtro decodificado, o `ProductArt` com `cached_network_image` e a regra F da barreira.
-Etapa 6: já existem as regras puras da listagem (`product_listing.dart` e `category_tree.dart` em
-`lib/modules/catalog/model/`), o `parseReaisToCents`/`formatCentsAsReais` e o `SearchViewModel` em
-`lib/ui/modules/catalog/view_models/`, a aba Buscar completa (campo com espera de 300 ms, painéis inferiores
-de filtros e de ordenação, pílulas, grade de duas colunas com paginação infinita), o filtro espelhado na rota
-`/search?…` e a rota `/search/product/:slug` (mesma `ProductPage` provisória, na pilha da aba Buscar).
-Etapa 7: já existem o detalhe do produto no domínio (`ProductDetail`, `CatalogRef` e `ProductImage` em
-`freezed`; `relatedProductsQuery`/`relatedProducts`/`rootCategorySlugOf` em `product_detail.dart`; o contrato
-`fetchProduct(slug)`), o DTO de `GET /storefront/products/:slug` (`lib/infra/api/`), o
-`ProductDetailViewModel` e a `ProductDetailPage` (galeria, descrição recolhível, ficha, trilha de categorias,
-"Mais de <categoria>" e o rodapé "Adicionar ao carrinho") nas rotas `/home/product/:slug` e
-`/search/product/:slug`, no lugar da `ProductPage` provisória (apagada), e as peças `ProductArtSize` e
-`ProductBadge` em `lib/ui/shared/widgets/`.
-Etapa 8: já existem a sessão por e-mail e senha (`Email`, `PersonName` e `StrongPassword` em
-`core/value_objects/`; `AuthUser`, `AuthRepository` e `AuthErrorCode` em `lib/modules/auth/`; `Session`,
-`SessionStatus`, `SessionStorage`/`SecureSessionStorage` e o `SessionRepository` em `lib/infra/auth/`; o DTO
-`auth_dto.dart` e o `AuthInterceptor`), a guarda de rotas (`resolveSessionRedirect` em
-`lib/app/router/session_redirect.dart`), o `SplashPage`, as telas cheias "Entrar" (`/login`) e "Criar conta"
-(`/register`) com os ViewModels, e a aba Conta real (convite sem sessão; "Olá, <primeiro nome>" e "Sair"
-com sessão), no lugar da `AccountPage` provisória.
-Etapa 9: já existem o carrinho do visitante no domínio (`lib/modules/cart/`: `CartItem`, `CartLine` e
-`CartDetail` em `freezed`, as regras e constantes de `cart_rules.dart`, o `CartState`, `CartErrorCode` e o
-contrato `CartRepository`), o `GuestCartStorage` e o `GuestCartRepository` (`lib/infra/cart/`), o DTO de
-`POST /cart/preview` (`lib/infra/api/cart_dto.dart`), o `KeyValueStore.remove`, a aba Carrinho real
-(`CartPage`, `CartViewModel`, `CartLineTile`, `CartSummary` e o `CartNavigationShell` com o badge na aba),
-a rota `/cart/product/:slug`, o `QuantityStepper` em `lib/ui/shared/widgets/` e o rodapé ligado do detalhe
-do produto (quantidade, "Adicionar · <total>", "Você já tem N no carrinho." e o cartão de entrega). O
-`PlaceholderBody` foi apagado (não sobrou consumidor).
-Etapa 10: já existem o carrinho da conta (`GET/POST/PUT/DELETE /me/cart`, `POST /me/cart/merge`) pelo
-`AccountCartApi` com `mapCartFailure` e o `SessionCartRepository` (`lib/infra/cart/`), que é o
-`CartRepository` do app e escolhe a fonte pela sessão; `accountCartItems` (`lib/modules/cart/model/`),
-`cartErrorFromCodes` e `CartErrorCode.productUnavailable`, o `mergeFailure` no `CartState`, `remove` com
-`Result` e `clear()` no contrato, e na aba Carrinho o banner de falha da carga e o aviso da mescla.
-Etapa 11: já existem os dados de entrega (`GET/PUT /me/customer`): os VOs `Cpf`, `Phone`, `ZipCode`,
-`StateCode` e `BoundedText` em `lib/core/value_objects/`, o domínio `lib/modules/customer/` (`Customer`,
-`CustomerAddress` e `CustomerLocation` em `freezed`, `customer_rules.dart` com `CustomerDraft.validate`,
-`customer_errors.dart`, o contrato `CustomerRepository` e `LoadDeliveryDetails`), o `ApiCustomerRepository`
-(`lib/infra/customer/`) com o DTO `customer_dto.dart`, a tela `DeliveryDetailsPage` com o
-`DeliveryDetailsViewModel` e as máscaras (`lib/ui/modules/customer/`), o item "Dados de entrega" na aba
-Conta (rota `/account/delivery`, `AppRoutes.deliveryDetails`), `inputFormatters` e `textCapitalization` no
-`AppTextField`, e o `BlockState` em `lib/ui/shared/view_models/`.
-Etapa 12: já existem o fechamento do pedido (`POST /me/orders`): o domínio `lib/modules/order/` (`PlacedOrder`
-com `number`, os limites de `order_rules.dart`, `OrderErrorCode` com `orderErrorFromCodes`/
-`isCustomerRejection` e o contrato `OrderRepository.placeOrder`), o DTO `order_dto.dart` e o
-`ApiOrderRepository` com `mapOrderFailure` (`lib/infra/order/`), o `CheckoutViewModel`, a `CheckoutPage`, os
-widgets dos passos e a `OrderPlacedPage` provisória (`lib/ui/modules/order/`), o `formatDeliveryAddress`
-(`lib/ui/modules/customer/view_models/`), o `CartSummary.checkout`, o `onSaved` da `DeliveryDetailsPage`, o
-"Finalizar pedido" da aba Carrinho ligado e as rotas `/cart/checkout`, `/cart/checkout/delivery` e
-`/cart/orders/:id`.
-Etapa 13: já existem o acompanhamento do pedido (`GET /me/orders/:id`): no domínio `lib/modules/order/`, o
-`OrderDetail` (`freezed`, com itens, endereço copiado, totais em `Money`, datas em UTC e `dateOf`), o
-`OrderStatus`, o `orderNumberOf`, o `order_progress.dart` (`orderStepState`, `isOrderFinished`) e o
-`OrderRepository.findMine`; o `parseOrderDetail` em `order_dto.dart` e o `findMine` do
-`ApiOrderRepository`; em `lib/ui/modules/order/`, os formatadores `order_formatters.dart`, o
-`OrderTrackingViewModel`, a `OrderTrackingPage` (puxar para atualizar, "Pedido não encontrado." e o banner)
-e os widgets `OrderStatusBadge`, `OrderHeader`, `OrderTimeline`/`OrderTimelineStep`, `OrderItemsCard`,
-`OrderInstructionsCard` e `OrderTrackingSkeleton`. A rota `/cart/orders/:id` monta a `OrderTrackingPage`;
-a `OrderPlacedPage` provisória foi apagada. Ainda sem SSE (etapa 14).
-Etapa 14: já existe o acompanhamento ao vivo (`GET /me/orders/:id/stream`): no domínio, o `OrderLiveStatus`,
-o contrato `OrderLiveSource` (`OrderStreamSignal`: `OrderStreamOpened`, `OrderStreamNotice`,
-`OrderStreamRefused`) e o caso de uso `LiveOrderFeed` com `orderStreamRetryDelay` (`lib/modules/order/`); o
-`EventStreamParser` (`lib/infra/http/`) e o `ApiOrderLiveSource` (`lib/infra/order/`); no
-`OrderTrackingViewModel`, `live`, a releitura silenciosa coalescida, `setActive` e o destaque do passo
-(`openedStatus`, `isHighlighted`); na tela, o `OrderLiveIndicator` ("Ao vivo"/"Reconectando…") e o
-`setActive` ligado à aba (`TickerMode`) e ao ciclo de vida do app (`AppLifecycleListener`).
+**Estado atual: app completo.** Projeto Flutter só com Android e iOS (org `br.com.jaja`, nome exibido
+"Jajá"), entrypoints `lib/main_dev.dart`/`lib/main_prod.dart`, quatro abas (Início, Buscar, Carrinho e
+Conta) e estas funcionalidades:
+
+- **Loja:** seletor no topo da Início, com a escolha lembrada no aparelho (`lib/modules/store/`).
+- **Catálogo:** Início com destaques, ofertas e categorias; Buscar com campo, filtros e ordenação em painéis
+  inferiores, pílulas e grade com paginação infinita, com o filtro espelhado na rota; detalhe do produto com
+  galeria, ficha, trilha de categorias e "Mais de <categoria>" (`lib/modules/catalog/`).
+- **Sessão:** "Entrar" e "Criar conta" por e-mail e senha, splash enquanto a sessão é restaurada, guarda de
+  rotas com o destino em `from` e a aba Conta (`lib/modules/auth/`, `lib/infra/auth/`).
+- **Carrinho:** do visitante no aparelho (prévia por `POST /cart/preview`) e da conta (`/me/cart`), com a
+  mescla ao entrar, o badge na aba e o rodapé "Adicionar" no produto (`lib/modules/cart/`, `lib/infra/cart/`).
+- **Dados de entrega:** `GET/PUT /me/customer`, pela Conta e pelo checkout (`lib/modules/customer/`).
+- **Pedido:** checkout (`POST /me/orders`) e acompanhamento (`GET /me/orders/:id`) com atualização ao vivo
+  pelo SSE `GET /me/orders/:id/stream` (`lib/modules/order/`, `lib/infra/order/`).
+
+Como rodar no emulador e no aparelho está no [`README.md`](README.md); o que falta no backend e o contorno
+do app, em [`docs/lacunas-da-api.md`](docs/lacunas-da-api.md).
 
 ## Arquitetura
 
@@ -103,8 +35,8 @@ separado da UI e da infraestrutura. A organização de pastas é a mesma dos out
 
 ```
 lib/
-  main_dev.dart   # entrypoint de desenvolvimento (etapa 3; até lá, main.dart mínimo)
-  main_prod.dart  # entrypoint de produção (etapa 3)
+  main_dev.dart   # entrypoint de desenvolvimento
+  main_prod.dart  # entrypoint de produção
   app/            # bootstrap, app e rotas (go_router). Sem lógica, sem layout.
   core/           # base compartilhada — Dart PURO, sem Flutter
                   #   result.dart (sealed Ok/Failure), command.dart, errors/app_failure.dart,
@@ -116,9 +48,13 @@ lib/
                   #   armazenamento, sessão, carrinho, di/ (get_it)
   ui/
     modules/      # UI espelhando os domínios: pages/, widgets/, view_models/
-    shared/       # theme/ e widgets/ base, sem domínio
+    shared/       # theme/, widgets/, view_models/, formatters/ e pages/ base, sem domínio
 test/             # espelha lib/ (nunca teste ao lado do código)
+docs/             # lacunas-da-api.md
 ```
+
+A estrutura acima é fechada e verificada pela regra G da barreira (seção "Barreira de arquitetura"):
+pasta nova entra nas listas de `test/core/support/structure_rules.dart` junto com a regra que a justifica.
 
 ### O que cada camada pode importar
 
@@ -178,8 +114,13 @@ test/             # espelha lib/ (nunca teste ao lado do código)
   | ≥ 500 | `ServerFailure` (`server`) | "O servidor está indisponível no momento. Tente novamente em instantes." |
   | cancelado, desconhecido, status ausente ou < 400 | `UnexpectedFailure` (`unexpected`) | "Algo deu errado. Tente novamente." |
 
-  A mensagem nunca lista códigos do backend; texto específico por código é olhando `codes`, na etapa que o
-  consome.
+  A mensagem nunca lista códigos do backend; texto específico por código é olhando `codes`, no mapeador do
+  domínio que o consome (`mapCartFailure`, `mapOrderFailure`, …).
+- **A falha inesperada tem uma mensagem só:** `unexpectedFailureMessage` ("Algo deu errado. Tente
+  novamente.") e a falha pronta `unspecifiedFailure` (`GenericFailureCode.unspecified`), declaradas uma vez
+  em `lib/core/errors/app_failure.dart`. O `Command`, o `runRequest` e o `mapHttpFailure` (com o próprio
+  `HttpFailureCode.unexpected`) e os ViewModels que caem num estado inesperado usam essas constantes; nenhum
+  outro arquivo escreve esse texto.
 - **Cliente:** `createApiClient(Uri)` (`api_client.dart`), registrado como `Dio` lazy singleton em
   `configureDependencies`. Interceptores (Bearer) entram nesse mesmo cliente.
 - **Sessão e Bearer:** o `AuthInterceptor` (`lib/infra/http/auth_interceptor.dart`) é ligado ao `Dio` na DI
@@ -212,10 +153,11 @@ test/             # espelha lib/ (nunca teste ao lado do código)
   (`test/ui/shared/support/fake_image_loads.dart`) antes do `pumpWidget`, ou zera a URL com `copyWith`;
   sem isso o cache do aparelho é acionado e o teste cai com `MissingPluginException` depois de terminar.
 - **ViewModels na DI:** `configureDependencies` registra a infraestrutura (lazy singletons) e termina chamando
-  `registerViewModels()`, público, que registra cada ViewModel com `registerFactory`. Etapa nova acrescenta
-  o seu ViewModel ali. Testes de app e de rotas registram o repositório fake com
-  `getIt.registerSingleton<…>` e chamam só `registerViewModels()` (`test/app/support/fake_dependencies.dart`),
-  sem rede nem disco.
+  `registerViewModels()`, público, que registra cada ViewModel com `registerFactory`. ViewModel novo entra
+  ali. `test/infra/di/service_locator_test.dart` confere que todo `getIt<T>` de `app_router.dart` e
+  `bootstrap.dart` resolve na DI real e que ViewModels e casos de uso são instância nova a cada pedido.
+  Testes de app e de rotas registram o repositório fake com `getIt.registerSingleton<…>` e chamam só
+  `registerViewModels()` (`test/app/support/fake_dependencies.dart`), sem rede nem disco.
 - **Página recebe a fábrica do ViewModel pelo construtor** (`xxxViewModelFactory: () => getIt<XxxViewModel>()`
   no `builder` da rota), materializa a instância no `initState`, dispara a carga ali, descarta no `dispose()`
   e observa com `watchPropertyValue(..., target:)` numa `WatchingStatefulWidget`. Nos testes, a fábrica cria
@@ -240,9 +182,9 @@ test/             # espelha lib/ (nunca teste ao lado do código)
   `GET /storefront/products` quanto à rota `/search?…` (`AppRoutes.searchLocation(ProductQuery)` ao ir e
   `decodeProductQuery(state.uri.queryParameters)` no `builder` da rota). Nunca monte query string à mão nem
   invente nome de parâmetro; valor inválido é ignorado em silêncio, como o controller e o web.
-- **Página provisória:** `Scaffold` + `SafeArea` + `PlaceholderBody(title:)`, na pasta `pages/` do domínio
-  dono da aba (`catalog`, `cart`, `auth`). A etapa da funcionalidade troca a página; o `PlaceholderBody` sai
-  quando não sobrar consumidor.
+- **Toda rota abre a sua página:** `test/app/router/app_router_test.dart` abre cada caminho de `AppRoutes`
+  por `initialLocation` e confere a página e a aba, e leva cada item de `sessionRequiredPaths` a "Entrar"
+  sem sessão. Rota nova entra nessas tabelas.
 
 ## Estado
 
@@ -269,12 +211,11 @@ Todo bloco que mostra dado buscado da rede segue a mesma regra, sem variação p
 - **Vazio:** mensagem curta com **uma ação** (ex.: "Ver catálogo").
 - "Tentar de novo" refaz só o que falhou; puxar a tela refaz tudo.
 - **Forma do bloco no ViewModel:** cada bloco remoto é um `BlockState<T>` (`sealed class` em
-  `lib/ui/shared/view_models/block_state.dart`, desde a etapa 11: `BlockLoading`, `BlockFailed(failure)`,
+  `lib/ui/shared/view_models/block_state.dart`: `BlockLoading`, `BlockFailed(failure)`,
   `BlockLoaded(value)`), exposto como propriedade própria do ViewModel (não o `result` do `Command`),
   observado com `watchPropertyValue` e consumido por `switch` exaustivo (a `HomeSection` é o molde:
   skeleton, `StateErrorBanner` com "Tentar de novo", nada quando carregado e vazio, conteúdo). Tela nova
-  com bloco remoto reusa esse `sealed class`; com o segundo consumidor fora do catálogo, ele sobe para
-  `ui/shared/` sem mudar de forma.
+  com bloco remoto reusa esse `sealed class`.
 - **Listas paginadas (paginação infinita, molde: a Buscar):** o skeleton da grade entra **só na página 1**
   (primeira carga, troca de filtro, "Tentar de novo", puxar a tela); a página seguinte mostra só um skeleton
   curto no rodapé, mantendo os itens. Falha da página seguinte **não** troca a grade: o `StateErrorBanner`
@@ -290,14 +231,21 @@ Todo bloco que mostra dado buscado da rede segue a mesma regra, sem variação p
   navegação; os pedaços visuais moram em `ui/modules/<dominio>/widgets/`, um arquivo por widget.
 - **Estado local desce junto com o widget** extraído (vira `StatefulWidget` e leva o estado).
 - **`ui/shared/widgets/` só com o segundo consumidor** — e sobe sem conhecimento de domínio. Exceção: os
-  componentes base da marca da etapa 2 (botões pill, campo, preço, chip, card de produto, skeleton, banner
+  componentes base da marca (botões pill, campo, preço, chip, card de produto, skeleton, banner
   de erro, vazio), que o plano define como base compartilhada.
 - **Testes em `test/` espelhando `lib/`:** unidade para `core`, `modules` e `infra` (parsing de DTO a partir
   de JSON de exemplo, mapeador de falhas, repositórios com dio fake); widget test para páginas e estados.
   **Nada de mocktail nem mockito:** fakes escritos à mão em `test/**/support/` (inclusive o
   `HttpClientAdapter` fake do dio).
 - **Comentário só quando o código não se explica** (invariante, restrição, origem de um valor copiado). Não
-  redizer a assinatura nem citar número de decisão no código.
+  redizer a assinatura nem citar número de decisão ou etapa do plano no código.
+- **Texto de interface escrito uma vez só** (regra H). O texto fica numa constante `static const` de quem o
+  exibe primeiro (ex.: `CartPage.emptyTitle`) e o outro consumidor reusa a constante. Quando os consumidores
+  são de domínios diferentes ou nenhum é dono natural, o texto vai para a classe de textos do domínio em
+  `lib/ui/modules/<dominio>/view_models/<dominio>_texts.dart` (`CartTexts`, `CatalogTexts`,
+  `CustomerTexts`, `OrderTexts`: `abstract final class` só com `static const`); importar `view_models/` de
+  outro domínio da UI é permitido. Mensagens de domínio (`modules/*/errors`) e de infraestrutura têm outro
+  dono e ficam fora da regra.
 - **Regras de negócio copiadas, nunca inventadas:** limites do carrinho, taxa de entrega, frete grátis,
   status do pedido e limites de campos vêm de `modules/orders/src` e `modules/customers/src`, com a origem
   num comentário curto.
@@ -319,15 +267,23 @@ de execução. Cor obtida por `color-mix(…)`/oklab no web entra no app **já r
 origem no comentário (`Color.lerp` é sRGB e daria outro resultado).
 
 Material 3 com tudo resolvido no `ThemeData` e num `ThemeExtension` de tokens da marca: **nenhuma cor
-(`Color(...)`, `Colors.*`), `TextStyle` ou raio literal em `pages/` e `widgets/`** (a barreira passa a
-verificar na etapa 2).
+(`Color(...)`, `Colors.*`), `TextStyle` ou raio literal em `pages/`, `widgets/` e `lib/app/`** (regra C) e
+**nenhuma cor literal fora de `lib/ui/shared/theme/app_colors.dart`** (regra C2).
 
-**Regra C ativa** (`test/core/support/inline_style_rules.dart`, lida pelo `analyzer`): em arquivos sob
-`lib/ui` com uma pasta `pages/` ou `widgets/` no caminho, `flutter test` falha com arquivo, linha, trecho e
-remédio diante de `Color(...)`/`Color.fromARGB|fromRGBO|from`, `Colors.*` (exceto `Colors.transparent`),
+**Regra C** (`test/core/support/inline_style_rules.dart`, lida pelo `analyzer`): em arquivos sob
+`lib/ui` com uma pasta `pages/` ou `widgets/` no caminho, e em todo `lib/app/`, `flutter test` falha com
+arquivo, linha, trecho e remédio diante de
+`Color(...)`/`Color.fromARGB|fromRGBO|from`, `Colors.*` (exceto `Colors.transparent`),
 `TextStyle(...)`, argumento `fontSize:`, `Radius.circular`/`BorderRadius.circular` com número e qualquer
 `*.styleFrom(...)`. `lib/ui/shared/theme/` fica fora: é onde os literais moram. Espaçamento literal é
 permitido. Comentário e string não contam.
+
+**Regra C2** (mesmo arquivo, `scanDirectoryForColorLiteral`): em todo `lib/`, cor literal
+(`Color(...)`/`Color.fromARGB|fromRGBO|from`, `Colors.*` exceto `Colors.transparent`) só em
+`lib/ui/shared/theme/app_colors.dart`; nos outros arquivos do tema também é violação. Por isso as cores das
+sombras são `AppColors.shadowCard`/`shadowBrand`/`shadowFloat`/`shadowBadge`, e `brand_tokens.dart` só
+monta deslocamento e desfoque. `Color.lerp` não é cor literal. Em `pages/`, `widgets/` e `lib/app/` uma cor
+literal aparece nas duas regras, cada uma com o seu remédio.
 
 Onde fica cada coisa do tema (`lib/ui/shared/theme/`):
 
@@ -393,8 +349,40 @@ houver consumidor:
 - **Dev:** `build_runner`, `freezed`, `json_serializable`, `flutter_lints`, `analyzer` (barreira de
   arquitetura).
 
-Qualquer outro pacote está fora. Cada etapa que cria pasta ou acrescenta pacote restrito **estende a
+Qualquer outro pacote está fora. Toda mudança que cria pasta ou acrescenta pacote restrito **estende a
 barreira** em `test/core/architecture_test.dart`, nunca a afrouxa.
+
+## Barreira de arquitetura
+
+`test/core/architecture_test.dart`, com as regras em `test/core/support/`. Cada regra tem testes com fontes
+ou caminhos de exemplo e um teste sobre o código real que falha se não verificou nenhum arquivo. Uma
+violação faz o `flutter test` falhar com o arquivo (e a linha, quando há) e o remédio.
+
+| Regra | O que barra | Onde |
+|---|---|---|
+| A | `core/` e `modules/` importando Flutter, `dart:io`, `dart:ui`, pacote fora da lista ou, em `core/`, `modules/` (regra 1) | `import_rules.dart` |
+| B | `dio`, `flutter_secure_storage` e `shared_preferences` fora de `lib/infra/` | `import_rules.dart` |
+| C | estilo literal (cor, `TextStyle`, `fontSize`, raio numérico, `styleFrom`) em `pages/`/`widgets/` de `lib/ui` e em `lib/app/` | `inline_style_rules.dart` |
+| C2 | cor literal em qualquer arquivo de `lib/` que não seja `lib/ui/shared/theme/app_colors.dart` | `inline_style_rules.dart` |
+| D | `get_it` fora de `lib/infra/di/` e `lib/app/` | `import_rules.dart` |
+| E | `watch_it` fora de `lib/ui/` e `lib/app/`, e em `lib/ui/` sem `show` ou trazendo `di`/`sl`/`GetIt` | `import_rules.dart` |
+| F | `cached_network_image` fora de `lib/ui/` | `import_rules.dart` |
+| G | estrutura de pastas fora das listas fechadas, teste em `lib/` e pasta de teste sem espelho em `lib/` | `structure_rules.dart` |
+| H | o mesmo texto de interface em mais de um arquivo de `lib/ui` e `lib/app` | `ui_text_rules.dart` |
+
+- **Regra G (estrutura):** em `lib/`, só `app`, `core`, `infra`, `modules` e `ui` e os arquivos
+  `main_dev.dart` e `main_prod.dart`; em `lib/modules/`, só os domínios `auth`, `cart`, `catalog`,
+  `customer`, `order` e `store`, cada um só com `model`, `provider`, `usecase` e `errors`; em `lib/ui/`, só
+  `modules` e `shared`; em `lib/ui/modules/`, os mesmos domínios, cada um só com `pages`, `widgets` e
+  `view_models`; em `lib/ui/shared/`, só `theme`, `widgets`, `view_models`, `formatters` e `pages`. Arquivo
+  solto direto num nível de lista fechada é violação. Abaixo das subpastas conhecidas e dentro de `core/`,
+  `infra/` e `app/` as pastas são livres. Nenhum `*_test.dart` em `lib/`; toda pasta de `test/` com testes
+  tem a pasta equivalente em `lib/` (pastas `support/` à parte).
+- **Regra H (texto repetido):** lê os literais de `lib/ui` e `lib/app` com o `analyzer` (literal simples e o
+  valor juntado de literais adjacentes, sem interpolação) e trata como texto de interface o que começa com
+  letra maiúscula e tem ao menos 12 caracteres; diretivas (`import`, `export`, `part`) e anotações ficam de
+  fora. O texto que aparece em mais de um arquivo é violação, listando os arquivos; repetição no mesmo
+  arquivo não é acusada. O remédio é a constante da convenção de textos.
 
 ## Regras de domínio do app
 
@@ -458,7 +446,7 @@ specs em `openspec/specs/<domínio>/`.
     indisponíveis, como o `cart-drawer` do web; senão abre o checkout.
   - No detalhe do produto, o rodapé tem o `QuantityStepper` (1 a 99) e "Adicionar · <total>"
     ("Adicionando…" enquanto inclui); o sucesso mostra o aviso "Adicionado ao carrinho" com "Ver carrinho"
-    (abre a aba Carrinho) e volta a quantidade a 1. Isso substitui o botão desabilitado da etapa 7.
+    (abre a aba Carrinho) e volta a quantidade a 1.
 - **Loja:** lista de `GET /storefront/stores`, escolha lembrada em `shared_preferences`; espelhe exatamente o
   efeito que a escolha tem no web, sem inventar parâmetro de API. A loja em vigor sai **sempre** de
   `pickCurrentStore(stores, rememberedSlug)` (`lib/modules/store/model/current_store.dart`: a lembrada se
@@ -495,8 +483,8 @@ specs em `openspec/specs/<domínio>/`.
   `relatedProductsQuery` (última categoria da trilha, `sort=featured&pageSize=5`) e `relatedProducts` (sem o
   próprio, no máximo 4), pedido só depois do produto e fora do `load`: falha ou lista vazia **some** em
   silêncio, sem banner. Marca e trilha abrem a Buscar filtrada pela página (`onOpenSearch`); outro produto
-  empilha na mesma aba. O botão "Adicionar ao carrinho" fica fixo no rodapé, **visível e desabilitado**
-  (`onAddToCart: null`) até a etapa 9 ligar o carrinho; sem stepper, total nem entrega antes disso.
+  empilha na mesma aba. O rodapé fixo com a quantidade e "Adicionar · <total>" é o do carrinho (ver
+  **Carrinho**).
 - **Dados de entrega:** `GET/PUT /me/customer` com endereço em texto, **sem mapa**. Ao salvar, preserve a
   `location` vinda do backend; cliente novo vai com `location: null`.
   - O `PUT` leva **sempre** `address.location` explícita: a do último `GET` (ou da última resposta do
@@ -525,8 +513,8 @@ specs em `openspec/specs/<domínio>/`.
     sucesso ou falha, o carrinho é **relido** (`refresh()`); o app **nunca esvazia** o carrinho por conta
     própria (quem esvazia é o servidor).
   - Rotas na pilha da aba Carrinho: `/cart/checkout` (`AppRoutes.checkout`, aberta por `go`),
-    `/cart/checkout/delivery` (a `DeliveryDetailsPage` da etapa 11 por `push`, com `onBack` e `onSaved`
-    fazendo `pop`, e o checkout consulta o cadastro na volta) e `/cart/orders/:id`
+    `/cart/checkout/delivery` (a `DeliveryDetailsPage` dos dados de entrega por `push`, com `onBack` e
+    `onSaved` fazendo `pop`, e o checkout consulta o cadastro na volta) e `/cart/orders/:id`
     (`AppRoutes.orderLocation`, aberta por `go` no sucesso, que tira o checkout da pilha). O checkout e o
     pedido estão em `sessionRequiredPaths` (`checkout` e `orders`); nenhuma tela checa a sessão.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o

@@ -7,6 +7,7 @@ import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/product_art.dart';
+import '../../cart/view_models/cart_texts.dart';
 import '../../catalog/view_models/category_art.dart';
 
 /// Linha do "Resumo do pedido", de `checkout.page.tsx`: foto (ou a
@@ -20,7 +21,7 @@ class CheckoutLineTile extends StatelessWidget {
     required this.onRemove,
   });
 
-  static const String unavailableLabel = 'Indisponível';
+  static const String unavailableLabel = CartTexts.unavailableLabel;
   static const String removeLabel = 'Remover';
 
   /// Lado da foto (`size-11` do web).

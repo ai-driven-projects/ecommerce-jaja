@@ -11,6 +11,7 @@ import '../../../shared/view_models/block_state.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
+import '../view_models/customer_texts.dart';
 import '../view_models/delivery_details_view_model.dart';
 import '../widgets/account_data_card.dart';
 import '../widgets/address_fields.dart';
@@ -31,12 +32,12 @@ class DeliveryDetailsPage extends WatchingStatefulWidget {
     this.onSaved,
   });
 
-  static const String title = 'Dados de entrega';
-  static const String errorTitle = 'Não foi possível carregar seus dados.';
+  static const String title = CustomerTexts.deliveryDetailsTitle;
+  static const String errorTitle = CustomerTexts.loadError;
   static const String newCustomerMessage =
       'Preencha uma vez e seus pedidos saem mais rápido.';
   static const String personalTitle = 'Dados pessoais';
-  static const String addressTitle = 'Endereço de entrega';
+  static const String addressTitle = CustomerTexts.addressTitle;
   static const String saveLabel = 'Salvar dados';
   static const String savingLabel = 'Salvando…';
   static const String discardLabel = 'Descartar alterações';

@@ -4,6 +4,7 @@ import '../../../../modules/order/model/order_rules.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../view_models/order_texts.dart';
 
 /// Dados só deste pedido, abaixo do endereço: "Quem recebe" e "Instruções
 /// para o entregador", limitados como na API e sem validação local (quem
@@ -18,7 +19,7 @@ class OrderNoteFields extends StatelessWidget {
   });
 
   static const String recipientLabel = 'Quem recebe';
-  static const String instructionsLabel = 'Instruções para o entregador';
+  static const String instructionsLabel = OrderTexts.courierInstructions;
   static const String instructionsHint =
       'Ex.: deixar na recepção do andar, falar com a Ana';
 

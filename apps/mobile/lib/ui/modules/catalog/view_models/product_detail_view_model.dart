@@ -119,12 +119,7 @@ class ProductDetailViewModel extends ChangeNotifier {
   Future<Result<AddedToCart>> _addToCart() async {
     final current = _product;
     if (current is! BlockLoaded<ProductDetail>) {
-      return const Failure(
-        UnexpectedFailure(
-          message: 'Algo deu errado. Tente novamente.',
-          code: GenericFailureCode.unspecified,
-        ),
-      );
+      return const Failure(unspecifiedFailure);
     }
     final product = current.value;
     final quantity = _quantity;

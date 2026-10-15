@@ -894,91 +894,77 @@
       "commit": "c4067d2b2897f24220bd133728e4db30f1f3f34d"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 15,
       "phase": "Fechamento",
       "title": "Varredura final",
-      "change": "mobile-app-15-varredura-final-mobile"
+      "change": "mobile-app-15-varredura-final-mobile",
+      "iteration": 15,
+      "deliveredAt": "2026-10-15T20:08:43.102Z",
+      "durationMs": 1570658,
+      "cost": 10.620610200000002,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 418732,
+          "cost": 2.9167972000000004,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 30988,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 394,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1060402,
+          "cost": 7.3399052000000005,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 31568,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 28476,
+          "cost": 0.3639078,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 98,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     }
   ],
-  "iteration": {
-    "number": 15,
-    "stage": 15,
-    "startCommit": "c4067d2b2897f24220bd133728e4db30f1f3f34d",
-    "startedAt": "2026-10-15T19:42:32.366Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 418732,
-        "cost": 2.9167972000000004,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 30988,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja a varredura final do app mobile",
-      "comparison": "O código entregue pelas etapas 1–14 está limpo: nenhum arquivo órfão nem símbolo público sem uso em lib/, e nenhuma página provisória sobrou. Só dois widgets ainda citam \"etapa N\" em comentários.\nO que falta é arrumação: \"Algo deu errado. Tente novamente.\" está escrito em 6 arquivos (core, infra e 3 ViewModels), e há uns 12 textos de tela duplicados entre carrinho, catálogo, cadastro e pedido.\nA barreira cobre imports e estilo, mas não confere a estrutura de pastas, e a regra de cor só olha pages/widgets. Hoje a cor literal só existe em app_colors.dart, então dá para endurecer a regra sem quebrar nada.\nOs testes de DI e de rotas conferem caso a caso, mas nenhum garante que tudo o que o router e o bootstrap pedem sai da DI real, nem varre todas as rotas que exigem sessão.\nO README ainda fala em abas provisórias, docs/lacunas-da-api.md não existe (nenhuma etapa registrou lacuna) e CLAUDE.md e duas specs ainda descrevem o app por etapa. A localização do cliente não é exigida para fazer o pedido, então isso não é lacuna.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 25125598,
-    "cost": 207.55990829999996,
+    "durationMs": 26246536,
+    "cost": 215.26372129999996,
     "runs": 1,
     "iterationsStarted": 15,
-    "iterationsDelivered": 14,
-    "claudeSessions": 129,
-    "turns": 2508,
-    "checks": 95,
+    "iterationsDelivered": 15,
+    "claudeSessions": 134,
+    "turns": 2630,
+    "checks": 98,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 35
+    "commits": 36
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

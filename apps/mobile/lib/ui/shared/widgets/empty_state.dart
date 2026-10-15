@@ -7,7 +7,7 @@ import 'app_button.dart';
 
 /// Estado vazio de `empty-list-state.tsx`: emoji grande, título em display,
 /// explicação curta e exatamente uma ação, num cartão branco. A borda é
-/// contínua (o web usa tracejada; ver o `design.md` da etapa 2).
+/// contínua, enquanto o web usa tracejada.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,

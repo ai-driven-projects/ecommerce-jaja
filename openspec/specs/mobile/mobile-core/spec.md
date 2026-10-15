@@ -17,7 +17,7 @@ Toda operação que pode falhar fora da UI SHALL devolver um resultado que é ex
 - **THEN** o resultado é o caso de falha, com uma falha do tipo rede e sua mensagem
 
 ### Requirement: Falhas tipadas com mensagem para a pessoa
-O app SHALL classificar falhas num conjunto fechado de tipos: validação, rede, configuração, sessão ausente ou expirada, recusa do backend, recurso não encontrado, erro do servidor e erro inesperado. Toda falha MUST ter uma mensagem em português pronta para exibir e um código que a identifica. A mensagem MUST ser um texto fixo, nunca a descrição de uma exceção nem um stack trace. A falha de recusa do backend MUST carregar o status HTTP e a lista de códigos de erro que o backend devolveu em `message`, preservando a ordem.
+O app SHALL classificar falhas num conjunto fechado de tipos: validação, rede, configuração, sessão ausente ou expirada, recusa do backend, recurso não encontrado, erro do servidor e erro inesperado. Toda falha MUST ter uma mensagem em português pronta para exibir e um código que a identifica. A mensagem MUST ser um texto fixo, nunca a descrição de uma exceção nem um stack trace. A falha de recusa do backend MUST carregar o status HTTP e a lista de códigos de erro que o backend devolveu em `message`, preservando a ordem. A falha inesperada MUST usar sempre a mesma mensagem, "Algo deu errado. Tente novamente.", declarada uma única vez no núcleo, venha ela de um comando de tela, de uma chamada à API ou de um estado inesperado num ViewModel.
 
 #### Scenario: Recusa do backend com códigos
 - **WHEN** uma falha de recusa é criada para o status `400` com os códigos `CART_ITEMS_LIMIT_EXCEEDED`
@@ -26,6 +26,10 @@ O app SHALL classificar falhas num conjunto fechado de tipos: validação, rede,
 #### Scenario: Tratamento exaustivo dos tipos
 - **WHEN** o código trata uma falha com um `switch` que omite um dos tipos
 - **THEN** a análise estática acusa o caso não coberto
+
+#### Scenario: Mesma mensagem para o inesperado
+- **WHEN** um comando de tela lança uma exceção e, em outro momento, a conversão de uma resposta da API falha
+- **THEN** as duas falhas são inesperadas e têm a mensagem "Algo deu errado. Tente novamente."
 
 ### Requirement: Comando de tela
 O app SHALL oferecer um comando que executa uma ação assíncrona que devolve um resultado, com e sem argumento, e expõe se está em execução e o último resultado. Ao começar, o comando MUST marcar a execução, limpar o resultado anterior e avisar a mudança; ao terminar, MUST guardar o resultado, desmarcar a execução e avisar de novo. Uma nova execução pedida enquanto outra roda MUST ser ignorada. Se a ação lançar uma exceção, o comando MUST guardar uma falha inesperada com a mensagem "Algo deu errado. Tente novamente." em vez de propagar a exceção.

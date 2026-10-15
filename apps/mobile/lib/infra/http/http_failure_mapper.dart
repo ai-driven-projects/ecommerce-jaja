@@ -4,7 +4,6 @@ import '../../core/errors/app_failure.dart';
 
 const _networkMessage =
     'Não foi possível falar com o servidor. Tente novamente.';
-const _unexpectedMessage = 'Algo deu errado. Tente novamente.';
 
 /// Traduz qualquer falha de requisição do `dio` numa [AppFailure] tipada.
 ///
@@ -31,7 +30,7 @@ AppFailure mapHttpFailure(DioException exception) {
 }
 
 const _unexpected = UnexpectedFailure(
-  message: _unexpectedMessage,
+  message: unexpectedFailureMessage,
   code: HttpFailureCode.unexpected,
 );
 

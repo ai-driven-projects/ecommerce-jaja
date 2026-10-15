@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/theme/brand_tokens.dart';
+import '../view_models/order_texts.dart';
 import 'checkout_step_card.dart';
 
 /// Cartão "Instruções para o entregador", com o texto gravado no pedido. A
@@ -8,7 +9,7 @@ import 'checkout_step_card.dart';
 class OrderInstructionsCard extends StatelessWidget {
   const OrderInstructionsCard({super.key, required this.instructions});
 
-  static const String title = 'Instruções para o entregador';
+  static const String title = OrderTexts.courierInstructions;
 
   final String instructions;
 

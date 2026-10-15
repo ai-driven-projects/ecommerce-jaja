@@ -66,5 +66,11 @@ void main() {
 
       expect(failure.codes, orderedEquals(['B_CODE', 'A_CODE', 'C_CODE']));
     });
+
+    test('falha inesperada tem uma única mensagem', () {
+      expect(unexpectedFailureMessage, 'Algo deu errado. Tente novamente.');
+      expect(unspecifiedFailure.message, unexpectedFailureMessage);
+      expect(unspecifiedFailure.code, GenericFailureCode.unspecified);
+    });
   });
 }

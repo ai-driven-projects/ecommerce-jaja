@@ -54,6 +54,16 @@ final class UnexpectedFailure extends AppFailure {
 
 enum GenericFailureCode { unspecified }
 
+/// Única mensagem da falha inesperada do app: o núcleo, a infraestrutura HTTP
+/// e os ViewModels a reusam, cada um com o próprio código.
+const String unexpectedFailureMessage = 'Algo deu errado. Tente novamente.';
+
+/// Falha inesperada sem código específico (exceção fora do [Result]).
+const UnexpectedFailure unspecifiedFailure = UnexpectedFailure(
+  message: unexpectedFailureMessage,
+  code: GenericFailureCode.unspecified,
+);
+
 enum MoneyCode { negativeCents }
 
 enum EmailCode { invalid }

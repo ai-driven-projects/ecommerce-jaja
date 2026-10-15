@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'support/import_rules.dart';
 import 'support/inline_style_rules.dart';
+import 'support/structure_rules.dart';
+import 'support/ui_text_rules.dart';
 
 List<ImportViolation> _scan(String filePath, String source, ImportRule rule) =>
     scanSource(filePath: filePath, source: source, rules: {rule});
@@ -134,24 +136,109 @@ void main() {
       );
     });
 
-    test('pages e widgets de lib/ui tiram cor, tipografia e raio do tema', () {
+    test('pages e widgets de lib/ui e todo lib/app tiram cor, tipografia e '
+        'raio do tema', () {
+      final scanned = [
+        ...dartFilesIn('lib/ui'),
+        ...dartFilesIn('lib/app'),
+      ].where((file) => isInlineStyleScoped(file.path));
+      expect(
+        scanned.where((file) => file.path.contains('lib/app/')),
+        isNotEmpty,
+        reason: 'Nenhum arquivo de lib/app escaneado — a barreira não rodou.',
+      );
+      expect(
+        scanned.where((file) => file.path.contains('lib/ui/')),
+        isNotEmpty,
+        reason: 'Nenhum arquivo de lib/ui escaneado — a barreira não rodou.',
+      );
+
+      final violations = [
+        ...scanDirectoryForInlineStyle('lib/ui'),
+        ...scanDirectoryForInlineStyle('lib/app'),
+      ];
+
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'Estilo literal em pages/widgets ou lib/app (deveria vir do '
+            'tema):\n${violations.join('\n')}',
+      );
+    });
+
+    test('cor literal só no arquivo de cores do tema', () {
       final scanned = dartFilesIn(
-        'lib/ui',
-      ).where((file) => isInlineStyleScoped(file.path));
+        'lib',
+      ).where((file) => isColorLiteralScoped(file.path));
       expect(
         scanned,
         isNotEmpty,
         reason: 'Nenhum arquivo .dart escaneado — a barreira não rodou.',
       );
 
-      final violations = scanDirectoryForInlineStyle('lib/ui');
+      final violations = scanDirectoryForColorLiteral('lib');
 
       expect(
         violations,
         isEmpty,
         reason:
-            'Estilo literal em pages/widgets (deveria vir do tema):\n'
+            'Cor literal fora de lib/$colorLiteralFile:\n'
             '${violations.join('\n')}',
+      );
+    });
+
+    test('lib/ui e lib/app não repetem texto de interface entre arquivos', () {
+      final scanned = [...dartFilesIn('lib/ui'), ...dartFilesIn('lib/app')];
+      final texts = scanned.expand(
+        (file) => collectUiTexts(
+          filePath: file.path,
+          source: file.readAsStringSync(),
+        ).keys,
+      );
+      expect(
+        texts,
+        isNotEmpty,
+        reason: 'Nenhum texto de interface coletado — a barreira não rodou.',
+      );
+
+      final repetitions = scanDirectoriesForRepeatedUiTexts([
+        'lib/ui',
+        'lib/app',
+      ]);
+
+      expect(
+        repetitions,
+        isEmpty,
+        reason:
+            'Texto de interface repetido entre arquivos:\n'
+            '${repetitions.join('\n')}',
+      );
+    });
+
+    test('lib/ e test/ seguem a estrutura de pastas', () {
+      final libFiles = filesIn('lib');
+      final testFiles = filesIn('test');
+      expect(
+        libFiles.where((path) => path.endsWith('.dart')),
+        isNotEmpty,
+        reason: 'Nenhum arquivo de lib/ listado — a barreira não rodou.',
+      );
+      expect(
+        testFiles.where((path) => path.endsWith('_test.dart')),
+        isNotEmpty,
+        reason: 'Nenhum teste de test/ listado — a barreira não rodou.',
+      );
+
+      final violations = [
+        ...checkLibStructure(libFiles),
+        ...checkTestStructure(libFiles: libFiles, testFiles: testFiles),
+      ];
+
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Estrutura de pastas fora da regra:\n${violations.join('\n')}',
       );
     });
   });
@@ -611,6 +698,144 @@ void main() {
     });
   });
 
+  group('Regra G: estrutura de pastas', () {
+    const realLib = [
+      'lib/main_dev.dart',
+      'lib/main_prod.dart',
+      'lib/app/router/app_router.dart',
+      'lib/core/result.dart',
+      'lib/modules/cart/model/cart.dart',
+      'lib/modules/order/usecase/live_order_feed.dart',
+      'lib/ui/modules/cart/view_models/cart_texts.dart',
+      'lib/ui/shared/theme/app_colors.dart',
+    ];
+
+    test('a estrutura de exemplo é aceita', () {
+      expect(checkLibStructure(realLib), isEmpty);
+    });
+
+    test('subpasta desconhecida num domínio é violação com o caminho e as '
+        'permitidas', () {
+      const path = 'lib/modules/cart/services/cart_service.dart';
+
+      final violations = checkLibStructure([path]);
+
+      expect(violations, hasLength(1));
+      expect(violations.single.path, path);
+      expect(
+        violations.single.toString(),
+        allOf(
+          startsWith(path),
+          contains('lib/modules/cart/'),
+          contains('model, provider, usecase, errors'),
+        ),
+      );
+    });
+
+    for (final path in [
+      'lib/helpers/x.dart',
+      'lib/main.dart',
+      'lib/ui/modules/cart/helpers/x.dart',
+      'lib/ui/components/x.dart',
+      'lib/ui/shared/utils/x.dart',
+      'lib/ui/shared/x.dart',
+      'lib/modules/cart/cart.dart',
+      'lib/ui/modules/cart/x.dart',
+    ]) {
+      test('$path é violação', () {
+        final violations = checkLibStructure([path]);
+
+        expect(violations, hasLength(1));
+        expect(violations.single.path, path);
+      });
+    }
+
+    for (final path in [
+      'lib/modules/payment/model/x.dart',
+      'lib/ui/modules/payment/pages/x.dart',
+    ]) {
+      test('domínio desconhecido em $path é violação', () {
+        final violations = checkLibStructure([path]);
+
+        expect(violations, hasLength(1));
+        expect(violations.single.reason, contains('domínio desconhecido'));
+      });
+    }
+
+    test('subpastas abaixo das conhecidas e pastas livres de core, infra e '
+        'app são aceitas', () {
+      expect(
+        checkLibStructure([
+          'lib/modules/catalog/model/sub/x.dart',
+          'lib/infra/qualquer/x.dart',
+          'lib/core/value_objects/x.dart',
+          'lib/app/router/x.dart',
+        ]),
+        isEmpty,
+      );
+    });
+
+    test('*_test.dart em lib/ é violação', () {
+      const path = 'lib/core/result_test.dart';
+
+      final violations = checkTestStructure(
+        libFiles: [...realLib, path],
+        testFiles: const [],
+      );
+
+      expect(violations, hasLength(1));
+      expect(violations.single.path, path);
+    });
+
+    test('teste sem espelho em lib/ é violação com o caminho do teste', () {
+      const path = 'test/ui/modules/cart/helpers/x_test.dart';
+
+      final violations = checkTestStructure(
+        libFiles: realLib,
+        testFiles: [path],
+      );
+
+      expect(violations, hasLength(1));
+      expect(violations.single.path, path);
+      expect(violations.single.toString(), startsWith(path));
+    });
+
+    test('teste que espelha uma pasta de lib/ é aceito', () {
+      expect(
+        checkTestStructure(
+          libFiles: realLib,
+          testFiles: const [
+            'test/core/result_test.dart',
+            'test/modules/cart/model/cart_test.dart',
+            'test/ui/modules/cart/view_models/cart_texts_test.dart',
+            'test/app/router/app_router_test.dart',
+            'test/widget_test.dart',
+          ],
+        ),
+        isEmpty,
+      );
+    });
+
+    test('support/ e arquivos que não são teste são aceitos', () {
+      expect(
+        checkTestStructure(
+          libFiles: realLib,
+          testFiles: const [
+            'test/core/support/structure_rules.dart',
+            'test/app/support/fake_dependencies.dart',
+            'test/ui/modules/cart/support/x_test.dart',
+            'test/ui/modules/cart/helpers/fake.dart',
+          ],
+        ),
+        isEmpty,
+      );
+    });
+
+    test('pasta inexistente lança StateError em vez de passar vazia', () {
+      expect(() => filesIn('lib/pasta-inexistente'), throwsStateError);
+    });
+  });
+
   group('Regra C: estilo vindo do tema', () {
     const widgetPath = 'lib/ui/shared/widgets/fake.dart';
 
@@ -724,6 +949,23 @@ void main() {
       );
     });
 
+    test('TextStyle( e raio literal em lib/app são violação', () {
+      expect(
+        scan(
+          'TextStyle(fontWeight: FontWeight.w800)',
+          filePath: 'lib/app/app.dart',
+        ),
+        hasLength(1),
+      );
+      expect(
+        scan(
+          'BorderRadius.circular(12)',
+          filePath: '/projeto/apps/mobile/lib/app/router/x.dart',
+        ),
+        hasLength(1),
+      );
+    });
+
     test('fonte que não parseia lança StateError em vez de passar vazia', () {
       expect(
         () => scanSourceForInlineStyle(
@@ -735,8 +977,198 @@ void main() {
     });
   });
 
+  group('Regra C2: cor literal só no arquivo de cores', () {
+    List<InlineStyleViolation> scan(String expression, String filePath) =>
+        scanSourceForColorLiteral(
+          filePath: filePath,
+          source:
+              "import 'package:flutter/material.dart';\n"
+              'final value = $expression;\n',
+        );
+
+    test('Color(0x…) no arquivo de cores é aceito', () {
+      expect(
+        scan('Color(0xFFFF6B00)', 'lib/ui/shared/theme/app_colors.dart'),
+        isEmpty,
+      );
+      expect(
+        scan(
+          'Color.fromRGBO(0, 0, 0, 0.08)',
+          '/projeto/apps/mobile/lib/ui/shared/theme/app_colors.dart',
+        ),
+        isEmpty,
+      );
+    });
+
+    for (final filePath in [
+      'lib/ui/shared/theme/app_theme.dart',
+      'lib/ui/shared/theme/brand_tokens.dart',
+      'lib/infra/http/x.dart',
+      'lib/app/app.dart',
+      'lib/ui/modules/catalog/view_models/x.dart',
+    ]) {
+      test('Color(0x…) em $filePath é violação com arquivo e linha', () {
+        final violations = scan('const Color(0xFF000000)', filePath);
+
+        expect(violations, hasLength(1));
+        expect(
+          violations.single.toString(),
+          startsWith('$filePath:2 → final value = const Color(0xFF000000);'),
+        );
+        expect(violations.single.remedy, contains(colorLiteralFile));
+      });
+    }
+
+    test('Colors.* e Color.fromARGB fora do arquivo de cores são violação', () {
+      const path = 'lib/ui/shared/theme/app_theme.dart';
+
+      expect(scan('Colors.black', path), hasLength(1));
+      expect(scan('Color.fromARGB(255, 0, 0, 0)', path), hasLength(1));
+    });
+
+    test('Colors.transparent, comentário e string são aceitos', () {
+      const path = 'lib/ui/shared/theme/app_theme.dart';
+
+      expect(scan('Colors.transparent', path), isEmpty);
+      expect(
+        scanSourceForColorLiteral(
+          filePath: path,
+          source:
+              '// Color(0xFF000000)\n'
+              "const exemplo = 'Colors.red';\n",
+        ),
+        isEmpty,
+      );
+    });
+
+    test('C2 não olha tipografia nem raio', () {
+      const path = 'lib/ui/shared/theme/app_theme.dart';
+
+      expect(scan('TextStyle(fontSize: 12)', path), isEmpty);
+      expect(scan('BorderRadius.circular(12)', path), isEmpty);
+    });
+
+    test('arquivo fora de lib/ fica fora da regra', () {
+      expect(scan('Color(0xFF000000)', 'test/core/x.dart'), isEmpty);
+    });
+  });
+
+  group('Regra H: texto de interface sem repetição', () {
+    const cartPage = 'lib/ui/modules/cart/pages/cart_page.dart';
+    const checkoutSummary =
+        'lib/ui/modules/order/widgets/checkout_summary.dart';
+    const message = 'Não foi possível carregar o carrinho.';
+
+    test('mesmo texto em dois arquivos é violação listando o texto e os '
+        'dois arquivos', () {
+      final repetitions = findRepeatedUiTexts({
+        cartPage: "const title = '$message';\n",
+        checkoutSummary: "import 'x.dart';\n\nconst title = '$message';\n",
+      });
+
+      expect(repetitions, hasLength(1));
+      expect(repetitions.single.text, message);
+      expect(repetitions.single.occurrences.map((o) => o.toString()), [
+        '$cartPage:1',
+        '$checkoutSummary:3',
+      ]);
+      expect(
+        repetitions.single.toString(),
+        allOf(contains(message), contains(cartPage), contains(checkoutSummary)),
+      );
+    });
+
+    test('texto reusado por constante é aceito', () {
+      expect(
+        findRepeatedUiTexts({
+          'lib/ui/modules/cart/view_models/cart_texts.dart':
+              "abstract final class CartTexts {\n"
+              "  static const loadError = '$message';\n"
+              '}\n',
+          cartPage: 'const title = CartTexts.loadError;\n',
+          checkoutSummary: 'const title = CartTexts.loadError;\n',
+        }),
+        isEmpty,
+      );
+    });
+
+    for (final (description, literal) in [
+      ('curto', "'Ver produto'"),
+      ('minúsculo', "'não foi possível carregar.'"),
+      ('interpolado', r"'Você já tem $count no carrinho.'"),
+    ]) {
+      test('texto $description em dois arquivos é aceito', () {
+        expect(
+          findRepeatedUiTexts({
+            cartPage: 'final a = $literal;\n',
+            checkoutSummary: 'final b = $literal;\n',
+          }),
+          isEmpty,
+        );
+      });
+    }
+
+    test('texto em import, export e anotação é aceito', () {
+      const source =
+          "import 'Package_Sem_Sentido_Algum.dart';\n"
+          "export 'Outro_Arquivo_Qualquer.dart';\n"
+          "@Deprecated('Use a constante nova.')\n"
+          'const x = 1;\n';
+
+      expect(
+        findRepeatedUiTexts({cartPage: source, checkoutSummary: source}),
+        isEmpty,
+      );
+    });
+
+    test('texto repetido no mesmo arquivo é aceito', () {
+      expect(
+        findRepeatedUiTexts({
+          cartPage: "const a = '$message';\nconst b = '$message';\n",
+        }),
+        isEmpty,
+      );
+    });
+
+    test('literais adjacentes contam como o texto juntado', () {
+      final repetitions = findRepeatedUiTexts({
+        cartPage:
+            "const a = 'Não foi possível '\n    'carregar o carrinho.';\n",
+        checkoutSummary: "const b = '$message';\n",
+      });
+
+      expect(repetitions, hasLength(1));
+      expect(repetitions.single.text, message);
+    });
+
+    test('partes de literais adjacentes não contam sozinhas', () {
+      expect(
+        findRepeatedUiTexts({
+          cartPage: "const a = 'Não foi possível ' 'carregar o carrinho.';\n",
+          checkoutSummary: "const b = 'Não foi possível ';\n",
+        }),
+        isEmpty,
+      );
+    });
+
+    test('fonte que não parseia lança StateError em vez de passar vazia', () {
+      expect(
+        () => collectUiTexts(filePath: cartPage, source: 'const a = (;\n'),
+        throwsStateError,
+      );
+    });
+  });
+
   test('pasta inexistente lança StateError em vez de passar vazia', () {
     expect(() => dartFilesIn('lib/pasta-inexistente'), throwsStateError);
+    expect(
+      () => scanDirectoryForColorLiteral('lib/pasta-inexistente'),
+      throwsStateError,
+    );
+    expect(
+      () => scanDirectoriesForRepeatedUiTexts(['lib/pasta-inexistente']),
+      throwsStateError,
+    );
     expect(() => scanDirectory('lib/pasta-inexistente'), throwsStateError);
     expect(
       () => scanDirectoryForInlineStyle('lib/pasta-inexistente'),

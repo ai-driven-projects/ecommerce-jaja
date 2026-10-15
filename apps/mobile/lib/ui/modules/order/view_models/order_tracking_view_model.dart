@@ -96,12 +96,7 @@ class OrderTrackingViewModel extends ChangeNotifier {
     } catch (_) {
       if (_disposed || request != _request) return;
       _loading = false;
-      _order = const BlockFailed(
-        UnexpectedFailure(
-          message: 'Algo deu errado. Tente novamente.',
-          code: GenericFailureCode.unspecified,
-        ),
-      );
+      _order = const BlockFailed(unspecifiedFailure);
       _notify();
       return;
     }

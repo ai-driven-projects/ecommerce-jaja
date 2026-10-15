@@ -13,6 +13,7 @@ import '../../store/view_models/store_selector_view_model.dart';
 import '../../store/widgets/store_picker_sheet.dart';
 import '../../store/widgets/store_selector.dart';
 import '../../../shared/view_models/block_state.dart';
+import '../view_models/catalog_texts.dart';
 import '../view_models/home_view_model.dart';
 import '../widgets/category_chips_row.dart';
 import '../widgets/highlighted_categories_grid.dart';
@@ -37,13 +38,12 @@ class HomePage extends WatchingStatefulWidget {
   static const String featuredTitle = 'Em destaque';
   static const String offersTitle = 'Ofertas da semana';
   static const String highlightedTitle = 'Categorias em destaque';
-  static const String categoriesErrorTitle =
-      'Não foi possível carregar as categorias.';
+  static const String categoriesErrorTitle = CatalogTexts.categoriesError;
   static const String featuredErrorTitle =
       'Não foi possível carregar os destaques.';
   static const String offersErrorTitle =
       'Não foi possível carregar as ofertas.';
-  static const String emptyTitle = 'Nada por aqui. Já já.';
+  static const String emptyTitle = CatalogTexts.emptyTitle;
   static const String emptyMessage = 'O catálogo está vazio no momento.';
   static const String emptyAction = 'Ver catálogo';
 

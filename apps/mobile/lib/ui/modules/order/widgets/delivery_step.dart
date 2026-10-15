@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
 import '../../customer/view_models/customer_masks.dart';
+import '../../customer/view_models/customer_texts.dart';
 import '../../customer/view_models/delivery_address_line.dart';
 
 /// Conteúdo do passo "Endereço de entrega": o skeleton enquanto o cadastro
@@ -24,7 +25,7 @@ class DeliveryStep extends StatelessWidget {
     required this.onOpenDeliveryDetails,
   });
 
-  static const String errorTitle = 'Não foi possível carregar seus dados.';
+  static const String errorTitle = CustomerTexts.loadError;
   static const String newCustomerMessage =
       'Precisamos destes dados uma vez só: ficam salvos para os próximos '
       'pedidos.';

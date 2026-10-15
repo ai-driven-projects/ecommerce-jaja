@@ -8,7 +8,9 @@ import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
+import '../../cart/view_models/cart_texts.dart';
 import '../../cart/widgets/cart_summary.dart';
+import '../view_models/order_texts.dart';
 import 'checkout_line_tile.dart';
 import 'checkout_step_card.dart';
 
@@ -25,10 +27,10 @@ class CheckoutSummary extends StatelessWidget {
   });
 
   static const String title = 'Resumo do pedido';
-  static const String errorTitle = 'Não foi possível carregar o carrinho.';
-  static const String emptyTitle = 'Seu carrinho está vazio.';
-  static const String emptyMessage = 'Adicione itens para o escritório!';
-  static const String emptyAction = 'Voltar para a loja';
+  static const String errorTitle = CartTexts.loadError;
+  static const String emptyTitle = CartTexts.emptyTitle;
+  static const String emptyMessage = CartTexts.emptyMessage;
+  static const String emptyAction = OrderTexts.backToStore;
   static const int skeletonCount = 2;
 
   final CartState cart;

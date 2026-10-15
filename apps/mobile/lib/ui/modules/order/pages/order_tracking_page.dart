@@ -8,6 +8,7 @@ import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/view_models/block_state.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/state_error_banner.dart';
+import '../view_models/order_texts.dart';
 import '../view_models/order_tracking_view_model.dart';
 import '../widgets/order_header.dart';
 import '../widgets/order_instructions_card.dart';
@@ -34,7 +35,7 @@ class OrderTrackingPage extends WatchingStatefulWidget {
 
   static const String notFoundTitle = 'Pedido não encontrado.';
   static const String notFoundMessage = 'Ele não existe ou é de outra conta.';
-  static const String backToStoreAction = 'Voltar para a loja';
+  static const String backToStoreAction = OrderTexts.backToStore;
   static const String errorTitle = 'Não foi possível carregar o pedido.';
 
   /// Cria o ViewModel; a rota passa o `registerFactory` da DI.

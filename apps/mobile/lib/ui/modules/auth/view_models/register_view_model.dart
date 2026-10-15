@@ -32,14 +32,6 @@ class RegisterViewModel extends ChangeNotifier {
   String _confirmPassword = '';
   bool _attempted = false;
 
-  String get name => _name;
-
-  String get email => _email;
-
-  String get password => _password;
-
-  String get confirmPassword => _confirmPassword;
-
   String? get nameError =>
       _attempted ? validationMessage(PersonName.create(_name)) : null;
 

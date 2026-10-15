@@ -58,4 +58,11 @@ class AppColors {
   static const Color tintYellow = Color(0xFFFFF7DD);
   static const Color tintPeach = Color(0xFFFFF1E6);
   static const Color tintGreen = Color(0xFFF0F7EA);
+
+  // Cores das sombras `--shadow-card`, `--shadow-brand`, `--shadow-float` e
+  // `--shadow-badge`; deslocamento e desfoque ficam em `brand_tokens.dart`.
+  static const Color shadowCard = Color.fromRGBO(30, 24, 18, 0.09);
+  static const Color shadowBrand = Color.fromRGBO(255, 107, 0, 0.28);
+  static const Color shadowFloat = Color.fromRGBO(0, 0, 0, 0.12);
+  static const Color shadowBadge = Color.fromRGBO(0, 0, 0, 0.08);
 }

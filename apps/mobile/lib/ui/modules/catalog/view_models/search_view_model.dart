@@ -14,11 +14,6 @@ import '../../../../modules/catalog/model/product_summary_entity.dart';
 import '../../../../modules/catalog/provider/catalog_repository.dart';
 import '../../../shared/view_models/block_state.dart';
 
-const _unexpectedFailure = UnexpectedFailure(
-  message: 'Algo deu errado. Tente novamente.',
-  code: GenericFailureCode.unspecified,
-);
-
 /// Estado da aba Buscar: o filtro em vigor, a espera da busca digitada, a
 /// listagem paginada e a árvore de categorias do painel de filtros.
 ///
@@ -28,10 +23,7 @@ const _unexpectedFailure = UnexpectedFailure(
 /// geração do filtro, e a resposta de uma geração antiga é descartada (da
 /// primeira página e da seguinte).
 class SearchViewModel extends ChangeNotifier {
-  SearchViewModel(
-    this._repository, {
-    this.searchDelay = const Duration(milliseconds: 300),
-  }) {
+  SearchViewModel(this._repository) {
     loadCategories = Command0<void>(_fetchCategories, onStateChange: _notify);
     loadMore = Command0<void>(_fetchNextPage, onStateChange: _notify);
   }
@@ -39,7 +31,7 @@ class SearchViewModel extends ChangeNotifier {
   final CatalogRepository _repository;
 
   /// Tempo sem digitação até a busca do campo valer.
-  final Duration searchDelay;
+  static const searchDelay = Duration(milliseconds: 300);
 
   /// Busca a árvore de categorias (reaproveitando a guardada, salvo depois de
   /// [refresh]). É o "Tentar de novo" do grupo Categoria do painel.
@@ -260,7 +252,7 @@ class SearchViewModel extends ChangeNotifier {
     try {
       return await _repository.fetchProducts(listingPageQuery(query, page));
     } catch (_) {
-      return const Failure(_unexpectedFailure);
+      return const Failure(unspecifiedFailure);
     }
   }
 

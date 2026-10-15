@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/infra/auth/secure_session_storage.dart';
 import 'package:mobile/infra/auth/session.dart';
@@ -46,8 +49,128 @@ import '../../modules/order/support/fake_order_live_source.dart';
 import '../../modules/order/support/fake_order_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 
+/// Os ViewModels que as rotas pedem ao `getIt`; todos `registerFactory`.
+const _viewModelTypes = <Type>[
+  StoreSelectorViewModel,
+  HomeViewModel,
+  SearchViewModel,
+  ProductDetailViewModel,
+  LoginViewModel,
+  RegisterViewModel,
+  AccountViewModel,
+  CartViewModel,
+  DeliveryDetailsViewModel,
+  CheckoutViewModel,
+  OrderTrackingViewModel,
+];
+
+/// Tudo o que `app_router.dart` e `bootstrap.dart` resolvem no `getIt`. O
+/// teste "a lista acompanha…" lê os dois arquivos e falha se ela envelhecer.
+const _appRequestedTypes = <Type>[
+  Session,
+  SessionRepository,
+  GuestCartRepository,
+  SessionCartRepository,
+  ..._viewModelTypes,
+];
+
+/// Arquivos de `lib/app` que pedem dependências ao `getIt`.
+const _appFilesUsingLocator = [
+  'lib/app/router/app_router.dart',
+  'lib/app/bootstrap.dart',
+];
+
+/// Instância nova a cada pedido: os ViewModels e os casos de uso que eles
+/// recebem.
+const _factoryTypes = <Type>[
+  ..._viewModelTypes,
+  LoadDeliveryDetails,
+  LiveOrderFeed,
+];
+
+/// A mesma instância em todo pedido: cliente HTTP, armazenamento e
+/// repositórios.
+const _singletonTypes = <Type>[
+  Dio,
+  KeyValueStore,
+  SessionStorage,
+  Session,
+  SessionRepository,
+  AuthRepository,
+  StoreRepository,
+  CatalogRepository,
+  GuestCartStorage,
+  GuestCartRepository,
+  AccountCartApi,
+  SessionCartRepository,
+  CartRepository,
+  CustomerRepository,
+  OrderRepository,
+  OrderLiveSource,
+];
+
+/// Resolve [type] pela DI; ViewModel resolvido é descartado no fim do teste.
+Object _resolve(Type type) {
+  final instance = getIt.get<Object>(type: type);
+  if (_viewModelTypes.contains(type)) {
+    addTearDown((instance as ChangeNotifier).dispose);
+  }
+  return instance;
+}
+
 void main() {
   tearDown(resetDependencies);
+
+  group('tudo o que o app pede ao getIt', () {
+    for (final type in _appRequestedTypes) {
+      test('$type sai da DI real', () {
+        configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+        expect(getIt.isRegistered(type: type), isTrue);
+        expect(() => _resolve(type), returnsNormally);
+      });
+    }
+
+    test('a lista acompanha os getIt<T> do router e do bootstrap', () {
+      final pattern = RegExp(r'getIt<(\w+)>');
+      final requested = {
+        for (final path in _appFilesUsingLocator)
+          for (final match in pattern.allMatches(File(path).readAsStringSync()))
+            match.group(1)!,
+      };
+      expect(
+        requested,
+        isNotEmpty,
+        reason: 'Nenhum getIt<T> encontrado — o teste não verificou nada.',
+      );
+
+      expect(
+        {for (final type in _appRequestedTypes) type.toString()},
+        requested,
+        reason:
+            'Atualize _appRequestedTypes com os getIt<T> de '
+            '${_appFilesUsingLocator.join(' e ')}.',
+      );
+    });
+  });
+
+  group('tempo de vida dos registros', () {
+    for (final type in _factoryTypes) {
+      test('$type é uma instância nova a cada pedido', () {
+        configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+        expect(identical(_resolve(type), _resolve(type)), isFalse);
+      });
+    }
+
+    for (final type in _singletonTypes) {
+      test('$type é a mesma instância em todo pedido', () {
+        configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+        expect(identical(_resolve(type), _resolve(type)), isTrue);
+      });
+    }
+  });
 
   group('configureDependencies', () {
     test('registra o Dio', () {

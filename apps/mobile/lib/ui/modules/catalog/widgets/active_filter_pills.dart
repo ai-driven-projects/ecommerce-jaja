@@ -9,6 +9,7 @@ import '../../../shared/formatters/money_formatter.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_chip.dart';
+import '../view_models/catalog_texts.dart';
 
 /// Uma pílula por filtro ativo, nesta ordem: a categoria, cada marca, o preço,
 /// "Só ofertas" e "Só destaques" (`activeFilters` de
@@ -30,8 +31,8 @@ class ActiveFilterPills extends StatelessWidget {
   });
 
   static const String onSaleLabel = 'Só ofertas';
-  static const String featuredLabel = 'Só destaques';
-  static const String clearLabel = 'Limpar filtros';
+  static const String featuredLabel = CatalogTexts.featuredOnly;
+  static const String clearLabel = CatalogTexts.clearFilters;
 
   /// Quantidade de pílulas de [query]: o n de "Filtros (n)".
   static int countOf(ProductQuery query) =>
