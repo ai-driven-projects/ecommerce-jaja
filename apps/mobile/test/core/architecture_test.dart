@@ -58,6 +58,28 @@ void main() {
       },
     );
 
+    test('get_it só em lib/infra/di e lib/app', () {
+      final scanned = dartFilesIn('lib');
+      expect(
+        scanned,
+        isNotEmpty,
+        reason: 'Nenhum arquivo .dart escaneado — a barreira não rodou.',
+      );
+
+      final violations = scanDirectory(
+        'lib',
+        rules: {ImportRule.locatorConfinement},
+      );
+
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'Localizador de dependências fora de lib/infra/di e lib/app:\n'
+            '${violations.join('\n')}',
+      );
+    });
+
     test('pages e widgets de lib/ui tiram cor, tipografia e raio do tema', () {
       final scanned = dartFilesIn(
         'lib/ui',
@@ -256,6 +278,65 @@ void main() {
       );
 
       expect(violations, isEmpty);
+    });
+  });
+
+  group('Regra D: localizador de dependências confinado', () {
+    const getItImport = "import 'package:get_it/get_it.dart';";
+
+    test('get_it numa página é violação com arquivo e linha', () {
+      final violations = _scan(
+        'lib/ui/modules/catalog/pages/x.dart',
+        "import 'package:flutter/material.dart';\n$getItImport\n",
+        ImportRule.locatorConfinement,
+      );
+
+      expect(violations, hasLength(1));
+      expect(
+        violations.single.toString(),
+        'lib/ui/modules/catalog/pages/x.dart:2 → $getItImport',
+      );
+    });
+
+    for (final filePath in [
+      'lib/modules/cart/x.dart',
+      'lib/infra/http/x.dart',
+    ]) {
+      test('get_it em $filePath é violação', () {
+        final violations = _scan(
+          filePath,
+          '$getItImport\n',
+          ImportRule.locatorConfinement,
+        );
+
+        expect(violations, hasLength(1));
+        expect(violations.single.rule, ImportRule.locatorConfinement);
+      });
+    }
+
+    for (final filePath in [
+      'lib/infra/di/x.dart',
+      'lib/app/router/x.dart',
+      '/projeto/apps/mobile/lib/infra/di/x.dart',
+    ]) {
+      test('get_it em $filePath é aceito', () {
+        final violations = _scan(
+          filePath,
+          '$getItImport\n',
+          ImportRule.locatorConfinement,
+        );
+
+        expect(violations, isEmpty);
+      });
+    }
+
+    test('a regra D está no conjunto padrão', () {
+      final violations = scanSource(
+        filePath: 'lib/infra/http/x.dart',
+        source: '$getItImport\n',
+      );
+
+      expect(violations.map((v) => v.rule), [ImportRule.locatorConfinement]);
     });
   });
 

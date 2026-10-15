@@ -173,7 +173,7 @@
       "commit": "28b7313577e15918a21cd0cd8e1d77e149186c7f"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 3,
       "phase": "Fundamentos",
       "title": "HTTP, DI e shell de navegação",
@@ -184,7 +184,55 @@
         "base": "adf5fa956b4bdfbf87d092c3d8791bd8fe109cb8",
         "commit": "6153d78d178dbf8d2dcf1c9d47554783af57582e",
         "at": "2026-10-15T13:32:53.594Z"
-      }
+      },
+      "iteration": 3,
+      "deliveredAt": "2026-10-15T13:45:37.865Z",
+      "durationMs": 760553,
+      "cost": 5.17967,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 56269,
+          "cost": 0.536522,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 12877,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 340,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 633776,
+          "cost": 4.2950812,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 21736,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 35427,
+          "cost": 0.34806679999999995,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 128,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
@@ -271,84 +319,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 3,
-    "stage": 3,
-    "startCommit": "28b7313577e15918a21cd0cd8e1d77e149186c7f",
-    "startedAt": "2026-10-15T13:32:57.228Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 56269,
-        "cost": 0.536522,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 12877,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja cliente HTTP, DI, entrypoints e shell de abas do app mobile",
-      "comparison": "A etapa 1 já deixou em lib/core os tipos de falha (rede, sessão, recusa com statusCode e codes, não encontrado, servidor) e a resolução de API_URL que nada usa ainda; falta o enum de códigos HTTP, reservado para esta etapa.\nO backend responde erro como ApiErrorResponse com os códigos em message; o web guarda esses códigos e traduz por um dicionário de ~180 entradas, quase todas de admin. Por isso aqui só entram as mensagens genéricas, e cada etapa traduz os códigos que usa.\nO app modelo da plataforma serviu de desenho para cliente, mapeador, DI, bootstrap e shell; o mapeador dele lida com 401/5xx, e aqui ele foi refeito sem Firebase, flavors nem o domínio de cursos.\nOs mockups e o web não têm barra de abas, então o tema da barra sai dos tokens da etapa 2. O lib/main.dart mínimo e o tema que a etapa 2 põe nele passam para lib/app.\nO flutter create só declara a permissão INTERNET nos manifestos de debug e profile; sem ela no manifesto principal, o app de produção não teria rede.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 2609014,
-    "cost": 19.0659226,
+    "durationMs": 3300421,
+    "cost": 25.4144194,
     "runs": 1,
     "iterationsStarted": 3,
-    "iterationsDelivered": 2,
-    "claudeSessions": 20,
-    "turns": 278,
-    "checks": 23,
+    "iterationsDelivered": 3,
+    "claudeSessions": 28,
+    "turns": 381,
+    "checks": 26,
     "fixes": 3,
     "recoveries": 1,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 5
+    "commits": 6
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

@@ -80,6 +80,29 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: button(AppButtonVariant.ghost),
       ),
+      navigationBarTheme: _navigationBarTheme(textTheme),
+    );
+  }
+
+  // Barra de abas: sem referência no web nem nos mockups; segue o chip ativo
+  // (fundo `brandSoft`, texto `brand`) sobre o cartão branco.
+  static NavigationBarThemeData _navigationBarTheme(TextTheme textTheme) {
+    Color colorFor(Set<WidgetState> states) =>
+        states.contains(WidgetState.selected)
+        ? AppColors.brand
+        : AppColors.mutedInk;
+
+    return NavigationBarThemeData(
+      height: 64,
+      backgroundColor: AppColors.card,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: AppColors.brandSoft,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(color: colorFor(states)),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (states) => textTheme.labelMedium!.copyWith(color: colorFor(states)),
+      ),
     );
   }
 

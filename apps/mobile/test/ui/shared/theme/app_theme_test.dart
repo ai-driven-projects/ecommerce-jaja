@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/main.dart';
+import 'package:mobile/app/app.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
 import 'package:mobile/ui/shared/theme/brand_tokens.dart';
 
@@ -23,6 +23,34 @@ void main() {
     expect(theme.colorScheme.onSurface.toARGB32(), 0xFF1E1812);
   });
 
+  test(
+    'a barra de abas é branca, com indicador brandSoft e aba ativa brand',
+    () {
+      final bar = theme.navigationBarTheme;
+      const selected = {WidgetState.selected};
+      const idle = <WidgetState>{};
+
+      expect(bar.backgroundColor, BrandTokens.light.card);
+      expect(bar.indicatorColor, BrandTokens.light.brandSoft);
+      expect(bar.surfaceTintColor, Colors.transparent);
+      expect(bar.height, 64);
+      expect(bar.iconTheme!.resolve(selected)!.color, BrandTokens.light.brand);
+      expect(bar.iconTheme!.resolve(idle)!.color, BrandTokens.light.mutedInk);
+      expect(
+        bar.labelTextStyle!.resolve(selected)!.color,
+        BrandTokens.light.brand,
+      );
+      expect(
+        bar.labelTextStyle!.resolve(idle)!.color,
+        BrandTokens.light.mutedInk,
+      );
+      expect(
+        bar.labelTextStyle!.resolve(idle)!.fontSize,
+        theme.textTheme.labelMedium!.fontSize,
+      );
+    },
+  );
+
   testWidgets('com o aparelho em modo escuro o app continua claro', (
     tester,
   ) async {
@@ -31,7 +59,7 @@ void main() {
 
     await tester.pumpWidget(const JajaApp());
 
-    final context = tester.element(find.byType(Scaffold));
+    final context = tester.element(find.byType(Scaffold).first);
     final current = Theme.of(context);
     expect(MediaQuery.platformBrightnessOf(context), Brightness.dark);
     expect(current.brightness, Brightness.light);
@@ -41,7 +69,7 @@ void main() {
     final material = tester.widget<Material>(
       find
           .descendant(
-            of: find.byType(Scaffold),
+            of: find.byType(Scaffold).first,
             matching: find.byType(Material),
           )
           .first,

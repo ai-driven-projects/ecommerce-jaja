@@ -57,3 +57,15 @@ enum GenericFailureCode { unspecified }
 enum MoneyCode { negativeCents }
 
 enum ConfigurationCode { missingApiUrl, invalidApiUrl }
+
+/// Códigos das falhas de requisição HTTP, atribuídos por `mapHttpFailure` em
+/// `lib/infra/http`.
+enum HttpFailureCode {
+  noConnection,
+  timeout,
+  sessionExpired,
+  notFound,
+  rejected,
+  server,
+  unexpected,
+}

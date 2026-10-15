@@ -32,7 +32,12 @@ const allowedLayersByPureLayer = {
 const infraPackages = {'dio', 'flutter_secure_storage', 'shared_preferences'};
 const infraLayer = 'infra';
 
-enum ImportRule { purity, infraConfinement }
+/// Regra D: o localizador de dependências, confinado à DI e à inicialização.
+/// Decidida pelo caminho (não só pela camada): `lib/infra/http` é proibido.
+const locatorPackage = 'get_it';
+const locatorAllowedPrefixes = {'infra/di/', 'app/'};
+
+enum ImportRule { purity, infraConfinement, locatorConfinement }
 
 class ImportViolation {
   const ImportViolation(
@@ -114,7 +119,8 @@ List<ImportViolation> scanDirectory(
 
 /// Lê as diretivas com o parser do `analyzer`: `import` comentado ou dentro de
 /// string não é diretiva e não conta. Cada regra só se aplica aos arquivos da
-/// sua camada (Regra A em `core`/`modules`, Regra B fora de `infra`).
+/// sua camada (Regra A em `core`/`modules`, Regra B fora de `infra`, Regra D
+/// fora de `infra/di` e `app`).
 List<ImportViolation> scanSource({
   required String filePath,
   required String source,
@@ -139,7 +145,14 @@ List<ImportViolation> scanSource({
     for (final uri in uris) {
       final target = resolveImportTarget(uri: uri, fromFile: filePath);
       final brokenRule = rules
-          .where((rule) => _breaks(rule, fromLayer: fromLayer, target: target))
+          .where(
+            (rule) => _breaks(
+              rule,
+              fromLib: fromLib,
+              fromLayer: fromLayer,
+              target: target,
+            ),
+          )
           .firstOrNull;
       if (brokenRule == null) continue;
 
@@ -186,6 +199,7 @@ ImportTarget resolveImportTarget({
 
 bool _breaks(
   ImportRule rule, {
+  required String? fromLib,
   required String? fromLayer,
   required ImportTarget target,
 }) {
@@ -204,6 +218,11 @@ bool _breaks(
     case ImportRule.infraConfinement:
       if (fromLayer == infraLayer) return false;
       return target is PackageTarget && infraPackages.contains(target.package);
+    case ImportRule.locatorConfinement:
+      if (fromLib != null && locatorAllowedPrefixes.any(fromLib.startsWith)) {
+        return false;
+      }
+      return target is PackageTarget && target.package == locatorPackage;
   }
 }
 

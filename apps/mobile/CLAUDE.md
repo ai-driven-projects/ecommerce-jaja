@@ -15,6 +15,9 @@ reescreve para refletir o estado final.
 `Command`, `AppFailure`; `Money` e ambiente a seguir). Ainda não há tema, rotas, DI, HTTP nem domínio.
 Etapa 2: já existem o tema claro da marca (`lib/ui/shared/theme/`, com as fontes em `assets/fonts/`), o
 `formatMoney` e os componentes base em `lib/ui/shared/widgets/`; o `main.dart` mínimo usa `AppTheme.light()`.
+Etapa 3: já existem o cliente HTTP com falhas tipadas (`lib/infra/http/`), a DI com `get_it`
+(`lib/infra/di/`), os entrypoints `lib/main_dev.dart`/`lib/main_prod.dart` (o `main.dart` foi apagado), o
+bootstrap e o `JajaApp` em `lib/app/`, e o shell de quatro abas com páginas provisórias.
 
 ## Arquitetura
 
@@ -79,6 +82,43 @@ test/             # espelha lib/ (nunca teste ao lado do código)
      `static Result<T>` de criação (`Money.fromCents`). Quando é **estado degradado válido**: construtor
      público e getters que devolvem `null`.
    - VO de `core/` não conhece `modules/` (a barreira barra).
+
+## Infraestrutura de HTTP, DI e rotas
+
+- **Toda chamada à API passa por `runRequest`** (`lib/infra/http/run_request.dart`):
+  `runRequest(() => dio.get<Object?>(...), parse)` devolve `Result<T>`. `DioException` vira falha por
+  `mapHttpFailure` (`http_failure_mapper.dart`); qualquer outro erro, inclusive no `parse`, vira
+  `UnexpectedFailure`. Repositório nunca faz `try/catch` de `dio` nem chama `mapHttpFailure` à mão.
+- **Status → falha** (código em `HttpFailureCode`, em `core/errors/app_failure.dart`):
+
+  | Situação | Falha | Mensagem |
+  |---|---|---|
+  | sem conexão, certificado ruim | `NetworkFailure` (`noConnection`) | "Não foi possível falar com o servidor. Tente novamente." |
+  | tempo esgotado (conexão, envio, resposta, conversão) | `NetworkFailure` (`timeout`) | idem |
+  | 401 | `SessionFailure` (`sessionExpired`) | "Sua sessão expirou. Entre de novo." |
+  | 404 | `NotFoundFailure` (`notFound`) | "Não encontramos o que você procurou." |
+  | outros 4xx | `BackendRejectionFailure` (`rejected`, `statusCode`, `codes` do `message`) | "Não foi possível concluir. Tente novamente." |
+  | ≥ 500 | `ServerFailure` (`server`) | "O servidor está indisponível no momento. Tente novamente em instantes." |
+  | cancelado, desconhecido, status ausente ou < 400 | `UnexpectedFailure` (`unexpected`) | "Algo deu errado. Tente novamente." |
+
+  A mensagem nunca lista códigos do backend; texto específico por código é olhando `codes`, na etapa que o
+  consome.
+- **Cliente:** `createApiClient(Uri)` (`api_client.dart`), registrado como `Dio` lazy singleton em
+  `configureDependencies`. Interceptores (Bearer) entram nesse mesmo cliente.
+- **`getIt` só em `lib/infra/di/` e `lib/app/`** (regra D da barreira, `ImportRule.locatorConfinement`):
+  qualquer outro arquivo, inclusive os entrypoints na raiz de `lib/`, que importe `get_it` faz o
+  `flutter test` falhar. Teste que chama `configureDependencies` faz `tearDown(resetDependencies)`.
+- **Entrypoints:** `lib/main_dev.dart` e `lib/main_prod.dart` só chamam `bootstrap(AppEnvironment.x)`; todo
+  `flutter run` usa `-t` (o `Makefile` cuida). Endereço não resolvido abre `ConfigurationErrorApp`, sem
+  registrar dependências.
+- **Rotas:** caminhos em `AppRoutes` (`lib/app/router/app_routes.dart`), nunca string solta; o router é
+  `buildAppRouter` com um `StatefulShellBranch` por aba (Início, Buscar, Carrinho, Conta, nessa ordem), `/`
+  redirecionado para `/home` e `NotFoundPage` para rota desconhecida. Em `ui/`, só o
+  `AppNavigationShell` importa `go_router` (pelo `StatefulNavigationShell`); páginas recebem navegação por
+  callback, como a `NotFoundPage`.
+- **Página provisória:** `Scaffold` + `SafeArea` + `PlaceholderBody(title:)`, na pasta `pages/` do domínio
+  dono da aba (`catalog`, `cart`, `auth`). A etapa da funcionalidade troca a página; o `PlaceholderBody` sai
+  quando não sobrar consumidor.
 
 ## Estado
 
