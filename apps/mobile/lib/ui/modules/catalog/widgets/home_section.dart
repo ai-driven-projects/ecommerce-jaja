@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/state_error_banner.dart';
-import '../view_models/block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 import 'section_heading.dart';
 
 /// Seção da Início que depende de uma busca remota, no padrão de tela

@@ -60,6 +60,25 @@ enum EmailCode { invalid }
 
 enum PersonNameCode { tooShort, tooLong, surnameMissing }
 
+/// Códigos `CPF_*` de `packages/shared/src/vo/cpf.vo.ts`.
+enum CpfCode {
+  invalidFormat,
+  invalidLength,
+  repeatedSequence,
+  invalidCheckDigit,
+}
+
+/// Códigos `PHONE_*` de `packages/shared/src/vo/phone.vo.ts`.
+enum PhoneCode { invalidFormat, invalidLength }
+
+enum ZipCodeCode { invalid }
+
+enum StateCodeCode { invalid }
+
+/// Códigos `TEXT_TOO_SHORT`/`TEXT_TOO_LONG` de
+/// `packages/shared/src/vo/text.vo.ts`.
+enum TextCode { tooShort, tooLong }
+
 /// `mismatch`: a confirmação do cadastro difere da senha (validada no
 /// `RegisterViewModel`, não num value object).
 enum PasswordCode { tooWeak, mismatch }

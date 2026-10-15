@@ -14,7 +14,7 @@ import '../../../../modules/catalog/model/product_detail_entity.dart';
 import '../../../../modules/catalog/model/product_page_entity.dart';
 import '../../../../modules/catalog/model/product_summary_entity.dart';
 import '../../../../modules/catalog/provider/catalog_repository.dart';
-import 'block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 
 /// O que foi incluído no carrinho, para o aviso "Adicionado ao carrinho".
 typedef AddedToCart = ({int quantity, Money total});

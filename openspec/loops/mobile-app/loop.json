@@ -656,18 +656,73 @@
       "commit": "d9aa06e9d04977b2922c41a09bc48beaa3076ed1"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 11,
       "phase": "Pedido",
       "title": "Dados de entrega",
-      "change": "mobile-app-11-dados-entrega-mobile"
+      "change": "mobile-app-11-dados-entrega-mobile",
+      "iteration": 11,
+      "deliveredAt": "2026-10-15T18:39:42.435Z",
+      "durationMs": 1706561,
+      "cost": 12.4207466,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 356781,
+          "cost": 2.8689742000000007,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 30074,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 349,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 1248521,
+          "cost": 9.203869599999999,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 34430,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 36151,
+          "cost": 0.3479028,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 255,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
       "number": 12,
       "phase": "Pedido",
       "title": "Checkout",
-      "change": "mobile-app-12-checkout-mobile"
+      "change": "mobile-app-12-checkout-mobile",
+      "early": {
+        "title": "Planeja o checkout do app mobile",
+        "comparison": "- O plano cita POST /me/cart/orders, mas MyOrderController expõe só POST /me/orders (corpo lido: recipientName e deliveryInstructions; 201 com OrderDetailDTO; ORDER_* em 400). A change segue o controller e registra a divergência.\n- A aba Carrinho já tem \"Finalizar pedido · <total>\" fixo e desabilitado (_CheckoutBar com onPressed null); o SessionCartRepository da etapa 10 já oferece refresh(), remove com Result e o CartState com isSyncing e indisponíveis. O checkout reaproveita isso, sem esvaziar o carrinho por conta própria.\n- O checkout do web (checkout.page.tsx) mostra o login e o formulário de entrega dentro da página. No app, a sessão vem da guarda de rotas (sessionRequiredPaths, ainda vazia no código) e os dados de entrega reaproveitam a tela da etapa 11, aberta por cima do checkout.\n- A etapa 11 ainda está em obras: CustomerRepository.fetchMine, DeliveryDetailsPage, BlockState em ui/shared e as máscaras foram assumidos pela change dela e listados em \"Dependências da etapa anterior\".\n- O acompanhamento só existe na etapa 13, então o sucesso leva a uma página provisória em /cart/orders/:id; o domínio order nasce só com placeOrder e PlacedOrder(id).",
+        "base": "0ce55f0bf6209a10f92664d94d0052b9c9a6915f",
+        "commit": "ff2ccfeef4632c8c31c506f2a86ff4cd0941e731",
+        "at": "2026-10-15T18:39:42.424Z"
+      }
     },
     {
       "status": "pending",
@@ -691,84 +746,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 11,
-    "stage": 11,
-    "startCommit": "d9aa06e9d04977b2922c41a09bc48beaa3076ed1",
-    "startedAt": "2026-10-15T18:11:15.802Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 356781,
-        "cost": 2.8689742000000007,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 30074,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja os dados de entrega do app mobile",
-      "comparison": "O app já tem sessão, guarda de rotas (com `sessionRequiredPaths` vazio e um teste exigindo isso) e carrinho da conta, mas ainda não tem o domínio `customer`. A aba Conta só mostra o perfil e \"Sair\".\nO `PUT /me/customer` exige CPF e o endereço inteiro. Se `location` não vier, a API mantém o ponto atual; `null` apaga. O plano pede sempre enviar o ponto do `GET` (ou `null`), e o design segue isso e registra o risco.\nO plano fala em \"nome, telefone e endereço\", mas o nome é da conta de acesso e o CPF é obrigatório. A tela segue o \"Minha conta\" do web: nome e e-mail só para leitura, CPF, telefone e endereço editáveis.\nO `mapHttpFailure` descarta os códigos do `404`, então qualquer `404` do `GET` vira \"sem cadastro\". O `Store.place` (`CityState`) já existe para preencher cidade e UF do cliente novo.\nO `CLAUDE.md` manda subir o `BlockState` para `ui/shared/` no segundo consumidor fora do catálogo. Esta tela é esse consumidor, então a mudança entrou na etapa.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 19599170,
-    "cost": 161.18732169999998,
+    "durationMs": 20918876,
+    "cost": 173.65817249999998,
     "runs": 1,
     "iterationsStarted": 11,
-    "iterationsDelivered": 10,
-    "claudeSessions": 96,
-    "turns": 1829,
-    "checks": 71,
+    "iterationsDelivered": 11,
+    "claudeSessions": 104,
+    "turns": 2007,
+    "checks": 74,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 25
+    "commits": 27
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

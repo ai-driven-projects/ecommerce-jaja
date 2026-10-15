@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 
 import '../theme/app_typography.dart';
 import '../theme/brand_tokens.dart';
@@ -20,6 +21,8 @@ class AppTextField extends StatelessWidget {
     this.maxLength,
     this.enabled = true,
     this.autofillHints,
+    this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   final String label;
@@ -35,6 +38,10 @@ class AppTextField extends StatelessWidget {
   final int? maxLength;
   final bool enabled;
   final Iterable<String>? autofillHints;
+
+  /// Máscaras e filtros aplicados a cada digitação, antes do [maxLength].
+  final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +66,8 @@ class AppTextField extends StatelessWidget {
           maxLength: maxLength,
           enabled: enabled,
           autofillHints: autofillHints,
+          inputFormatters: inputFormatters,
+          textCapitalization: textCapitalization,
           style: textTheme.bodyMedium!.copyWith(color: tokens.ink),
           cursorColor: tokens.brand,
           decoration: InputDecoration(hintText: hintText, errorText: errorText),

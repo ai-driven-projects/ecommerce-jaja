@@ -20,7 +20,7 @@ import '../../../shared/widgets/product_badge.dart';
 import '../../../shared/widgets/quantity_stepper.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
-import '../view_models/block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 import '../view_models/product_detail_view_model.dart';
 import '../widgets/category_trail.dart';
 import '../widgets/product_description.dart';

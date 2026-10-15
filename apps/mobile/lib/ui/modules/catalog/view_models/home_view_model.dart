@@ -7,7 +7,7 @@ import '../../../../modules/catalog/model/home_catalog.dart';
 import '../../../../modules/catalog/model/product_query.dart';
 import '../../../../modules/catalog/model/product_summary_entity.dart';
 import '../../../../modules/catalog/provider/catalog_repository.dart';
-import 'block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 
 /// Estado da aba Início: três blocos remotos independentes (categorias,
 /// destaques e ofertas), cada um com o próprio command. O último resultado de

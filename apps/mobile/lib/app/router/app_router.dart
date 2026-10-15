@@ -20,6 +20,8 @@ import '../../ui/modules/catalog/pages/search_page.dart';
 import '../../ui/modules/catalog/view_models/home_view_model.dart';
 import '../../ui/modules/catalog/view_models/product_detail_view_model.dart';
 import '../../ui/modules/catalog/view_models/search_view_model.dart';
+import '../../ui/modules/customer/pages/delivery_details_page.dart';
+import '../../ui/modules/customer/view_models/delivery_details_view_model.dart';
 import '../../ui/modules/store/view_models/store_selector_view_model.dart';
 import '../../ui/shared/pages/not_found_page.dart';
 import '../../ui/shared/pages/splash_page.dart';
@@ -173,7 +175,23 @@ GoRouter buildAppRouter({String initialLocation = AppRoutes.home}) {
                   onOpenRegister: () => context.push(
                     AppRoutes.registerLocation(from: AppRoutes.account),
                   ),
+                  onOpenDeliveryDetails: () =>
+                      context.go(AppRoutes.deliveryDetails),
                 ),
+                routes: [
+                  // Filha de /account: fica na pilha da aba Conta, com a
+                  // barra de abas visível; exige sessão (guarda).
+                  GoRoute(
+                    path: AppRoutes.deliveryDetailsSegment,
+                    builder: (context, state) => DeliveryDetailsPage(
+                      deliveryDetailsViewModelFactory: () =>
+                          getIt<DeliveryDetailsViewModel>(),
+                      onBack: () => context.canPop()
+                          ? context.pop()
+                          : context.go(AppRoutes.account),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

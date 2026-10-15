@@ -21,6 +21,7 @@ import 'package:mobile/ui/modules/catalog/pages/search_page.dart';
 import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
 import 'package:mobile/ui/modules/catalog/widgets/filters_sheet.dart';
 import 'package:mobile/ui/modules/catalog/widgets/product_grid.dart';
+import 'package:mobile/ui/modules/customer/pages/delivery_details_page.dart';
 import 'package:mobile/ui/shared/pages/splash_page.dart';
 import 'package:mobile/ui/shared/theme/app_theme.dart';
 import 'package:mobile/ui/shared/widgets/app_button.dart';
@@ -538,6 +539,54 @@ void main() {
       expect(find.byType(LoginPage), findsNothing);
       expect(find.text(AccountPage.inviteTitle), findsOneWidget);
       expect(_bar(tester).selectedIndex, 3);
+      expect(_location(router), AppRoutes.account);
+    });
+
+    testWidgets('/account/delivery sem sessão leva a "Entrar" com o destino '
+        'e, depois de entrar, abre os dados de entrega na aba Conta', (
+      tester,
+    ) async {
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.deliveryDetails,
+      );
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(DeliveryDetailsPage), findsNothing);
+      expect(_fullLocation(router), '/login?from=%2Faccount%2Fdelivery');
+
+      await _signIn(tester);
+
+      expect(find.byType(LoginPage), findsNothing);
+      expect(find.byType(DeliveryDetailsPage), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 3);
+      expect(_location(router), AppRoutes.deliveryDetails);
+    });
+
+    testWidgets('com sessão, "Dados de entrega" na Conta abre a tela na pilha '
+        'da aba, e voltar retorna à Conta', (tester) async {
+      await _useSession(FakeAuthRepository(currentUser: ana));
+      final router = await _pumpRouter(
+        tester,
+        initialLocation: AppRoutes.account,
+      );
+
+      await tester.tap(
+        find.widgetWithText(AppButton, AccountPage.deliveryDetailsLabel),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DeliveryDetailsPage), findsOneWidget);
+      expect(find.text(DeliveryDetailsPage.title), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(_bar(tester).selectedIndex, 3);
+      expect(_location(router), AppRoutes.deliveryDetails);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DeliveryDetailsPage), findsNothing);
+      expect(find.text(AccountPage.greeting('Ana')), findsOneWidget);
       expect(_location(router), AppRoutes.account);
     });
 

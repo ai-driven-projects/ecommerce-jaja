@@ -63,6 +63,14 @@ Etapa 10: já existem o carrinho da conta (`GET/POST/PUT/DELETE /me/cart`, `POST
 `CartRepository` do app e escolhe a fonte pela sessão; `accountCartItems` (`lib/modules/cart/model/`),
 `cartErrorFromCodes` e `CartErrorCode.productUnavailable`, o `mergeFailure` no `CartState`, `remove` com
 `Result` e `clear()` no contrato, e na aba Carrinho o banner de falha da carga e o aviso da mescla.
+Etapa 11: já existem os dados de entrega (`GET/PUT /me/customer`): os VOs `Cpf`, `Phone`, `ZipCode`,
+`StateCode` e `BoundedText` em `lib/core/value_objects/`, o domínio `lib/modules/customer/` (`Customer`,
+`CustomerAddress` e `CustomerLocation` em `freezed`, `customer_rules.dart` com `CustomerDraft.validate`,
+`customer_errors.dart`, o contrato `CustomerRepository` e `LoadDeliveryDetails`), o `ApiCustomerRepository`
+(`lib/infra/customer/`) com o DTO `customer_dto.dart`, a tela `DeliveryDetailsPage` com o
+`DeliveryDetailsViewModel` e as máscaras (`lib/ui/modules/customer/`), o item "Dados de entrega" na aba
+Conta (rota `/account/delivery`, `AppRoutes.deliveryDetails`), `inputFormatters` e `textCapitalization` no
+`AppTextField`, e o `BlockState` em `lib/ui/shared/view_models/`.
 
 ## Arquitetura
 
@@ -237,7 +245,7 @@ Todo bloco que mostra dado buscado da rede segue a mesma regra, sem variação p
 - **Vazio:** mensagem curta com **uma ação** (ex.: "Ver catálogo").
 - "Tentar de novo" refaz só o que falhou; puxar a tela refaz tudo.
 - **Forma do bloco no ViewModel:** cada bloco remoto é um `BlockState<T>` (`sealed class` em
-  `lib/ui/modules/catalog/view_models/block_state.dart`: `BlockLoading`, `BlockFailed(failure)`,
+  `lib/ui/shared/view_models/block_state.dart`, desde a etapa 11: `BlockLoading`, `BlockFailed(failure)`,
   `BlockLoaded(value)`), exposto como propriedade própria do ViewModel (não o `result` do `Command`),
   observado com `watchPropertyValue` e consumido por `switch` exaustivo (a `HomeSection` é o molde:
   skeleton, `StateErrorBanner` com "Tentar de novo", nada quando carregado e vazio, conteúdo). Tela nova
@@ -466,6 +474,18 @@ specs em `openspec/specs/<domínio>/`.
   (`onAddToCart: null`) até a etapa 9 ligar o carrinho; sem stepper, total nem entrega antes disso.
 - **Dados de entrega:** `GET/PUT /me/customer` com endereço em texto, **sem mapa**. Ao salvar, preserve a
   `location` vinda do backend; cliente novo vai com `location: null`.
+  - O `PUT` leva **sempre** `address.location` explícita: a do último `GET` (ou da última resposta do
+    `PUT`) ou `null` sem cadastro; nunca omitida. `CustomerDraft` exige `location` no construtor para nenhum
+    caminho esquecê-la.
+  - `404` no `GET /me/customer` significa **sem cadastro** (`Ok(null)` no `CustomerRepository`), não falha:
+    a tela abre vazia com a cidade/UF da loja em vigor (`pickCurrentStore`) e o texto "Preencha uma vez e
+    seus pedidos saem mais rápido.".
+  - As regras dos campos vêm **só** dos VOs `Cpf`, `Phone`, `ZipCode`, `StateCode` e `BoundedText`
+    (`lib/core/value_objects/`, cópias de `packages/shared` e `modules/customers`) e dos limites de
+    `customer_rules.dart`; ViewModel, widget e máscara não validam por conta própria. Recusas do backend
+    vão ao campo por `customerFieldErrorsFromCodes` (código desconhecido fica na mensagem genérica).
+  - A rota `/account/delivery` está em `sessionRequiredPaths`: sem sessão, vai ao login com o destino no
+    `from`.
 - **Acompanhamento:** `GET /me/orders/:id` + SSE `GET /me/orders/:id/stream` lido por stream do dio com o
   Bearer no cabeçalho (**nunca token na URL**). O evento só avisa para buscar o pedido de novo; `ping` é
   ignorado; reconexão com espera crescente de 1 s a 10 s; para ao sair da tela e em segundo plano, retoma ao

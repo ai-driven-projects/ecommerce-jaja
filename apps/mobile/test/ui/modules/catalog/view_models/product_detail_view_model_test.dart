@@ -7,7 +7,7 @@ import 'package:mobile/modules/cart/model/cart_state.dart';
 import 'package:mobile/modules/catalog/model/product_detail.dart';
 import 'package:mobile/modules/catalog/model/product_detail_entity.dart';
 import 'package:mobile/modules/catalog/model/product_summary_entity.dart';
-import 'package:mobile/ui/modules/catalog/view_models/block_state.dart';
+import 'package:mobile/ui/shared/view_models/block_state.dart';
 import 'package:mobile/ui/modules/catalog/view_models/product_detail_view_model.dart';
 import 'package:mobile/ui/shared/formatters/money_formatter.dart';
 

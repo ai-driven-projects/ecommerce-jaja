@@ -1,4 +1,4 @@
-import '../../../../core/errors/app_failure.dart';
+import '../../../core/errors/app_failure.dart';
 
 /// Estado de um bloco da tela que depende de uma busca remota, nos três
 /// estados do padrão "skeleton / banner de erro / conteúdo": a tela faz

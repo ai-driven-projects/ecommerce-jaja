@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/errors/app_failure.dart';
-import 'package:mobile/ui/modules/catalog/view_models/block_state.dart';
+import 'package:mobile/ui/shared/view_models/block_state.dart';
 import 'package:mobile/ui/modules/catalog/widgets/home_section.dart';
 import 'package:mobile/ui/modules/catalog/widgets/section_heading.dart';
 import 'package:mobile/ui/shared/widgets/skeleton_box.dart';

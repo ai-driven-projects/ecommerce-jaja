@@ -25,9 +25,15 @@ abstract final class AppRoutes {
 
   static String registerLocation({String? from}) => _withFrom(register, from);
 
-  /// Rotas que exigem sessão; sem sessão, levam a "Entrar". Nasce vazia: as
-  /// etapas de dados de entrega, checkout e pedido acrescentam as suas.
-  static const Set<String> sessionRequiredPaths = {};
+  /// Dados de entrega, na pilha da aba Conta (barra de abas visível).
+  static const String deliveryDetails = '$account/$deliveryDetailsSegment';
+
+  /// O trecho de [deliveryDetails] relativo a [account], para a rota filha.
+  static const String deliveryDetailsSegment = 'delivery';
+
+  /// Rotas que exigem sessão; sem sessão, levam a "Entrar". As etapas de
+  /// checkout e pedido acrescentam as suas.
+  static const Set<String> sessionRequiredPaths = {deliveryDetails};
 
   /// Se [path] é uma das [sessionRequiredPaths] ou fica abaixo de uma delas.
   static bool requiresSession(String path) => sessionRequiredPaths.any(

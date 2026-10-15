@@ -10,6 +10,7 @@ import 'package:mobile/infra/cart/guest_cart_repository.dart';
 import 'package:mobile/infra/cart/guest_cart_storage.dart';
 import 'package:mobile/infra/cart/session_cart_repository.dart';
 import 'package:mobile/infra/catalog/api_catalog_repository.dart';
+import 'package:mobile/infra/customer/api_customer_repository.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/infra/http/auth_interceptor.dart';
 import 'package:mobile/infra/storage/key_value_store.dart';
@@ -17,6 +18,8 @@ import 'package:mobile/infra/store/api_store_repository.dart';
 import 'package:mobile/modules/auth/provider/auth_repository.dart';
 import 'package:mobile/modules/cart/provider/cart_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
+import 'package:mobile/modules/customer/provider/customer_repository.dart';
+import 'package:mobile/modules/customer/usecase/load_delivery_details_use_case.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 import 'package:mobile/ui/modules/auth/view_models/account_view_model.dart';
 import 'package:mobile/ui/modules/auth/view_models/login_view_model.dart';
@@ -25,11 +28,13 @@ import 'package:mobile/ui/modules/cart/view_models/cart_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/home_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/product_detail_view_model.dart';
 import 'package:mobile/ui/modules/catalog/view_models/search_view_model.dart';
+import 'package:mobile/ui/modules/customer/view_models/delivery_details_view_model.dart';
 import 'package:mobile/ui/modules/store/view_models/store_selector_view_model.dart';
 
 import '../../modules/auth/support/fake_auth_repository.dart';
 import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
+import '../../modules/customer/support/fake_customer_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 
 void main() {
@@ -199,6 +204,25 @@ void main() {
       expect(identical(first, second), isFalse);
     });
 
+    test('registra o CustomerRepository da API como singleton', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      expect(getIt<CustomerRepository>(), isA<ApiCustomerRepository>());
+      expect(
+        identical(getIt<CustomerRepository>(), getIt<CustomerRepository>()),
+        isTrue,
+      );
+    });
+
+    test('o LoadDeliveryDetails é uma instância nova a cada pedido', () {
+      configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
+
+      expect(
+        identical(getIt<LoadDeliveryDetails>(), getIt<LoadDeliveryDetails>()),
+        isFalse,
+      );
+    });
+
     test('o Dio tem um AuthInterceptor', () {
       configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
 
@@ -231,6 +255,7 @@ void main() {
       final cart = FakeCartRepository();
       addTearDown(cart.dispose);
       getIt.registerSingleton<CartRepository>(cart);
+      getIt.registerSingleton<CustomerRepository>(FakeCustomerRepository());
 
       registerViewModels();
 
@@ -250,6 +275,12 @@ void main() {
       addTearDown(login.dispose);
       addTearDown(register.dispose);
       addTearDown(account.dispose);
+      final deliveryDetails = getIt<DeliveryDetailsViewModel>();
+      final otherDeliveryDetails = getIt<DeliveryDetailsViewModel>();
+      addTearDown(deliveryDetails.dispose);
+      addTearDown(otherDeliveryDetails.dispose);
+      expect(deliveryDetails, isA<DeliveryDetailsViewModel>());
+      expect(identical(deliveryDetails, otherDeliveryDetails), isFalse);
       expect(storeSelector, isA<StoreSelectorViewModel>());
       expect(home, isA<HomeViewModel>());
       expect(search, isA<SearchViewModel>());
@@ -258,6 +289,7 @@ void main() {
       expect(register, isA<RegisterViewModel>());
       expect(account, isA<AccountViewModel>());
       expect(cartViewModel, isA<CartViewModel>());
+      expect(getIt<LoadDeliveryDetails>(), isA<LoadDeliveryDetails>());
       expect(getIt.isRegistered<Dio>(), isFalse);
       expect(getIt.isRegistered<KeyValueStore>(), isFalse);
     });
@@ -278,6 +310,8 @@ void main() {
     expect(getIt.isRegistered<AccountCartApi>(), isFalse);
     expect(getIt.isRegistered<SessionCartRepository>(), isFalse);
     expect(getIt.isRegistered<CartRepository>(), isFalse);
+    expect(getIt.isRegistered<CustomerRepository>(), isFalse);
+    expect(getIt.isRegistered<LoadDeliveryDetails>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
     expect(getIt.isRegistered<HomeViewModel>(), isFalse);
     expect(getIt.isRegistered<SearchViewModel>(), isFalse);

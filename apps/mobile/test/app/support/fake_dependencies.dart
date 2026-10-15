@@ -3,12 +3,14 @@ import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/modules/auth/provider/auth_repository.dart';
 import 'package:mobile/modules/cart/provider/cart_repository.dart';
 import 'package:mobile/modules/catalog/provider/catalog_repository.dart';
+import 'package:mobile/modules/customer/provider/customer_repository.dart';
 import 'package:mobile/modules/store/provider/store_repository.dart';
 
 import '../../modules/auth/support/fake_auth_repository.dart';
 import '../../modules/cart/support/fake_cart_repository.dart';
 import '../../modules/catalog/support/catalog_fixtures.dart';
 import '../../modules/catalog/support/fake_catalog_repository.dart';
+import '../../modules/customer/support/fake_customer_repository.dart';
 import '../../modules/store/support/fake_store_repository.dart';
 import '../../modules/store/support/store_fixtures.dart';
 
@@ -21,7 +23,9 @@ import '../../modules/store/support/store_fixtures.dart';
 /// registrado como `Session` (guarda e `refreshListenable` do router) e como
 /// `AuthRepository` (ViewModels de acesso), a mesma instância como no app.
 /// O carrinho é o [FakeCartRepository] de [cart] (padrão: vazio, restaurado),
-/// registrado como `CartRepository`.
+/// registrado como `CartRepository`. Os dados de entrega são o
+/// [FakeCustomerRepository] de [customer] (padrão: sem cadastro), registrado
+/// como `CustomerRepository`.
 ///
 /// O catálogo padrão são as fixtures do seed sem foto: a Início monta os
 /// cards logo ao abrir, e uma foto de verdade acionaria o cache do aparelho,
@@ -31,6 +35,7 @@ FakeStoreRepository registerFakeDependencies({
   FakeCatalogRepository? catalogRepository,
   FakeAuthRepository? auth,
   FakeCartRepository? cart,
+  FakeCustomerRepository? customer,
 }) {
   final repository =
       storeRepository ??
@@ -48,6 +53,9 @@ FakeStoreRepository registerFakeDependencies({
   getIt.registerSingleton<Session>(session);
   getIt.registerSingleton<AuthRepository>(session);
   getIt.registerSingleton<CartRepository>(cart ?? FakeCartRepository());
+  getIt.registerSingleton<CustomerRepository>(
+    customer ?? FakeCustomerRepository(),
+  );
   registerViewModels();
   return repository;
 }

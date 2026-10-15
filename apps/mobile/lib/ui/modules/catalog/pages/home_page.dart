@@ -12,7 +12,7 @@ import '../../../shared/widgets/state_error_banner.dart';
 import '../../store/view_models/store_selector_view_model.dart';
 import '../../store/widgets/store_picker_sheet.dart';
 import '../../store/widgets/store_selector.dart';
-import '../view_models/block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 import '../view_models/home_view_model.dart';
 import '../widgets/category_chips_row.dart';
 import '../widgets/highlighted_categories_grid.dart';

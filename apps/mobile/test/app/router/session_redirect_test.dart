@@ -15,7 +15,7 @@ String? _redirect(
         requiresSession: requiresSession,
       );
 
-/// Lista de teste: a do app nasce vazia nesta etapa.
+/// Lista de teste, independente da lista do app.
 bool _requiresX(String path) => path == '/x' || path.startsWith('/x/');
 
 void main() {
@@ -144,9 +144,22 @@ void main() {
       );
     });
 
-    test('nenhuma rota exige sessão nesta etapa', () {
-      expect(AppRoutes.sessionRequiredPaths, isEmpty);
+    test('só os dados de entrega exigem sessão nesta etapa', () {
+      expect(AppRoutes.sessionRequiredPaths, {'/account/delivery'});
+      expect(AppRoutes.deliveryDetails, '/account/delivery');
+      expect(AppRoutes.requiresSession(AppRoutes.deliveryDetails), isTrue);
       expect(AppRoutes.requiresSession(AppRoutes.account), isFalse);
+    });
+
+    test('sem sessão, os dados de entrega levam a "Entrar" com o destino', () {
+      expect(
+        _redirect(SessionStatus.anonymous, AppRoutes.deliveryDetails),
+        '/login?from=%2Faccount%2Fdelivery',
+      );
+      expect(
+        _redirect(SessionStatus.authenticated, AppRoutes.deliveryDetails),
+        isNull,
+      );
     });
   });
 }

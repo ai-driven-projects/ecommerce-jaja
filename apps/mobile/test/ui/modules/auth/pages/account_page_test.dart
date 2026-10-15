@@ -9,7 +9,11 @@ import 'package:mobile/ui/shared/widgets/app_button.dart';
 import '../../../../modules/auth/support/auth_fixtures.dart';
 import '../../../../modules/auth/support/fake_auth_repository.dart';
 
-typedef _Calls = ({List<String> logins, List<String> registers});
+typedef _Calls = ({
+  List<String> logins,
+  List<String> registers,
+  List<String> deliveryDetails,
+});
 
 /// Monta a página como a rota faz: a fábrica cria o ViewModel de verdade
 /// sobre o repositório fake, que começa com [currentUser].
@@ -19,7 +23,11 @@ Future<({FakeAuthRepository repository, _Calls calls})> _pumpAccount(
 }) async {
   final repository = FakeAuthRepository(currentUser: currentUser);
   addTearDown(repository.dispose);
-  final calls = (logins: <String>[], registers: <String>[]);
+  final calls = (
+    logins: <String>[],
+    registers: <String>[],
+    deliveryDetails: <String>[],
+  );
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light(),
@@ -27,6 +35,7 @@ Future<({FakeAuthRepository repository, _Calls calls})> _pumpAccount(
         accountViewModelFactory: () => AccountViewModel(repository),
         onOpenLogin: () => calls.logins.add('login'),
         onOpenRegister: () => calls.registers.add('register'),
+        onOpenDeliveryDetails: () => calls.deliveryDetails.add('delivery'),
       ),
     ),
   );
@@ -55,6 +64,7 @@ void _expectInvite() {
   expect(_button('Entrar'), findsOneWidget);
   expect(_button('Criar conta'), findsOneWidget);
   expect(_button('Sair'), findsNothing);
+  expect(_button('Dados de entrega'), findsNothing);
 }
 
 void main() {
@@ -85,9 +95,27 @@ void main() {
     expect(find.text('Olá, Ana'), findsOneWidget);
     expect(find.text('Ana Souza'), findsOneWidget);
     expect(find.text('ana@exemplo.com'), findsOneWidget);
+    expect(_button('Dados de entrega'), findsOneWidget);
     expect(_button('Sair'), findsOneWidget);
     expect(find.text('Administrador'), findsNothing);
     expect(find.text('Entre ou crie sua conta.'), findsNothing);
+  });
+
+  testWidgets('com sessão, "Dados de entrega" chama o callback', (
+    tester,
+  ) async {
+    final (repository: _, :calls) = await _pumpAccount(
+      tester,
+      currentUser: ana,
+    );
+
+    final button = tester.widget<AppButton>(_button('Dados de entrega'));
+    expect(button.variant, AppButtonVariant.secondary);
+
+    await tester.tap(_button('Dados de entrega'));
+
+    expect(calls.deliveryDetails, hasLength(1));
+    expect(calls.logins, isEmpty);
   });
 
   testWidgets('administrador vê "Administrador" no lugar do e-mail', (

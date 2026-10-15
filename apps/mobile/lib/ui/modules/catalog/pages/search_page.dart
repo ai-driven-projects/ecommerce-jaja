@@ -13,7 +13,7 @@ import '../../../shared/theme/brand_tokens.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/state_error_banner.dart';
-import '../view_models/block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 import '../view_models/search_view_model.dart';
 import '../widgets/active_filter_pills.dart';
 import '../widgets/filters_sheet.dart';

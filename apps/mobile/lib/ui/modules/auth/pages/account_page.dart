@@ -12,14 +12,15 @@ import '../widgets/account_benefit.dart';
 
 /// Aba Conta. Sem sessão, o convite para entrar ou criar conta (como a coluna
 /// de vantagens da `/entrar` do web); com sessão, a saudação, o nome, o
-/// e-mail (ou "Administrador") e "Sair". Troca de estado sozinha quando a
-/// sessão começa ou termina; a navegação sai por callback.
+/// e-mail (ou "Administrador"), "Dados de entrega" e "Sair". Troca de estado
+/// sozinha quando a sessão começa ou termina; a navegação sai por callback.
 class AccountPage extends WatchingStatefulWidget {
   const AccountPage({
     super.key,
     required this.accountViewModelFactory,
     required this.onOpenLogin,
     required this.onOpenRegister,
+    required this.onOpenDeliveryDetails,
   });
 
   static const String inviteTitle = 'Entre ou crie sua conta.';
@@ -34,6 +35,7 @@ class AccountPage extends WatchingStatefulWidget {
   static const String loginLabel = 'Entrar';
   static const String registerLabel = 'Criar conta';
   static const String adminLabel = 'Administrador';
+  static const String deliveryDetailsLabel = 'Dados de entrega';
   static const String signOutLabel = 'Sair';
   static const String signedOutMessage = 'Até já já.';
 
@@ -47,6 +49,9 @@ class AccountPage extends WatchingStatefulWidget {
 
   /// Abre "Criar conta" com destino nesta aba.
   final VoidCallback onOpenRegister;
+
+  /// Abre "Dados de entrega" na pilha desta aba.
+  final VoidCallback onOpenDeliveryDetails;
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -159,6 +164,14 @@ class _AccountPageState extends State<AccountPage> {
         style: textTheme.bodyMedium!.copyWith(color: tokens.mutedInk),
       ),
       const SizedBox(height: AppSpacing.s24),
+      AppButton(
+        label: AccountPage.deliveryDetailsLabel,
+        onPressed: widget.onOpenDeliveryDetails,
+        variant: AppButtonVariant.secondary,
+        size: AppButtonSize.xl,
+        expand: true,
+      ),
+      const SizedBox(height: AppSpacing.s12),
       AppButton(
         label: AccountPage.signOutLabel,
         onPressed: signingOut ? null : _signOut,

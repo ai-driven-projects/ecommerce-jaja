@@ -4,7 +4,7 @@ import 'package:mobile/core/result.dart';
 import 'package:mobile/modules/catalog/model/category_entity.dart';
 import 'package:mobile/modules/catalog/model/home_catalog.dart';
 import 'package:mobile/modules/catalog/model/product_summary_entity.dart';
-import 'package:mobile/ui/modules/catalog/view_models/block_state.dart';
+import 'package:mobile/ui/shared/view_models/block_state.dart';
 import 'package:mobile/ui/modules/catalog/view_models/home_view_model.dart';
 
 import '../../../../modules/catalog/support/catalog_fixtures.dart';

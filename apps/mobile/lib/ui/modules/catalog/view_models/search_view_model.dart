@@ -12,7 +12,7 @@ import '../../../../modules/catalog/model/product_page_entity.dart';
 import '../../../../modules/catalog/model/product_query.dart';
 import '../../../../modules/catalog/model/product_summary_entity.dart';
 import '../../../../modules/catalog/provider/catalog_repository.dart';
-import 'block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 
 const _unexpectedFailure = UnexpectedFailure(
   message: 'Algo deu errado. Tente novamente.',

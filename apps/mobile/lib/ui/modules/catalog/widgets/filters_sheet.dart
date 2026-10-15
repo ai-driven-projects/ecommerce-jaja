@@ -15,7 +15,7 @@ import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../../../shared/widgets/skeleton_box.dart';
 import '../../../shared/widgets/state_error_banner.dart';
-import '../view_models/block_state.dart';
+import '../../../shared/view_models/block_state.dart';
 import '../view_models/price_input.dart';
 import '../view_models/search_view_model.dart';
 import 'choice_row.dart';
