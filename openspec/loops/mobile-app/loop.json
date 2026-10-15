@@ -288,7 +288,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "6c34a4fa70d6b43d8c2b2bc0db5ea47db1baf7b5"
     },
     {
       "status": "pending",
@@ -368,22 +369,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 5,
+    "stage": 5,
+    "startCommit": "6c34a4fa70d6b43d8c2b2bc0db5ea47db1baf7b5",
+    "startedAt": "2026-10-15T14:21:26.517Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 913909,
+        "cost": 9.413108000000001,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 15942,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja o domínio de catálogo e a home da vitrine do app mobile",
+      "comparison": "A etapa 4 deixou a aba Início só com o seletor de loja sobre um PlaceholderBody, o padrão de ViewModel com watch_it e registerViewModels, o ApiStoreRepository com guarda e requisição compartilhada, e a barreira com as regras A a E; o ProductArt ainda usa Image.network.\nO contrato vem direto do StorefrontController e dos DTOs de modules/catalog (árvore de categorias com level/parentSlug/productCount, página de produtos com brandFacets, filtros page/pageSize/search/category/brand/preços/onSale/featured/sort); o web monta a home com featured+sort=featured+pageSize=12, onSale+sort=discount+pageSize=8 e até 12 categorias em destaque em pré-ordem, escondendo seção vazia.\nO hero do web carrega dados fictícios (entregadores online, pedidos ao vivo), então a change fixa um hero compacto só com os textos da marca; destaques e ofertas viram trilhos horizontais e os chips das raízes abrem a Buscar filtrada por uma codificação única dos filtros com os nomes da API, reaproveitada nas rotas.\nA rota de produto nasce provisória e aninhada em /home; a SearchPage passa a receber o filtro decodificado, mas segue placeholder até a etapa 6. cached_network_image entra com a regra F confinando-o a lib/ui.",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 5442087,
-    "cost": 48.66120694999999,
+    "durationMs": 6372408,
+    "cost": 58.074314949999994,
     "runs": 1,
-    "iterationsStarted": 4,
+    "iterationsStarted": 5,
     "iterationsDelivered": 4,
-    "claudeSessions": 37,
-    "turns": 604,
-    "checks": 32,
+    "claudeSessions": 38,
+    "turns": 648,
+    "checks": 35,
     "fixes": 3,
     "recoveries": 1,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 8
+    "commits": 9
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
