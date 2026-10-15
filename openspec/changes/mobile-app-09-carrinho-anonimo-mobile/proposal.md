@@ -1,6 +1,6 @@
 ## Why
 
-O app já mostra o catálogo inteiro e o produto (etapas 4 a 7) e a sessão está a caminho (etapa 8), mas a aba Carrinho ainda é provisória e o "Adicionar ao carrinho" do detalhe nasce desabilitado: o cliente não consegue montar a compra. Esta é a etapa 9 de 15 do loop `mobile-app`: o carrinho do visitante da vitrine web (`guest-cart-storage.util.ts`, `cart.util.ts`, a parte "visitante" de `cart.context.tsx`, a gaveta `cart-drawer.component.tsx` e o "Adicionar" de `product-detail.component.tsx`, spec `orders/storefront-cart`) precisa existir no app, guardado no aparelho e precificado pela API, com as regras de `modules/orders/src/cart`.
+O app já mostra o catálogo inteiro e o produto (etapas 4 a 7) e já tem sessão (etapa 8), mas a aba Carrinho ainda é provisória e o "Adicionar ao carrinho" do detalhe nasce desabilitado: o cliente não consegue montar a compra. Esta é a etapa 9 de 15 do loop `mobile-app`: o carrinho do visitante da vitrine web (`guest-cart-storage.util.ts`, `cart.util.ts`, a parte "visitante" de `cart.context.tsx`, a gaveta `cart-drawer.component.tsx` e o "Adicionar" de `product-detail.component.tsx`, spec `orders/storefront-cart`) precisa existir no app, guardado no aparelho e precificado pela API, com as regras de `modules/orders/src/cart`.
 
 ## What Changes
 

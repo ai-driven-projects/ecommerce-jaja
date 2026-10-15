@@ -4,13 +4,12 @@
 
 ## 1. Domínio cart
 
-- [ ] 1.1 Conferir no código as dependências da etapa 8 listadas no design; registrar no `design.md` qualquer nome diferente e seguir com o nome entregue.
-- [ ] 1.2 Criar `lib/modules/cart/model/cart_entity.dart` (`CartItem`, `CartLine`, `CartDetail` com `empty()`, Decisão 1) e rodar o codegen; teste de `CartDetail.empty()` (totais zero, limite 7900).
-- [ ] 1.3 Criar `lib/modules/cart/errors/cart_errors.dart` com `CartErrorCode` e as três mensagens (Decisão 1).
-- [ ] 1.4 Criar `lib/modules/cart/model/cart_rules.dart` (constantes com a origem, `normalizeCartItems`, `addCartItem`, `setCartItemQuantity`, `removeCartItem`).
-- [ ] 1.5 Testes em `test/modules/cart/model/cart_rules_test.dart`: normalização do cenário "Conteúdo guardado irregular", não-lista → vazio, 51 produtos → 50; somar mantém a posição; 98+3 → `quantityExceeded`; 51º → `itemsLimitExceeded`; 0, −1 e 100 ao incluir → `quantityInvalid`; `set` 0 remove, 100 → `quantityExceeded`; lista original intacta.
-- [ ] 1.6 Criar `lib/modules/cart/model/cart_state.dart` (Decisão 1) e testes: `count` soma local; `lines` aplica a quantidade local e tira ausentes; `quantityOf`; `awaitsFirstPreview` só com itens, sem linhas e sem falha.
-- [ ] 1.7 Criar `lib/modules/cart/provider/cart_repository.dart` (Decisão 1); `flutter analyze` sem problemas.
+- [ ] 1.1 Criar `lib/modules/cart/model/cart_entity.dart` (`CartItem`, `CartLine`, `CartDetail` com `empty()`, Decisão 1) e rodar o codegen; teste de `CartDetail.empty()` (totais zero, limite 7900).
+- [ ] 1.2 Criar `lib/modules/cart/errors/cart_errors.dart` com `CartErrorCode` e as três mensagens (Decisão 1).
+- [ ] 1.3 Criar `lib/modules/cart/model/cart_rules.dart` (constantes com a origem, `normalizeCartItems`, `addCartItem`, `setCartItemQuantity`, `removeCartItem`).
+- [ ] 1.4 Testes em `test/modules/cart/model/cart_rules_test.dart`: normalização do cenário "Conteúdo guardado irregular", não-lista → vazio, 51 produtos → 50; somar mantém a posição; 98+3 → `quantityExceeded`; 51º → `itemsLimitExceeded`; 0, −1 e 100 ao incluir → `quantityInvalid`; `set` 0 remove, 100 → `quantityExceeded`; lista original intacta.
+- [ ] 1.5 Criar `lib/modules/cart/model/cart_state.dart` (Decisão 1) e testes: `count` soma local; `lines` aplica a quantidade local e tira ausentes; `quantityOf`; `awaitsFirstPreview` só com itens, sem linhas e sem falha.
+- [ ] 1.6 Criar `lib/modules/cart/provider/cart_repository.dart` (Decisão 1); `flutter analyze` sem problemas.
 
 ## 2. Armazenamento e DTO
 
@@ -31,7 +30,7 @@
 
 ## 4. DI, fakes e ViewModels
 
-- [ ] 4.1 Em `service_locator.dart`, registrar `GuestCartStorage`, `GuestCartRepository` e `CartRepository` (Decisão 5); em `bootstrap.dart`, `restore()` sem esperar; ajustar `test/app/bootstrap_test.dart` se precisar do mock do `SharedPreferences`.
+- [ ] 4.1 Em `service_locator.dart`, registrar `GuestCartStorage`, `GuestCartRepository` e `CartRepository` (Decisão 5); em `bootstrap.dart`, `restore()` sem esperar, logo depois do da sessão; `test/app/bootstrap_test.dart` continua passando sem mudar os pedidos esperados (o mock do `SharedPreferences` já existe).
 - [ ] 4.2 Em `service_locator_test.dart`: `CartRepository` e `GuestCartRepository` são a mesma instância.
 - [ ] 4.3 Criar `test/modules/cart/support/cart_fixtures.dart` e `fake_cart_repository.dart` (Decisão 9); `registerFakeDependencies` aceita `FakeCartRepository? cart`.
 - [ ] 4.4 Criar `lib/ui/modules/cart/view_models/cart_view_model.dart` (Decisão 6) e registrá-lo em `registerViewModels()`.
