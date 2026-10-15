@@ -15,23 +15,25 @@ typedef CartQuantityCall = ({String productId, int quantity});
 /// rota, sem rede nem disco. Começa com [state] (padrão: vazio, restaurado).
 ///
 /// Cada `add` consome a próxima resposta de [enqueueAdd] ou [holdAdd]; cada
-/// `setQuantity`, a próxima de [enqueueSetQuantity]. Com a fila vazia, ambos
-/// devolvem `Ok`. No `Ok`, a mudança é aplicada aos itens pelas regras de
-/// `cart_rules.dart` (que ainda podem recusar), avisa os ouvintes e emite em
-/// [changes], para o badge e o "Você já tem" mudarem nos testes; o `remove`
-/// também. As linhas da prévia ([CartState.detail]) só mudam por [emit].
-/// [addCalls], [setQuantityCalls], [removeCalls] e [refreshCalls] gravam as
-/// chamadas, na ordem.
+/// `setQuantity`, a próxima de [enqueueSetQuantity]; cada `remove`, a próxima
+/// de [enqueueRemove]. Com a fila vazia, devolvem `Ok`. No `Ok`, a mudança é
+/// aplicada aos itens pelas regras de `cart_rules.dart` (que ainda podem
+/// recusar), avisa os ouvintes e emite em [changes], para o badge e o "Você já
+/// tem" mudarem nos testes. As linhas da prévia ([CartState.detail]) só mudam por [emit].
+/// [addCalls], [setQuantityCalls], [removeCalls], [clearCalls] e
+/// [refreshCalls] gravam as chamadas, na ordem; o `clear` esvazia os itens.
 class FakeCartRepository extends ChangeNotifier implements CartRepository {
   FakeCartRepository({CartState? state}) : _state = state ?? CartState();
 
   final List<CartQuantityCall> addCalls = [];
   final List<CartQuantityCall> setQuantityCalls = [];
   final List<String> removeCalls = [];
+  int clearCalls = 0;
   int refreshCalls = 0;
 
   final Queue<Future<Result<void>>> _addResponses = Queue();
   final Queue<Future<Result<void>>> _setQuantityResponses = Queue();
+  final Queue<Future<Result<void>>> _removeResponses = Queue();
   final StreamController<CartState> _changes = StreamController.broadcast();
 
   CartState _state;
@@ -48,6 +50,10 @@ class FakeCartRepository extends ChangeNotifier implements CartRepository {
 
   void enqueueSetQuantity(Result<void> result) {
     _setQuantityResponses.add(Future.value(result));
+  }
+
+  void enqueueRemove(Result<void> result) {
+    _removeResponses.add(Future.value(result));
   }
 
   /// Segura o próximo `add` até o teste completar o [Completer], para
@@ -85,9 +91,19 @@ class FakeCartRepository extends ChangeNotifier implements CartRepository {
   }
 
   @override
-  Future<void> remove(String productId) async {
+  Future<Result<void>> remove(String productId) {
     removeCalls.add(productId);
-    _apply(removeCartItem(_state.items, productId));
+    return _settle(
+      _removeResponses,
+      (items) => Ok(removeCartItem(items, productId)),
+    );
+  }
+
+  @override
+  Future<Result<void>> clear() async {
+    clearCalls++;
+    _apply(const []);
+    return const Ok(null);
   }
 
   @override

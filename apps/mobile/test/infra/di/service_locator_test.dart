@@ -5,8 +5,10 @@ import 'package:mobile/infra/auth/session.dart';
 import 'package:mobile/infra/auth/session_repository.dart';
 import 'package:mobile/infra/auth/session_status.dart';
 import 'package:mobile/infra/auth/session_storage.dart';
+import 'package:mobile/infra/cart/account_cart_api.dart';
 import 'package:mobile/infra/cart/guest_cart_repository.dart';
 import 'package:mobile/infra/cart/guest_cart_storage.dart';
+import 'package:mobile/infra/cart/session_cart_repository.dart';
 import 'package:mobile/infra/catalog/api_catalog_repository.dart';
 import 'package:mobile/infra/di/service_locator.dart';
 import 'package:mobile/infra/http/auth_interceptor.dart';
@@ -170,14 +172,20 @@ void main() {
       expect(identical(getIt<SessionRepository>(), repository), isTrue);
     });
 
-    test('CartRepository e GuestCartRepository são a mesma instância', () {
+    test('CartRepository é o SessionCartRepository', () {
       configureDependencies(apiBaseUrl: Uri.parse('http://localhost:4000'));
 
-      final repository = getIt<GuestCartRepository>();
+      final repository = getIt<SessionCartRepository>();
 
       expect(getIt.isRegistered<GuestCartStorage>(), isTrue);
+      expect(getIt.isRegistered<GuestCartRepository>(), isTrue);
+      expect(getIt.isRegistered<AccountCartApi>(), isTrue);
       expect(identical(getIt<CartRepository>(), repository), isTrue);
-      expect(identical(getIt<GuestCartRepository>(), repository), isTrue);
+      expect(identical(getIt<SessionCartRepository>(), repository), isTrue);
+      expect(
+        identical(getIt<CartRepository>(), getIt<GuestCartRepository>()),
+        isFalse,
+      );
     });
 
     test('o CartViewModel é uma instância nova a cada pedido', () {
@@ -267,6 +275,8 @@ void main() {
     expect(getIt.isRegistered<Session>(), isFalse);
     expect(getIt.isRegistered<AuthRepository>(), isFalse);
     expect(getIt.isRegistered<GuestCartRepository>(), isFalse);
+    expect(getIt.isRegistered<AccountCartApi>(), isFalse);
+    expect(getIt.isRegistered<SessionCartRepository>(), isFalse);
     expect(getIt.isRegistered<CartRepository>(), isFalse);
     expect(getIt.isRegistered<StoreSelectorViewModel>(), isFalse);
     expect(getIt.isRegistered<HomeViewModel>(), isFalse);

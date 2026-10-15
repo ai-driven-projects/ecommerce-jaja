@@ -68,6 +68,13 @@ final class GuestCartRepository extends ChangeNotifier
     if (items.isNotEmpty) _schedulePreview();
   }
 
+  /// Itens guardados no aparelho, depois de o [restore] terminar. É o que a
+  /// mescla com o carrinho da conta envia.
+  Future<List<CartItem>> pendingItems() async {
+    await restore();
+    return _state.items;
+  }
+
   @override
   Future<Result<void>> add(String productId, int quantity) =>
       _change((items) => addCartItem(items, productId, quantity));
@@ -77,8 +84,29 @@ final class GuestCartRepository extends ChangeNotifier
       _change((items) => setCartItemQuantity(items, productId, quantity));
 
   @override
-  Future<void> remove(String productId) =>
+  Future<Result<void>> remove(String productId) =>
       _change((items) => Ok(removeCartItem(items, productId)));
+
+  /// Esvazia o carrinho: apaga a chave do aparelho, cancela a prévia agendada
+  /// e descarta a que estiver em curso. Nunca falha.
+  @override
+  Future<Result<void>> clear() async {
+    await restore();
+    if (_disposed) return const Ok(null);
+
+    _previewTimer?.cancel();
+    _generation++;
+    _set(
+      _state.copyWith(
+        items: const [],
+        detail: CartDetail.empty(),
+        isSyncing: false,
+        clearPreviewFailure: true,
+      ),
+    );
+    await _storage.write(const []);
+    return const Ok(null);
+  }
 
   @override
   void refresh() {

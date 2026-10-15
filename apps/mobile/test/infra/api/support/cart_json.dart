@@ -93,3 +93,31 @@ Map<String, Object?> previewWithoutLineField(String field) => previewWith(
   'lines',
   <Object?>[Map.of(canetaLineJson)..remove(field), unavailableLineJson],
 );
+
+// Recusas de `/me/cart` (`throwFailure` em
+// `apps/backend/src/modules/orders/cart-http.ts`): `ApiErrorResponse` com os
+// códigos em `message`. `CART_PRODUCT_NOT_FOUND` vem com `404`; o resto, `400`.
+
+/// Corpo de uma recusa com o [statusCode] e os [codes].
+Map<String, Object?> cartRejectionJson(int statusCode, List<String> codes) => {
+  'statusCode': statusCode,
+  'error': statusCode == 404 ? 'Not Found' : 'Bad Request',
+  'message': codes,
+};
+
+final quantityExceededJson = cartRejectionJson(400, [
+  'CART_ITEM_QUANTITY_EXCEEDED',
+]);
+
+final itemsLimitExceededJson = cartRejectionJson(400, [
+  'CART_ITEMS_LIMIT_EXCEEDED',
+]);
+
+final quantityInvalidJson = cartRejectionJson(400, [
+  'CART_ITEM_QUANTITY_INVALID',
+]);
+
+final productNotFoundJson = cartRejectionJson(404, ['CART_PRODUCT_NOT_FOUND']);
+
+/// Recusa com um código que o app não conhece.
+final unknownRejectionJson = cartRejectionJson(400, ['ALGO_NOVO']);

@@ -17,8 +17,10 @@ import '../auth/secure_session_storage.dart';
 import '../auth/session.dart';
 import '../auth/session_repository.dart';
 import '../auth/session_storage.dart';
+import '../cart/account_cart_api.dart';
 import '../cart/guest_cart_repository.dart';
 import '../cart/guest_cart_storage.dart';
+import '../cart/session_cart_repository.dart';
 import '../catalog/api_catalog_repository.dart';
 import '../http/api_client.dart';
 import '../http/auth_interceptor.dart';
@@ -67,14 +69,27 @@ void configureDependencies({required Uri apiBaseUrl}) {
   getIt.registerLazySingleton<GuestCartStorage>(
     () => GuestCartStorage(getIt<KeyValueStore>()),
   );
-  // Como a sessão: a mesma instância atende o bootstrap (`restore`) e o
-  // domínio (`CartRepository`).
+  // O visitante é a fonte sem sessão: o bootstrap o restaura e o
+  // `SessionCartRepository` delega a ele.
   getIt.registerLazySingleton<GuestCartRepository>(
     () => GuestCartRepository(getIt<Dio>(), getIt<GuestCartStorage>()),
     dispose: (repository) => repository.dispose(),
   );
+  getIt.registerLazySingleton<AccountCartApi>(
+    () => AccountCartApi(getIt<Dio>()),
+  );
+  // Como a sessão: a mesma instância atende o bootstrap (`start`) e o
+  // domínio (`CartRepository`).
+  getIt.registerLazySingleton<SessionCartRepository>(
+    () => SessionCartRepository(
+      getIt<GuestCartRepository>(),
+      getIt<AccountCartApi>(),
+      getIt<Session>(),
+    ),
+    dispose: (repository) => repository.dispose(),
+  );
   getIt.registerLazySingleton<CartRepository>(
-    () => getIt<GuestCartRepository>(),
+    () => getIt<SessionCartRepository>(),
   );
   registerViewModels();
 }

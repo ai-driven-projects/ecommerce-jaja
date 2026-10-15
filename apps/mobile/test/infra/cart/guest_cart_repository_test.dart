@@ -330,12 +330,12 @@ void main() {
       expect(storedItems(), [_item(_a, 5), _item(_b, 1)]);
     });
 
-    test('remove tira o item e grava', () async {
+    test('remove tira o item, grava e devolve Ok', () async {
       await repository.add(_a, 2);
       await repository.add(_b, 1);
       notifications = 0;
 
-      await repository.remove(_a);
+      expect(await repository.remove(_a), isA<Ok<void>>());
 
       expect(repository.state.items, [_item(_b, 1)]);
       expect(storedItems(), [_item(_b, 1)]);
@@ -544,6 +544,86 @@ void main() {
       expect(repository.state.previewFailure, isNull);
       expect(repository.state.isSyncing, isFalse);
       expect(repository.state.lines.single.productId, _a);
+    });
+  });
+
+  group('pendingItems e clear', () {
+    tearDown(() => repository.dispose());
+
+    test(
+      'pendingItems espera o restore e devolve os itens guardados',
+      () async {
+        final slow = _SlowKeyValueStore(
+          initialValues: {
+            _key: _stored([_item(_a, 3), _item(_b, 1)]),
+          },
+        );
+        build(slowStore: slow, previewDelay: const Duration(hours: 1));
+
+        var done = false;
+        final pending = repository.pendingItems()..then((_) => done = true);
+        await pumpEventQueue();
+        expect(done, isFalse);
+
+        slow.release();
+
+        expect(await pending, [_item(_a, 3), _item(_b, 1)]);
+      },
+    );
+
+    test('pendingItems sem nada guardado devolve vazio', () async {
+      build();
+
+      expect(await repository.pendingItems(), isEmpty);
+    });
+
+    test('clear apaga a chave, zera o estado e avisa', () async {
+      build(
+        values: {
+          _key: _stored([_item(_a, 2)]),
+        },
+      );
+      adapter.enqueueResponse(body: _preview([_lineA()]));
+      await repository.restore();
+      await pumpEventQueue();
+      expect(repository.state.lines, hasLength(1));
+      notifications = 0;
+      emitted.clear();
+
+      expect(await repository.clear(), isA<Ok<void>>());
+
+      expect(store.values.containsKey(_key), isFalse);
+      expect(repository.state.items, isEmpty);
+      expect(repository.state.detail, CartDetail.empty());
+      expect(repository.state.isSyncing, isFalse);
+      expect(repository.state.previewFailure, isNull);
+      expect(notifications, 1);
+      expect(emitted.single.isEmpty, isTrue);
+      expect(await repository.pendingItems(), isEmpty);
+    });
+
+    test('clear descarta a prévia em curso e cancela a agendada', () async {
+      build(
+        values: {
+          _key: _stored([_item(_a, 2)]),
+        },
+      );
+      final gate = Completer<void>();
+      adapter
+        ..gate = gate
+        ..enqueueResponse(body: _preview([_lineA()]));
+      await repository.restore();
+      await pumpEventQueue();
+      expect(adapter.requests, hasLength(1));
+
+      await repository.clear();
+      gate.complete();
+      await pumpEventQueue();
+
+      expect(adapter.requests, hasLength(1));
+      expect(repository.state.items, isEmpty);
+      expect(repository.state.detail, CartDetail.empty());
+      expect(store.values.containsKey(_key), isFalse);
     });
   });
 

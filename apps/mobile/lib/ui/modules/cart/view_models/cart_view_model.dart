@@ -70,8 +70,11 @@ class CartViewModel extends ChangeNotifier {
 
   Future<Result<void>> _remove(String productId) async {
     _failureMessage = null;
-    await _repository.remove(productId);
-    return const Ok(null);
+    final result = await _repository.remove(productId);
+    if (result case Failure(:final failure)) {
+      _failureMessage = failure.message;
+    }
+    return result;
   }
 
   void _notify() {

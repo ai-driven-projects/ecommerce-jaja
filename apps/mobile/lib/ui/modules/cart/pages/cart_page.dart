@@ -18,9 +18,10 @@ import '../widgets/cart_line_tile.dart';
 import '../widgets/cart_summary.dart';
 
 /// Aba Carrinho: "Seu carrinho" e, conforme o estado, o skeleton das linhas
-/// (abertura do app ou primeira prévia), o vazio com "Ver produtos", o banner
-/// da prévia que falhou ou as linhas com o resumo e "Finalizar pedido",
-/// desabilitado até o checkout existir. A navegação sai por callback.
+/// (abertura do app, primeira prévia ou carga da conta), o banner do carrinho
+/// que não carregou, o vazio com "Ver produtos" ou as linhas com o resumo e
+/// "Finalizar pedido", desabilitado até o checkout existir. Fora do skeleton,
+/// a mescla que falhou aparece no topo. A navegação sai por callback.
 class CartPage extends WatchingStatefulWidget {
   const CartPage({
     super.key,
@@ -34,6 +35,8 @@ class CartPage extends WatchingStatefulWidget {
   static const String emptyMessage = 'Adicione itens para o escritório!';
   static const String emptyAction = 'Ver produtos';
   static const String errorTitle = 'Não foi possível carregar o carrinho.';
+  static const String mergeErrorTitle =
+      'Não foi possível juntar o carrinho deste aparelho à sua conta.';
   static const int skeletonCount = 3;
 
   static String checkoutLabel(Money total) =>
@@ -73,6 +76,16 @@ class _CartPageState extends State<CartPage> {
       productId: productId,
       quantity: quantity,
     ));
+    _showFailure(messenger);
+  }
+
+  Future<void> _remove(String productId) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await _viewModel.remove.execute(productId);
+    _showFailure(messenger);
+  }
+
+  void _showFailure(ScaffoldMessengerState messenger) {
     final message = _viewModel.failureMessage;
     if (message != null) {
       messenger.showSnackBar(SnackBar(content: Text(message)));
@@ -104,6 +117,15 @@ class _CartPageState extends State<CartPage> {
               ),
             ),
             const SizedBox(height: AppSpacing.s16),
+            if (state.mergeFailure case final failure?
+                when !state.isRestoring && !state.awaitsFirstPreview) ...[
+              StateErrorBanner(
+                title: CartPage.mergeErrorTitle,
+                failure: failure,
+                onRetry: _viewModel.retry,
+              ),
+              const SizedBox(height: AppSpacing.s16),
+            ],
             ..._content(state),
           ],
         ),
@@ -118,6 +140,16 @@ class _CartPageState extends State<CartPage> {
     if (state.isRestoring || state.awaitsFirstPreview) {
       return const [_CartLinesSkeleton()];
     }
+    // A carga da conta pode falhar sem itens: a falha vem antes do vazio.
+    if (state.previewFailure case final failure?) {
+      return [
+        StateErrorBanner(
+          title: CartPage.errorTitle,
+          failure: failure,
+          onRetry: _viewModel.retry,
+        ),
+      ];
+    }
     if (state.isEmpty) {
       return [
         EmptyState(
@@ -129,15 +161,6 @@ class _CartPageState extends State<CartPage> {
         ),
       ];
     }
-    if (state.previewFailure case final failure?) {
-      return [
-        StateErrorBanner(
-          title: CartPage.errorTitle,
-          failure: failure,
-          onRetry: _viewModel.retry,
-        ),
-      ];
-    }
     return [
       for (final CartLine line in state.lines) ...[
         CartLineTile(
@@ -146,7 +169,7 @@ class _CartPageState extends State<CartPage> {
           onOpenProduct: widget.onOpenProduct,
           onChangeQuantity: (quantity) =>
               _changeQuantity(line.productId, quantity),
-          onRemove: () => _viewModel.remove.execute(line.productId),
+          onRemove: () => _remove(line.productId),
         ),
         const Divider(height: AppSpacing.s24),
       ],

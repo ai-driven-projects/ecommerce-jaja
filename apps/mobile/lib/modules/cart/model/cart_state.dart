@@ -4,7 +4,9 @@ import 'cart_entity.dart';
 /// Estado do carrinho exposto pelo `CartRepository`. [items] é a verdade local
 /// (muda na hora); [detail] é a última prévia bem-sucedida, ou
 /// `CartDetail.empty()` antes dela. [isSyncing] marca uma mudança ainda não
-/// confirmada por uma prévia; [previewFailure], a falha da última prévia.
+/// confirmada; [previewFailure], a falha ao obter o carrinho exibido (a
+/// prévia do visitante ou a carga da conta); [mergeFailure], a falha ao juntar
+/// o carrinho do aparelho ao da conta.
 final class CartState {
   CartState({
     List<CartItem> items = const [],
@@ -12,6 +14,7 @@ final class CartState {
     this.isRestoring = false,
     this.isSyncing = false,
     this.previewFailure,
+    this.mergeFailure,
   }) : items = List.unmodifiable(items),
        detail = detail ?? CartDetail.empty();
 
@@ -20,6 +23,7 @@ final class CartState {
   final bool isRestoring;
   final bool isSyncing;
   final AppFailure? previewFailure;
+  final AppFailure? mergeFailure;
 
   /// Soma local das quantidades, inclusive de linhas indisponíveis (o badge).
   int get count => items.fold(0, (sum, item) => sum + item.quantity);
@@ -58,6 +62,8 @@ final class CartState {
     bool? isSyncing,
     AppFailure? previewFailure,
     bool clearPreviewFailure = false,
+    AppFailure? mergeFailure,
+    bool clearMergeFailure = false,
   }) {
     return CartState(
       items: items ?? this.items,
@@ -67,6 +73,9 @@ final class CartState {
       previewFailure: clearPreviewFailure
           ? null
           : previewFailure ?? this.previewFailure,
+      mergeFailure: clearMergeFailure
+          ? null
+          : mergeFailure ?? this.mergeFailure,
     );
   }
 }

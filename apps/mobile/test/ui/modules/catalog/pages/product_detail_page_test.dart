@@ -290,6 +290,29 @@ void main() {
       expect(find.text('Você já tem 98 no carrinho.'), findsOneWidget);
       expect(_addButton('Adicionar · R\$ 38,70'), findsOneWidget);
     });
+
+    testWidgets('produto que o carrinho recusa mostra "Produto '
+        'indisponível." no SnackBar', (tester) async {
+      final cart = FakeCartRepository()
+        ..enqueueAdd(
+          const Failure(
+            NotFoundFailure(
+              message: 'Produto indisponível.',
+              code: CartErrorCode.productUnavailable,
+            ),
+          ),
+        );
+      await _pumpPage(tester, product: _pen, cart: cart);
+      await tester.pumpAndSettle();
+
+      await tester.tap(_addButton('Adicionar · R\$ 12,90'));
+      await tester.pumpAndSettle();
+
+      expect(cart.addCalls, [(productId: _pen.id, quantity: 1)]);
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.text('Produto indisponível.'), findsOneWidget);
+      expect(find.text(ProductDetailPage.addedTitle), findsNothing);
+    });
   });
 
   group('estados', () {

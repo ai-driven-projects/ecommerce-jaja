@@ -117,6 +117,14 @@ void main() {
     expect(state.copyWith(clearPreviewFailure: true).previewFailure, isNull);
   });
 
+  test('copyWith guarda e limpa a falha da mescla', () {
+    final state = CartState().copyWith(mergeFailure: serverFailure);
+    expect(state.mergeFailure, serverFailure);
+    expect(state.copyWith(isSyncing: true).mergeFailure, serverFailure);
+    expect(state.copyWith(clearMergeFailure: true).mergeFailure, isNull);
+    expect(CartState().mergeFailure, isNull);
+  });
+
   test('items é imutável', () {
     final state = CartState(items: [item('a', 1)]);
 

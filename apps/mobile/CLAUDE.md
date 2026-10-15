@@ -58,6 +58,11 @@ contrato `CartRepository`), o `GuestCartStorage` e o `GuestCartRepository` (`lib
 a rota `/cart/product/:slug`, o `QuantityStepper` em `lib/ui/shared/widgets/` e o rodapé ligado do detalhe
 do produto (quantidade, "Adicionar · <total>", "Você já tem N no carrinho." e o cartão de entrega). O
 `PlaceholderBody` foi apagado (não sobrou consumidor).
+Etapa 10: já existem o carrinho da conta (`GET/POST/PUT/DELETE /me/cart`, `POST /me/cart/merge`) pelo
+`AccountCartApi` com `mapCartFailure` e o `SessionCartRepository` (`lib/infra/cart/`), que é o
+`CartRepository` do app e escolhe a fonte pela sessão; `accountCartItems` (`lib/modules/cart/model/`),
+`cartErrorFromCodes` e `CartErrorCode.productUnavailable`, o `mergeFailure` no `CartState`, `remove` com
+`Result` e `clear()` no contrato, e na aba Carrinho o banner de falha da carga e o aviso da mescla.
 
 ## Arquitetura
 
@@ -387,14 +392,36 @@ specs em `openspec/specs/<domínio>/`.
     `cart_rules.dart` (copiadas de `modules/orders/src/cart/errors.ts`: 99 unidades, 50 produtos, taxa
     R$ 4,90, grátis a partir de R$ 79,00); toda mudança passa por `addCartItem`/`setCartItemQuantity`/
     `removeCartItem`, e a falha de regra devolve `ValidationFailure` sem mudar nada.
-  - O estado global é o `GuestCartRepository` (`CartRepository` na DI, mesma instância), restaurado pelo
-    bootstrap sem esperar; as ações esperam o `restore`. Quantidade e badge mudam na hora (soma local);
-    a prévia (`POST /cart/preview`) é pedida **250 ms depois da última mudança**, cada pedido abre uma
+  - O estado do visitante é o `GuestCartRepository` (registrado na DI como fonte do `SessionCartRepository`),
+    restaurado pelo bootstrap sem esperar; as ações esperam o `restore`. Quantidade e badge mudam na hora
+    (soma local); a prévia (`POST /cart/preview`) é pedida **250 ms depois da última mudança**, cada pedido abre uma
     **geração** e resposta de geração antiga (ou depois do `dispose`) é descartada. Produto que a prévia
     **não devolve sai** do carrinho e do armazenamento, em silêncio. Falha da prévia vira o banner "Não
     foi possível carregar o carrinho." com "Tentar de novo" (`refresh()`).
-  - Até a etapa 10, o carrinho é o do visitante **mesmo com sessão** (sem `/me/cart` nem merge); a UI
-    depende só do `CartRepository`, que a etapa 10 reimplementa com as duas fontes.
+  - A UI depende **só** do `CartRepository`, que é o `SessionCartRepository` (lazy singleton; o bootstrap
+    chama `start()` logo depois do `restore()` do visitante). A fonte é escolhida pelo **token** da sessão
+    (`authenticated ? token : null`): sem token (`unknown`/`anonymous`), tudo é delegado ao visitante e os
+    avisos dele são repassados; aviso da sessão sem troca de token é ignorado. Cada troca de token abre uma
+    **geração** e uma fila nova; tarefa ou resposta de geração antiga é descartada e não envia nada.
+  - Na conta, os itens exibidos saem de `accountCartItems(detail, overrides)`. Todo comando (`add`,
+    `setQuantity`, `remove`, `clear`) passa antes pelas mesmas regras puras de `cart_rules.dart` (falha de
+    regra devolve `ValidationFailure` sem requisição), grava o **override** da quantidade nova (badge e
+    quantidade mudam na hora) e entra numa **fila única** (um comando só sai depois da resposta do anterior;
+    `setQuantity(id, 0)` vira `DELETE`). A resposta vira o `detail`; na falha, ela volta a quem chamou e,
+    salvo `SessionFailure`, um `GET /me/cart` entra na fila. Os overrides só somem quando a fila esvazia.
+  - **Entrar** (token novo): com itens do visitante, `POST /me/cart/merge`; o armazenamento do visitante só é
+    apagado (`guest.clear()`) **no sucesso**. Na falha, `mergeFailure` mostra o aviso "Não foi possível
+    juntar o carrinho deste aparelho à sua conta." (`CartPage.mergeErrorTitle`, no topo da aba, fora do
+    skeleton) e vem `GET /me/cart`; a nova tentativa acontece pelo "Tentar de novo" (`refresh()` remescla
+    enquanto há itens locais) ou na próxima entrada. Sem itens locais, só `GET /me/cart`; falha da carga vira `previewFailure` (o banner "Não foi possível carregar o
+    carrinho." aparece antes do vazio).
+  - **Sair** (token nulo): volta ao carrinho do visitante como está no aparelho, descartando o estado da
+    conta; **nada** apaga o carrinho do servidor.
+  - Recusas do backend nos comandos são traduzidas por `mapCartFailure` com `CartErrorCode`
+    (`cartErrorFromCodes`, primeiro código conhecido): `CART_ITEM_QUANTITY_EXCEEDED`,
+    `CART_ITEMS_LIMIT_EXCEEDED`, `CART_ITEM_QUANTITY_INVALID` com os textos das regras, e `404` →
+    "Produto indisponível."; recusa sem código conhecido mantém "Não foi possível concluir. Tente
+    novamente."; `load` e `merge` não traduzem. As mensagens chegam à UI pelo `failure.message`.
   - "Finalizar pedido · <total>" aparece **desabilitado** até a etapa 12 ligar o checkout.
   - No detalhe do produto, o rodapé tem o `QuantityStepper` (1 a 99) e "Adicionar · <total>"
     ("Adicionando…" enquanto inclui); o sucesso mostra o aviso "Adicionado ao carrinho" com "Ver carrinho"

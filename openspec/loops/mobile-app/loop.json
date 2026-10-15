@@ -593,7 +593,7 @@
       "commit": "ff75fadac1089cf94ba56ac912a7520e8e368471"
     },
     {
-      "status": "pending",
+      "status": "delivered",
       "number": 10,
       "phase": "Conta e carrinho",
       "title": "Carrinho da conta e merge",
@@ -604,7 +604,55 @@
         "base": "0ba3f4a801e0cf8f89d04f0468d23ed949bd15d9",
         "commit": "1ca60e0ebf34147bfd5e5b1eb94a0200f8d91d8c",
         "at": "2026-10-15T17:53:33.183Z"
-      }
+      },
+      "iteration": 10,
+      "deliveredAt": "2026-10-15T18:11:12.268Z",
+      "durationMs": 1055388,
+      "cost": 6.628492400000001,
+      "steps": [
+        {
+          "id": "propose",
+          "durationMs": 99001,
+          "cost": 0.8519122,
+          "attempts": 1
+        },
+        {
+          "id": "baseline",
+          "durationMs": 26978,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "commitProposal",
+          "durationMs": 294,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "apply",
+          "durationMs": 876362,
+          "cost": 5.441696200000001,
+          "attempts": 1
+        },
+        {
+          "id": "verifyChange",
+          "durationMs": 26552,
+          "cost": 0,
+          "attempts": 1
+        },
+        {
+          "id": "archive",
+          "durationMs": 26084,
+          "cost": 0.33488399999999996,
+          "attempts": 1
+        },
+        {
+          "id": "commitDelivery",
+          "durationMs": 117,
+          "cost": 0,
+          "attempts": 1
+        }
+      ]
     },
     {
       "status": "pending",
@@ -642,84 +690,22 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": {
-    "number": 10,
-    "stage": 10,
-    "startCommit": "ff75fadac1089cf94ba56ac912a7520e8e368471",
-    "startedAt": "2026-10-15T17:53:36.804Z",
-    "currentStep": 2,
-    "steps": [
-      {
-        "id": "propose",
-        "state": "ok",
-        "durationMs": 99001,
-        "cost": 0.8519122,
-        "attempts": 1
-      },
-      {
-        "id": "baseline",
-        "state": "ok",
-        "durationMs": 26978,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "commitProposal",
-        "state": "running",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 1
-      },
-      {
-        "id": "apply",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "verifyChange",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "archive",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      },
-      {
-        "id": "commitDelivery",
-        "state": "pending",
-        "durationMs": 0,
-        "cost": 0,
-        "attempts": 0
-      }
-    ],
-    "briefing": {
-      "title": "Planeja o carrinho da conta e a mescla no login do app mobile",
-      "comparison": "A change mobile-app-10-carrinho-conta-mobile está criada com proposal, design, spec mobile/mobile-cart e tasks (7 grupos). São cerca de 30 mil caracteres, e `openspec validate --strict` passou.\n- Parti da change 09 como entregue: o contrato `CartRepository` e o `CartState` já são o que a etapa 10 reimplementa. A peça nova é um `SessionCartRepository` que escolhe a fonte pelo token da sessão e usa o `GuestCartRepository` como fonte do visitante. O contrato muda pouco: `remove` passa a devolver `Result`, entram `clear()` e o campo `mergeFailure`.\n- O comportamento copia a parte \"conta\" do `cart.context.tsx` do web: fila de comandos com quantidades aplicadas na hora, mescla quando surge o token com o carrinho local apagado só no sucesso, e nova leitura do carrinho depois de uma recusa.\n- No backend, o `throwFailure` devolve `CART_PRODUCT_NOT_FOUND` como 404. O `mapHttpFailure` da etapa 8 descarta os códigos do 404, então nos comandos o 404 vira \"Produto indisponível.\" direto.\n- O `SessionRepository` avisa os ouvintes até sem trocar de estado. Por isso a troca de fonte compara o token e abre uma geração nova a cada entrada e saída.\n- Duas mudanças na `CartPage`: a falha de carga aparece antes do estado vazio (a conta pode falhar sem itens) e entra um banner de falha da mescla com \"Tentar de novo\". As demais decisões tomadas sem consulta estão no `design.md`.",
-      "description": ""
-    }
-  },
+  "iteration": null,
   "totals": {
-    "durationMs": 18282539,
-    "cost": 150.04957149999998,
+    "durationMs": 19211948,
+    "cost": 158.3183475,
     "runs": 1,
     "iterationsStarted": 10,
-    "iterationsDelivered": 9,
-    "claudeSessions": 89,
-    "turns": 1666,
-    "checks": 65,
+    "iterationsDelivered": 10,
+    "claudeSessions": 95,
+    "turns": 1792,
+    "checks": 68,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 23
+    "commits": 24
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"

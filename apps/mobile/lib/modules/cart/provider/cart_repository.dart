@@ -16,9 +16,13 @@ abstract interface class CartRepository {
   /// Define a quantidade do produto; 0 o remove.
   Future<Result<void>> setQuantity(String productId, int quantity);
 
-  /// Tira o produto. Nunca falha.
-  Future<void> remove(String productId);
+  /// Tira o produto. No visitante nunca falha; na conta, a recusa do backend
+  /// volta como falha.
+  Future<Result<void>> remove(String productId);
 
-  /// Pede a prévia de novo, na hora (o "Tentar de novo").
+  /// Esvazia o carrinho. No visitante nunca falha.
+  Future<Result<void>> clear();
+
+  /// Obtém o carrinho exibido de novo, na hora (o "Tentar de novo").
   void refresh();
 }

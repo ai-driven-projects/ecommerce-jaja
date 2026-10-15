@@ -24,6 +24,16 @@ const _previewFailure = NetworkFailure(
   code: HttpFailureCode.noConnection,
 );
 
+const _mergeFailure = ServerFailure(
+  message: 'Algo deu errado do nosso lado. Tente de novo em instantes.',
+  code: HttpFailureCode.server,
+);
+
+const _productUnavailable = NotFoundFailure(
+  message: 'Produto indisponível.',
+  code: CartErrorCode.productUnavailable,
+);
+
 final _quantityExceeded = ValidationFailure(
   message: CartErrorCode.quantityExceeded.message,
   code: CartErrorCode.quantityExceeded,
@@ -126,6 +136,73 @@ void main() {
     expect(repository.refreshCalls, 1);
   });
 
+  testWidgets('falha na carga sem itens mostra o banner, não o vazio', (
+    tester,
+  ) async {
+    final repository = FakeCartRepository(
+      state: CartState(
+        detail: CartDetail.empty(),
+        previewFailure: _previewFailure,
+      ),
+    );
+    await _pumpPage(tester, repository);
+
+    expect(find.text(CartPage.errorTitle), findsOneWidget);
+    expect(find.text(_previewFailure.message), findsOneWidget);
+    expect(find.byType(EmptyState), findsNothing);
+
+    await tester.tap(find.text('Tentar de novo'));
+
+    expect(repository.refreshCalls, 1);
+  });
+
+  testWidgets('falha na mescla mostra o aviso acima das linhas e "Tentar de '
+      'novo" pede o refresh', (tester) async {
+    final repository = FakeCartRepository(
+      state: stateOf([canetaLine]).copyWith(mergeFailure: _mergeFailure),
+    );
+    await _pumpPage(tester, repository);
+
+    expect(find.text(CartPage.mergeErrorTitle), findsOneWidget);
+    expect(find.text(_mergeFailure.message), findsOneWidget);
+    expect(find.text(canetaLine.name), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(CartPage.mergeErrorTitle)).dy,
+      lessThan(tester.getTopLeft(find.byType(CartLineTile)).dy),
+    );
+
+    await tester.tap(find.text('Tentar de novo'));
+
+    expect(repository.refreshCalls, 1);
+  });
+
+  testWidgets('falha na mescla com a conta vazia mostra o aviso acima do '
+      'vazio', (tester) async {
+    final repository = FakeCartRepository(
+      state: CartState(detail: CartDetail.empty(), mergeFailure: _mergeFailure),
+    );
+    await _pumpPage(tester, repository);
+
+    expect(find.text(CartPage.mergeErrorTitle), findsOneWidget);
+    expect(find.text(CartPage.emptyTitle), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(CartPage.mergeErrorTitle)).dy,
+      lessThan(tester.getTopLeft(find.byType(EmptyState)).dy),
+    );
+  });
+
+  testWidgets('falha na mescla não aparece durante o skeleton', (tester) async {
+    await _pumpPage(
+      tester,
+      FakeCartRepository(
+        state: CartState(isRestoring: true, mergeFailure: _mergeFailure),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Carregando'), findsOneWidget);
+    expect(find.text(CartPage.mergeErrorTitle), findsNothing);
+  });
+
   testWidgets('mostra as linhas na ordem, o resumo e "Finalizar pedido" '
       'desabilitado', (tester) async {
     await _pumpPage(tester, FakeCartRepository(state: stateOf([canetaLine])));
@@ -218,6 +295,22 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.text('Limite de 99 unidades por produto.'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('falha da lixeira mostra a mensagem no SnackBar', (tester) async {
+    final repository = FakeCartRepository(state: stateOf([canetaLine]))
+      ..enqueueRemove(const Failure(_productUnavailable));
+    await _pumpPage(tester, repository);
+
+    await tester.tap(
+      find.byTooltip(CartLineTile.removeTooltip(canetaLine.name)),
+    );
+    await tester.pump();
+
+    expect(repository.removeCalls, [canetaLine.productId]);
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('Produto indisponível.'), findsOneWidget);
+    expect(find.text(canetaLine.name), findsOneWidget);
   });
 
   testWidgets('tocar no nome de uma linha abre o produto pelo slug', (

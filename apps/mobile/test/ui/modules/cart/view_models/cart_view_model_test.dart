@@ -76,6 +76,27 @@ void main() {
       expect(viewModel.state.isEmpty, isTrue);
     });
 
+    test(
+      'falha do remove preenche failureMessage e mantém o produto',
+      () async {
+        repository.enqueueRemove(
+          Failure(
+            NotFoundFailure(
+              message: CartErrorCode.productUnavailable.message,
+              code: CartErrorCode.productUnavailable,
+            ),
+          ),
+        );
+
+        await viewModel.remove.execute(canetaLine.productId);
+
+        expect(repository.removeCalls, [canetaLine.productId]);
+        expect(viewModel.failureMessage, 'Produto indisponível.');
+        expect(viewModel.remove.result, isA<Failure<void>>());
+        expect(viewModel.state.quantityOf(canetaLine.productId), 2);
+      },
+    );
+
     test('falha preenche failureMessage e não muda o carrinho', () async {
       repository.enqueueSetQuantity(Failure(_quantityExceeded));
 
