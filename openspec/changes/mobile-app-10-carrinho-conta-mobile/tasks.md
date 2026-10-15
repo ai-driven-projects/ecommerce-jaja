@@ -4,10 +4,10 @@
 
 ## 1. Conferência e domínio
 
-- [ ] 1.1 Conferir no código os nomes listados em "Dependências da etapa anterior" do design; registrar no `design.md` qualquer diferença e seguir com o nome entregue.
+- [ ] 1.1 Ler os arquivos listados em "Dependências da etapa anterior" do design (nomes já conferidos com o código entregue); se algo divergir durante a aplicação, seguir o código e registrar no `design.md`.
 - [ ] 1.2 Em `lib/modules/cart/errors/cart_errors.dart`, acrescentar `productUnavailable` e o código do backend de cada valor, mais `cartErrorFromCodes` (Decisão 1).
 - [ ] 1.3 Testes em `test/modules/cart/errors/cart_errors_test.dart`: cada `CART_*` vira o seu valor; `['ALGO_NOVO', 'CART_ITEMS_LIMIT_EXCEEDED']` → `itemsLimitExceeded`; lista sem código conhecido → `null`.
-- [ ] 1.4 Em `cart_repository.dart`, `remove` → `Future<Result<void>>` e `clear()` novo; em `cart_state.dart`, o campo `mergeFailure` (Decisão 1).
+- [ ] 1.4 Em `cart_repository.dart`, `remove` → `Future<Result<void>>` e `clear()` novo; em `cart_state.dart`, o campo `mergeFailure`, com `copyWith`/`clearMergeFailure` (Decisão 1).
 - [ ] 1.5 Criar `lib/modules/cart/model/account_cart_items.dart` (Decisão 1).
 - [ ] 1.6 Testes em `test/modules/cart/model/account_cart_items_test.dart`: sem `detail` nem overrides → vazio; override muda a quantidade na posição; 0 tira a linha; produto novo entra no fim, na ordem de inserção; `CartState.count` soma o resultado.
 
@@ -22,13 +22,13 @@
 
 - [ ] 3.1 Em `GuestCartRepository`, acrescentar `pendingItems()` e `clear()` e fazer `remove` devolver `Ok` (Decisão 3).
 - [ ] 3.2 Testes em `guest_cart_repository_test.dart`: `pendingItems()` espera o `restore` e devolve os itens guardados; `clear()` apaga a chave, zera o estado, avisa e descarta prévia em curso; `remove` devolve `Ok`.
-- [ ] 3.3 Em `FakeCartRepository`, `remove` com `Result` programável e `clear()` gravado (Decisão 5); ajustar os testes que usam o `remove` antigo.
+- [ ] 3.3 Em `FakeCartRepository`, `remove` com `Result` programável (`enqueueRemove`, no molde do `enqueueSetQuantity`) e `clear()` gravado em `clearCalls` (Decisão 5); ajustar os testes que usam o `remove` antigo.
 - [ ] 3.4 Em `CartViewModel`, `remove` lê o `Result` e a falha preenche `failureMessage`; teste no `cart_view_model_test.dart`.
 
 ## 4. Repositório pela sessão: fonte
 
 - [ ] 4.1 Criar `lib/infra/cart/session_cart_repository.dart` com `start()`, a escolha da fonte pelo token, a geração e a fila (Decisão 4).
-- [ ] 4.2 Criar em `test/infra/cart/session_cart_repository_test.dart` um montador com `GuestCartRepository` real, `AccountCartApi` sobre `FakeHttpClientAdapter` e `FakeAuthRepository` como `Session` (Decisão 7).
+- [ ] 4.2 Criar em `test/infra/cart/session_cart_repository_test.dart` um montador com `GuestCartRepository` real (adaptador próprio), `AccountCartApi` sobre uma subclasse local do `FakeHttpClientAdapter` que segura respostas e `FakeAuthRepository` como `Session`, com subclasse local para trocar o token (Decisão 7).
 - [ ] 4.3 Testes de fonte: `unknown`/`anonymous` delegam ao visitante e repassam os avisos dele; entrar sem itens locais → só `GET /me/cart`, `isRestoring` até a resposta e depois as linhas da conta; aviso repetido com o mesmo token não recarrega.
 - [ ] 4.4 Testes de saída: sair volta ao visitante vazio, sem `DELETE /me/cart`; entrar de novo recarrega a conta; resposta da conta que chega depois de sair é descartada; trocar de token recarrega.
 - [ ] 4.5 Teste de carga com falha: `GET /me/cart` `500` → `previewFailure`, `isRestoring` falso e `detail` vazio; `refresh()` recarrega e limpa a falha no sucesso.

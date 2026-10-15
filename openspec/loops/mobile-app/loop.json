@@ -589,7 +589,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "ff75fadac1089cf94ba56ac912a7520e8e368471"
     },
     {
       "status": "pending",
@@ -641,22 +642,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 10,
+    "stage": 10,
+    "startCommit": "ff75fadac1089cf94ba56ac912a7520e8e368471",
+    "startedAt": "2026-10-15T17:53:36.804Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 99001,
+        "cost": 0.8519122,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 26978,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja o carrinho da conta e a mescla no login do app mobile",
+      "comparison": "A change mobile-app-10-carrinho-conta-mobile está criada com proposal, design, spec mobile/mobile-cart e tasks (7 grupos). São cerca de 30 mil caracteres, e `openspec validate --strict` passou.\n- Parti da change 09 como entregue: o contrato `CartRepository` e o `CartState` já são o que a etapa 10 reimplementa. A peça nova é um `SessionCartRepository` que escolhe a fonte pelo token da sessão e usa o `GuestCartRepository` como fonte do visitante. O contrato muda pouco: `remove` passa a devolver `Result`, entram `clear()` e o campo `mergeFailure`.\n- O comportamento copia a parte \"conta\" do `cart.context.tsx` do web: fila de comandos com quantidades aplicadas na hora, mescla quando surge o token com o carrinho local apagado só no sucesso, e nova leitura do carrinho depois de uma recusa.\n- No backend, o `throwFailure` devolve `CART_PRODUCT_NOT_FOUND` como 404. O `mapHttpFailure` da etapa 8 descarta os códigos do 404, então nos comandos o 404 vira \"Produto indisponível.\" direto.\n- O `SessionRepository` avisa os ouvintes até sem trocar de estado. Por isso a troca de fonte compara o token e abre uma geração nova a cada entrada e saída.\n- Duas mudanças na `CartPage`: a falha de carga aparece antes do estado vazio (a conta pode falhar sem itens) e entra um banner de falha da mescla com \"Tentar de novo\". As demais decisões tomadas sem consulta estão no `design.md`.",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 18156123,
-    "cost": 149.1976593,
+    "durationMs": 18282539,
+    "cost": 150.04957149999998,
     "runs": 1,
-    "iterationsStarted": 9,
+    "iterationsStarted": 10,
     "iterationsDelivered": 9,
-    "claudeSessions": 88,
-    "turns": 1649,
-    "checks": 62,
+    "claudeSessions": 89,
+    "turns": 1666,
+    "checks": 65,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 22
+    "commits": 23
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
