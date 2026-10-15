@@ -652,7 +652,8 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "d9aa06e9d04977b2922c41a09bc48beaa3076ed1"
     },
     {
       "status": "pending",
@@ -690,22 +691,84 @@
       "change": "mobile-app-15-varredura-final-mobile"
     }
   ],
-  "iteration": null,
+  "iteration": {
+    "number": 11,
+    "stage": 11,
+    "startCommit": "d9aa06e9d04977b2922c41a09bc48beaa3076ed1",
+    "startedAt": "2026-10-15T18:11:15.802Z",
+    "currentStep": 2,
+    "steps": [
+      {
+        "id": "propose",
+        "state": "ok",
+        "durationMs": 356781,
+        "cost": 2.8689742000000007,
+        "attempts": 1
+      },
+      {
+        "id": "baseline",
+        "state": "ok",
+        "durationMs": 30074,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "commitProposal",
+        "state": "running",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 1
+      },
+      {
+        "id": "apply",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "verifyChange",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "archive",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      },
+      {
+        "id": "commitDelivery",
+        "state": "pending",
+        "durationMs": 0,
+        "cost": 0,
+        "attempts": 0
+      }
+    ],
+    "briefing": {
+      "title": "Planeja os dados de entrega do app mobile",
+      "comparison": "O app já tem sessão, guarda de rotas (com `sessionRequiredPaths` vazio e um teste exigindo isso) e carrinho da conta, mas ainda não tem o domínio `customer`. A aba Conta só mostra o perfil e \"Sair\".\nO `PUT /me/customer` exige CPF e o endereço inteiro. Se `location` não vier, a API mantém o ponto atual; `null` apaga. O plano pede sempre enviar o ponto do `GET` (ou `null`), e o design segue isso e registra o risco.\nO plano fala em \"nome, telefone e endereço\", mas o nome é da conta de acesso e o CPF é obrigatório. A tela segue o \"Minha conta\" do web: nome e e-mail só para leitura, CPF, telefone e endereço editáveis.\nO `mapHttpFailure` descarta os códigos do `404`, então qualquer `404` do `GET` vira \"sem cadastro\". O `Store.place` (`CityState`) já existe para preencher cidade e UF do cliente novo.\nO `CLAUDE.md` manda subir o `BlockState` para `ui/shared/` no segundo consumidor fora do catálogo. Esta tela é esse consumidor, então a mudança entrou na etapa.",
+      "description": ""
+    }
+  },
   "totals": {
-    "durationMs": 19211948,
-    "cost": 158.3183475,
+    "durationMs": 19599170,
+    "cost": 161.18732169999998,
     "runs": 1,
-    "iterationsStarted": 10,
+    "iterationsStarted": 11,
     "iterationsDelivered": 10,
-    "claudeSessions": 95,
-    "turns": 1792,
-    "checks": 68,
+    "claudeSessions": 96,
+    "turns": 1829,
+    "checks": 71,
     "fixes": 3,
     "recoveries": 2,
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 24
+    "commits": 25
   },
   "lastRun": {
     "start": "2026-10-15T12:52:27.051Z"
