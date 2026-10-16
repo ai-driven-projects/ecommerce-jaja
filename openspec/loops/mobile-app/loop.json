@@ -3,7 +3,7 @@
   "name": "mobile-app",
   "title": "App mobile do cliente Jajá (Flutter)",
   "createdAt": "2026-10-15T12:50:33.746Z",
-  "status": "running",
+  "status": "done",
   "config": {
     "model": "",
     "scope": [
@@ -946,12 +946,13 @@
           "cost": 0,
           "attempts": 1
         }
-      ]
+      ],
+      "commit": "ba6c87228100e79797a5e17230cf6f1cc50cf0b7"
     }
   ],
   "iteration": null,
   "totals": {
-    "durationMs": 26246536,
+    "durationMs": 26246887,
     "cost": 215.26372129999996,
     "runs": 1,
     "iterationsStarted": 15,
@@ -964,9 +965,12 @@
     "recoveriesResolved": 1,
     "failures": 0,
     "restarts": 0,
-    "commits": 36
+    "commits": 37
   },
   "lastRun": {
-    "start": "2026-10-15T12:52:27.051Z"
+    "start": "2026-10-15T12:52:27.051Z",
+    "end": "2026-10-15T20:08:43.468Z",
+    "outcome": "done",
+    "reason": "todas as etapas do plano foram entregues"
   }
 }
